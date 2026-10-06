@@ -68,7 +68,7 @@ jobs:
           CODEX_HOME: ${{ runner.temp }}/codex
       - name: Prepare, resolve, and check the merge
         id: repair
-        uses: scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73
+        uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
         with:
           workflow: automation/.um/workflows/resolve-pr-conflicts.yaml
           source-root: automation/.um

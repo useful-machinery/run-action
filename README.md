@@ -1,15 +1,15 @@
 # Useful Machinery Run Action
 
-The current Action implementation pins the checksum-verified `um` v0.57.0 release
-from `useful-machinery/um`. The examples below still select the independently
-verified v0.36.0 mirror revision; their references and harness pins will advance
-together after the new mirror passes all native behavior checks.
+The implementation and examples pin the checksum-verified `um` v0.57.0 release
+through public mirror revision `0572ca6153d1d030a1490d2f46298264aebd1cb3`.
+[Source and all three native behavior jobs passed](https://github.com/useful-machinery/run-action/actions/runs/37415128498)
+for that exact mirror revision.
 
-Run a checked-in Scherzo workflow inside a GitHub Actions job—without sending the
-run to Scherzo Cloud.
+Run a checked-in Useful Machinery workflow inside a GitHub Actions job—without sending the
+run to Useful Machinery.
 
-Scherzo workflows describe a directed graph of command and AI-agent steps. This
-Action lets GitHub provide the runner, trigger, and job environment while Scherzo
+Useful Machinery workflows describe a directed graph of command and AI-agent steps. This
+Action lets GitHub provide the runner, trigger, and job environment while Useful Machinery
 coordinates the workflow, captures its declared outputs, and produces one validated
 local result.
 
@@ -23,8 +23,8 @@ Use the Action when you want to:
 - get a structured outcome and a complete Portable Artifact Set when a terminal result
   commits, including for failed or cancelled workflows;
 - pass one declared text, JSON, file, or Git-branch export to later steps; and
-- run with an exact, verified Scherzo CLI without installing the CLI separately or
-  creating a Scherzo Cloud account.
+- run with an exact, verified Useful Machinery CLI without installing the CLI separately or
+  creating a Useful Machinery account.
 
 A typical job checks out a repository, installs any agent harness used by the workflow,
 runs this Action, and then chooses what to do with the result. Uploading artifacts,
@@ -35,7 +35,7 @@ steps.
 
 The Action:
 
-1. downloads the exact Scherzo CLI release pinned by the selected Action revision;
+1. downloads the exact Useful Machinery CLI release pinned by the selected Action revision;
 2. verifies the release checksum and CLI build identity;
 3. runs exactly one fresh local Workflow V1 invocation;
 4. validates the complete Portable Artifact Set; and
@@ -52,7 +52,7 @@ The caller still owns:
 - artifact upload, cross-job persistence, branch publication, and pull-request creation.
 
 Command-only workflows do not require an agent harness. The Action itself requests no
-GitHub token, Scherzo credential, harness-provider credential, or application credential.
+GitHub token, Useful Machinery credential, harness-provider credential, or application credential.
 
 ## Before you start
 
@@ -80,22 +80,22 @@ steps:
     uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     with:
       persist-credentials: false
-  - name: Run checked-in Scherzo workflow
-    id: scherzo
-    uses: scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73
+  - name: Run checked-in Useful Machinery workflow
+    id: um
+    uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
     with:
       workflow: .um/workflows/ci.yaml
   - name: Consume the retained result in the same job
-    if: ${{ always() && steps.scherzo.outputs.result-path != '' }}
+    if: ${{ always() && steps.um.outputs.result-path != '' }}
     env:
-      ARTIFACT_SET_PATH: ${{ steps.scherzo.outputs.artifact-set-path }}
-      RESULT_PATH: ${{ steps.scherzo.outputs.result-path }}
-      WORKFLOW_OUTCOME: ${{ steps.scherzo.outputs.outcome }}
+      ARTIFACT_SET_PATH: ${{ steps.um.outputs.artifact-set-path }}
+      RESULT_PATH: ${{ steps.um.outputs.result-path }}
+      WORKFLOW_OUTCOME: ${{ steps.um.outputs.outcome }}
     run: |
       set -euo pipefail
       test -d "$ARTIFACT_SET_PATH"
       test -f "$RESULT_PATH"
-      scherzo-cloud artifact validate --json "$ARTIFACT_SET_PATH" >/dev/null
+      um artifact validate --json "$ARTIFACT_SET_PATH" >/dev/null
       printf 'workflow outcome: %s\n' "$WORKFLOW_OUTCOME"
 ```
 
@@ -104,13 +104,13 @@ The source tree also contains a working
 [nightly Sentry repair composition](examples/nightly-sentry-repair/README.md). The latter
 adds agent-produced JSON discovery, a bounded GitHub matrix, and publisher
 failure-isolation verification. Both executable examples use named `request` inputs and
-pin the same verified v0.36.0 Action mirror: JSON for Sentry and Text for the conflict
+pin the same verified v0.57.0 Action mirror: JSON for Sentry and Text for the conflict
 resolver. Their harness versions are compatible with that released CLI.
 
 Keep each example's reference, acquisition form, workflow, and harness requirements
 paired when upgrading. V1 provides no moving `v1`, `latest`, or semantic-version tag; do not
 improvise with `main`, another branch or tag, an abbreviation, a placeholder, or a
-Scherzo Cloud monorepo commit.
+Useful Machinery monorepo commit.
 
 ## Inputs
 
@@ -197,7 +197,7 @@ values remain available under the local Workflow V1 environment policy.
 ## Public distribution
 
 The Action is distributed from
-[`scherzo-systems/run-action`](https://github.com/scherzo-systems/run-action).
+[`useful-machinery/run-action`](https://github.com/useful-machinery/run-action).
 Pin `uses:` to a full 40-character commit SHA from that repository. Branches and moving
 references do not provide the immutable selection required by V1.
 

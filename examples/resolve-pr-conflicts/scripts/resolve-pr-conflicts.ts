@@ -205,16 +205,16 @@ export function prepareMerge(cwd: string, { head, base }: Snapshot): boolean {
   if (checkedGit(cwd, ["status", "--porcelain"]) !== "")
     throw new Error("Merge preparation requires a clean checkout");
   checkedGit(cwd, ["cat-file", "-e", `${base}^{commit}`]);
-  checkedGit(cwd, ["update-ref", "refs/scherzo/base", base]);
+  checkedGit(cwd, ["update-ref", "refs/um/base", base]);
   const probe = git(cwd, ["merge-tree", "--write-tree", head, base]);
   if (probe.status === 0) return false;
   if (probe.status !== 1) throw new Error("Cannot inspect merge conflicts");
-  checkedGit(cwd, ["config", "user.name", "Scherzo conflict resolver"]);
   checkedGit(cwd, [
     "config",
-    "user.email",
-    "scherzo-conflicts@example.invalid",
+    "user.name",
+    "Useful Machinery conflict resolver",
   ]);
+  checkedGit(cwd, ["config", "user.email", "um-conflicts@example.invalid"]);
   const merge = git(cwd, ["merge", "--no-ff", "--no-commit", base]);
   if (
     merge.status !== 1 ||
@@ -229,7 +229,7 @@ function prepare(): void {
   const input = path.join(requireValue("UM_STEP_INPUTS"), "values/pr");
   const pr = JSON.parse(readFileSync(input, "utf8")) as Snapshot;
   const needed = prepareMerge(process.cwd(), pr);
-  writeFileSync(".git/scherzo-merge-needed", String(needed));
+  writeFileSync(".git/um-merge-needed", String(needed));
   if (!needed)
     console.log("No conflicts to resolve. Leaving the PR unchanged.");
 }
@@ -247,11 +247,9 @@ export function importResolution(
     "fetch",
     "--no-tags",
     bundle,
-    "refs/scherzo/head:refs/scherzo/candidate",
+    "refs/um/head:refs/um/candidate",
   ]);
-  const candidate = oid(
-    checkedGit(cwd, ["rev-parse", "refs/scherzo/candidate"]),
-  );
+  const candidate = oid(checkedGit(cwd, ["rev-parse", "refs/um/candidate"]));
   assertMerge(
     checkedGit(cwd, ["show", "-s", "--format=%P", candidate]),
     head,

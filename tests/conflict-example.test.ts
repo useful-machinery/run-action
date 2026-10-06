@@ -24,7 +24,7 @@ import {
 
 const repository = "example/project";
 const verifiedRunAction =
-  "scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73";
+  "useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3";
 const head = "1".repeat(40);
 const base = "2".repeat(40);
 const pr = {
@@ -174,15 +174,9 @@ test("publisher accepts only the authorized merge graph from a real bundle", () 
       git(destination, ["init", "--bare"]);
       // Supply precisely the authorized prerequisites to the fresh publisher.
       git(destination, ["fetch", source, prHead, baseHead]);
-      git(source, ["update-ref", "refs/scherzo/head", candidate.oid]);
+      git(source, ["update-ref", "refs/um/head", candidate.oid]);
       const bundle = path.join(root, `${candidate.name}.bundle`);
-      git(source, [
-        "bundle",
-        "create",
-        bundle,
-        "refs/scherzo/head",
-        `^${prHead}`,
-      ]);
+      git(source, ["bundle", "create", bundle, "refs/um/head", `^${prHead}`]);
       if (candidate.accepted) {
         assert.equal(
           importResolution(destination, bundle, prHead, baseHead),
@@ -291,7 +285,7 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
   );
   assert.equal(download.with["merge-multiple"], true);
   const repair = resolve.steps.find((step) =>
-    step.uses?.startsWith("scherzo-systems/run-action@"),
+    step.uses?.startsWith("useful-machinery/run-action@"),
   );
   assert.ok(repair);
   assert.equal(repair.uses, verifiedRunAction);
@@ -340,7 +334,7 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
   for (const job of [authorize, resolve]) {
     assert.equal(JSON.stringify(job).includes("PR_PUBLISH_TOKEN"), false);
   }
-  const scherzo = parse(
+  const um = parse(
     readFileSync(
       path.join(example, ".um/workflows/resolve-pr-conflicts.yaml"),
       "utf8",
@@ -358,19 +352,19 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
     };
     exports: Record<string, { ref: string }>;
   };
-  assert.deepEqual(scherzo.inputs, { request: { kind: "text" } });
-  assert.equal(scherzo.agentProfiles.resolver.harness.kind, "codex");
-  assert.equal(scherzo.steps.prepare.inputs.pr?.ref, "inputs.request");
+  assert.deepEqual(um.inputs, { request: { kind: "text" } });
+  assert.equal(um.agentProfiles.resolver.harness.kind, "codex");
+  assert.equal(um.steps.prepare.inputs.pr?.ref, "inputs.request");
   assert.equal(
-    scherzo.steps.resolve.agent.message.text.at(-1)?.ref,
+    um.steps.resolve.agent.message.text.at(-1)?.ref,
     "inputs.request",
   );
-  assert.deepEqual(scherzo.steps.resolve.condition, {
+  assert.deepEqual(um.steps.resolve.condition, {
     equals: [{ ref: "outputs.prepare.needed" }, { value: "true" }],
   });
-  assert.deepEqual(scherzo.steps.check.condition, {
+  assert.deepEqual(um.steps.check.condition, {
     disposition: { node: "resolve", is: "succeeded" },
   });
-  assert.equal(scherzo.steps.check.outputs.resolution?.kind, "git_branch");
-  assert.equal(scherzo.exports.resolution?.ref, "outputs.check.resolution");
+  assert.equal(um.steps.check.outputs.resolution?.kind, "git_branch");
+  assert.equal(um.exports.resolution?.ref, "outputs.check.resolution");
 });

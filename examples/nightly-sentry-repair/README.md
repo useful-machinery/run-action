@@ -2,11 +2,11 @@
 
 This example composes the Run Action with caller-owned GitHub Actions setup. Copy the
 `.github/` and `.um/` files into the corresponding roots of the repository to repair.
-The workflow intentionally calls a repository-owned `scripts/publish-scherzo-branch`
+The workflow intentionally calls a repository-owned `scripts/publish-um-branch`
 program that is not supplied by this Action.
 
 The executable workflow pins verified public mirror
-`c4fc5925553593aa41fecf683e778b8e08fb8c73`, its named-input interface, CLI v0.36.0,
+`0572ca6153d1d030a1490d2f46298264aebd1cb3`, its named-input interface, CLI v0.57.0,
 and qualified Pi 0.85.1. Source and all three native public jobs passed for that exact
 mirror. A provider-live trial of this composition is a separate qualification.
 
@@ -38,8 +38,8 @@ inputs: >-
   {"request":{"kind":"json","value":${{ toJSON(matrix.issue) }}}}
 ```
 
-Both jobs install Pi 0.85.1, the independently qualified version within CLI v0.36.0's
-admitted `>=0.84.2 <0.86.0` range. Keep the Action reference, acquisition form, workflow,
+Both jobs install Pi 0.85.1, the independently qualified version within CLI v0.57.0's
+admitted `>=0.84.2 <0.88.0` range. Keep the Action reference, acquisition form, workflow,
 and harness pin paired on future upgrades. Publication checks do not authorize or prove
 provider-live dogfood.
 
@@ -51,7 +51,7 @@ its local paths survive a job.
 
 ## Publisher boundary
 
-Provide `scripts/publish-scherzo-branch ARTIFACT_SET EXPORT_NAME` in the caller repository.
+Provide `scripts/publish-um-branch ARTIFACT_SET EXPORT_NAME` in the caller repository.
 It must validate the complete Artifact Set, resolve the named `git_branch`, verify its
 baseline against the separately authorized destination, and create at most one branch or
 pull request. It must treat the Artifact Set and repaired tree as untrusted data: while
@@ -70,7 +70,7 @@ The caller records byte identities before transfer, verifies them after transfer
 compares them again after publication. A manual run with
 `induce-publisher-failure: true` gives only deliberately invalid authority to the
 publisher. For that run, the caller publisher must write this exact content-free JSON to
-`SCHERZO_PUBLISHER_ATTESTATION_PATH` only after it issues the provider request and observes
+`UM_PUBLISHER_ATTESTATION_PATH` only after it issues the provider request and observes
 the expected authorization rejection:
 
 ```json
@@ -85,7 +85,7 @@ the expected authorization rejection:
 
 A local preflight, missing tool, malformed Artifact Set, or other pre-request failure must
 leave the attestation absent. The workflow accepts the induced failure only when the
-publisher step fails, that exact attestation is present, and the already-committed Scherzo
+publisher step fails, that exact attestation is present, and the already-committed Useful Machinery
 workflow result and complete Artifact Set remain byte-identical.
 
 Workflow V1 presentation is not a redacted channel: agent text, reasoning, and tool

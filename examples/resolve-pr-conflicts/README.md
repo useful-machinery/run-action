@@ -1,10 +1,10 @@
 # Resolve a PR's merge conflicts
 
-Comment `/resolve-conflicts` on a pull request. Codex resolves the merge, Scherzo
+Comment `/resolve-conflicts` on a pull request. Codex resolves the merge, Useful Machinery
 runs your checks, and a separate job pushes one merge commit back to the PR.
 
 This executable example pins verified public mirror
-`c4fc5925553593aa41fecf683e778b8e08fb8c73`, its named-input interface, CLI v0.36.0,
+`0572ca6153d1d030a1490d2f46298264aebd1cb3`, its named-input interface, CLI v0.57.0,
 and qualified Codex 0.153.4. Source and all three native public jobs passed for that exact
 mirror. A live GitHub/model trial remains outstanding.
 
@@ -14,7 +14,7 @@ GitHub.com only; open, same-repository PRs and commenters with write access.
 
 1. Copy this example's `.github/`, `.um/`, and `scripts/` directories into
    your repository's **default branch**. All four files are supplied.
-2. In [the Scherzo workflow](.um/workflows/resolve-pr-conflicts.yaml), replace
+2. In [the Useful Machinery workflow](.um/workflows/resolve-pr-conflicts.yaml), replace
    `npm ci && npm test` with your checks. Keep the final clean-worktree checks.
    Add any needed tools to the GitHub workflow's `resolve` job.
 3. Add two repository secrets:
@@ -31,7 +31,7 @@ repository needs additional guidance.
 
 ## How it fits together
 
-The interesting part lives in Scherzo:
+The interesting part lives in Useful Machinery:
 
 ```text
 prepare merge → resolve only if conflicted → run checks → export Git bundle
@@ -44,21 +44,21 @@ authorize → resolve → publish
 ```
 
 Authorization passes one PR snapshot through the Run Action's named Text `request` input. The
-Scherzo preparation command verifies the checkout, locates the base commit, configures
+Useful Machinery preparation command verifies the checkout, locates the base commit, configures
 the Git author, and starts the merge only if it conflicts. Its declared
 text output gates the agent. No conflicts means a successful workflow with the
 agent and checks skipped and no bundle to publish. GitHub still installs and
-authenticates Codex before invoking Scherzo; a no-op makes no model request.
+authenticates Codex before invoking Useful Machinery; a no-op makes no model request.
 
 GitHub uploads the available bundle directly from the Run Action's output and
 publishes it from a fresh runner. The [local helper](scripts/resolve-pr-conflicts.ts)
 has a local-only preparation command as well as GitHub authorization/publication
 commands. The DAG currently expects the trusted `automation` checkout alongside
-its execution root; importable Scherzo DAGs can replace this packaging later.
+its execution root; importable Useful Machinery DAGs can replace this packaging later.
 
-GitHub's actions use readable version tags. Only the Scherzo Run Action keeps its
+GitHub's actions use readable version tags. Only the Useful Machinery Run Action keeps its
 SHA, since it has no version tags yet. Codex stays at `0.153.4`, the qualified
-version for CLI v0.36.0 (`>=0.147.0 <0.154.0`); check compatibility before upgrading
+version for CLI v0.57.0 (`>=0.147.0 <0.159.0`); check compatibility before upgrading
 either pin. Version tags can move, unlike immutable commit SHAs.
 
 ## Named Text request
@@ -72,8 +72,8 @@ inputs: >-
   {"request":{"kind":"text","value":${{ toJSON(needs.authorize.outputs.pr) }}}}
 ```
 
-CLI v0.36.0 retains the same admitted Codex range and qualified 0.153.4 release. Do not
-update only the reference, acquisition form, or Scherzo workflow on a future upgrade.
+CLI v0.57.0 retains the same admitted Codex range and qualified 0.153.4 release. Do not
+update only the reference, acquisition form, or Useful Machinery workflow on a future upgrade.
 
 ## Why the separate publisher?
 
@@ -110,5 +110,5 @@ code and model output. Keep CI and human review in place.
 
 Codex reads the API key from stdin and stores login state in the repair runner's
 temporary `CODEX_HOME`. That directory is not cached or uploaded. Only the bundle
-is retained as a private run artifact for one day; the complete Scherzo result
+is retained as a private run artifact for one day; the complete Useful Machinery result
 stays on the repair runner. Hosted-runner cleanup discards the login state.

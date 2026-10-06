@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       induce-publisher-failure:
-        description: Exercise publisher failure isolation without changing the Scherzo result
+        description: Exercise publisher failure isolation without changing the Useful Machinery result
         required: false
         type: boolean
         default: false
@@ -33,7 +33,7 @@ jobs:
         run: npm install --global @earendil-works/pi-coding-agent@0.85.1
       - name: Discover a bounded Sentry issue matrix
         id: discovery
-        uses: scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73
+        uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -62,8 +62,8 @@ jobs:
           persist-credentials: false
       - name: Configure the caller-selected Git author
         run: |
-          git config --local user.name "Scherzo repair automation"
-          git config --local user.email "scherzo-repair@example.invalid"
+          git config --local user.name "Useful Machinery repair automation"
+          git config --local user.email "um-repair@example.invalid"
       - name: Prepare Node.js for the caller-selected harness
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -72,7 +72,7 @@ jobs:
         run: npm install --global @earendil-works/pi-coding-agent@0.85.1
       - name: Diagnose, repair, and retain one Git branch artifact
         id: repair
-        uses: scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73
+        uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
@@ -98,7 +98,7 @@ jobs:
           test -d "$ARTIFACT_SET_PATH"
           test -f "$RESULT_PATH"
           test -f "$EXPORT_PATH"
-          scherzo-cloud artifact validate --json "$ARTIFACT_SET_PATH" >/dev/null
+          um artifact validate --json "$ARTIFACT_SET_PATH" >/dev/null
       - name: Prepare the private publisher handoff
         env:
           ARTIFACT_SET_PATH: ${{ steps.repair.outputs.artifact-set-path }}
@@ -195,17 +195,17 @@ jobs:
           ARTIFACT_SET_PATH: ${{ runner.temp }}/publisher-handoff/artifact-set
           GH_TOKEN: ${{ inputs.induce-publisher-failure && 'deliberately-invalid' || secrets.REPAIR_PUBLISHER_GITHUB_TOKEN }}
           INDUCE_PUBLISHER_FAILURE: ${{ inputs.induce-publisher-failure || 'false' }}
-          SCHERZO_PUBLISHER_ATTESTATION_PATH: ${{ runner.temp }}/publisher-attempt.json
+          UM_PUBLISHER_ATTESTATION_PATH: ${{ runner.temp }}/publisher-attempt.json
         run: |
           set -euo pipefail
-          rm -f "$SCHERZO_PUBLISHER_ATTESTATION_PATH"
+          rm -f "$UM_PUBLISHER_ATTESTATION_PATH"
           if [[ "$INDUCE_PUBLISHER_FAILURE" == true ]]; then
-            if ./publisher-source/scripts/publish-scherzo-branch \
+            if ./publisher-source/scripts/publish-um-branch \
               "$ARTIFACT_SET_PATH" changes; then
               echo "The publisher unexpectedly accepted invalid authority." >&2
               exit 1
             fi
-            python3 - "$SCHERZO_PUBLISHER_ATTESTATION_PATH" <<'PY'
+            python3 - "$UM_PUBLISHER_ATTESTATION_PATH" <<'PY'
           import json
           import pathlib
           import sys
@@ -223,7 +223,7 @@ jobs:
           PY
             exit 86
           fi
-          ./publisher-source/scripts/publish-scherzo-branch \
+          ./publisher-source/scripts/publish-um-branch \
             "$ARTIFACT_SET_PATH" changes
       - name: Verify publisher outcome and local result isolation
         if: ${{ always() && steps.before-publish.outcome == 'success' }}

@@ -10,8 +10,8 @@ const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const verifiedNamedInputSha = "c4fc5925553593aa41fecf683e778b8e08fb8c73";
-const verifiedReference = `scherzo-systems/run-action@${verifiedNamedInputSha}`;
+const verifiedNamedInputSha = "0572ca6153d1d030a1490d2f46298264aebd1cb3";
+const verifiedReference = `useful-machinery/run-action@${verifiedNamedInputSha}`;
 const workflowPath = path.join(
   packageRoot,
   "examples/nightly-sentry-repair/.github/workflows/nightly-sentry-repair.yml",
@@ -51,7 +51,7 @@ interface ExampleWorkflow {
 function assertVerifiedReference(reference: string): void {
   assert.match(
     reference,
-    /^scherzo-systems\/run-action@[0-9a-f]{40}$/u,
+    /^useful-machinery\/run-action@[0-9a-f]{40}$/u,
     "Run Action references must use one full lowercase mirror SHA",
   );
   assert.equal(
@@ -94,7 +94,7 @@ test("customer examples select only the tested immutable mirror revision", async
   const example = await readFile(workflowPath, "utf8");
   const references = [...readme, ...example]
     .join("")
-    .match(/^\s*uses:\s*(scherzo-systems\/run-action@\S+)\s*$/gmu)
+    .match(/^\s*uses:\s*(useful-machinery\/run-action@\S+)\s*$/gmu)
     ?.map((line) => line.trim().replace(/^uses:\s*/u, ""));
   assert.deepEqual(references, [
     verifiedReference,
@@ -106,20 +106,20 @@ test("customer examples select only the tested immutable mirror revision", async
 
 test("moving, foreign, illustrative, and malformed Run Action references fail closed", () => {
   const invalidReferences = {
-    branch: "scherzo-systems/run-action@main",
-    tag: "scherzo-systems/run-action@v1",
-    abbreviated: "scherzo-systems/run-action@deb8478",
+    branch: "useful-machinery/run-action@main",
+    tag: "useful-machinery/run-action@v1",
+    abbreviated: "useful-machinery/run-action@deb8478",
     monorepo:
-      "scherzo-systems/run-action@b3cd2b142d62ed7b8289583603f312e59e88ae26",
+      "useful-machinery/run-action@b3cd2b142d62ed7b8289583603f312e59e88ae26",
     illustrative:
-      "scherzo-systems/run-action@0123456789abcdef0123456789abcdef01234567",
+      "useful-machinery/run-action@0123456789abcdef0123456789abcdef01234567",
     bootstrap:
-      "scherzo-systems/run-action@ffb1b386b3cb16f1dfd247d8b94eb97f42a4d6b1",
+      "useful-machinery/run-action@ffb1b386b3cb16f1dfd247d8b94eb97f42a4d6b1",
     uppercase:
-      "scherzo-systems/run-action@DEB84786F26C01835C9D3590D3304125ED9D0273",
+      "useful-machinery/run-action@DEB84786F26C01835C9D3590D3304125ED9D0273",
     malformed:
-      "scherzo-systems/run-action@geb84786f26c01835c9d3590d3304125ed9d0273",
-    placeholder: "scherzo-systems/run-action@FULL_COMMIT_SHA",
+      "useful-machinery/run-action@geb84786f26c01835c9d3590d3304125ed9d0273",
+    placeholder: "useful-machinery/run-action@FULL_COMMIT_SHA",
   };
   for (const [kind, reference] of Object.entries(invalidReferences)) {
     assert.throws(
@@ -257,7 +257,7 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
     "ARTIFACT_SET_PATH",
     "GH_TOKEN",
     "INDUCE_PUBLISHER_FAILURE",
-    "SCHERZO_PUBLISHER_ATTESTATION_PATH",
+    "UM_PUBLISHER_ATTESTATION_PATH",
   ]);
   assert.match(
     publisher.env?.GH_TOKEN ?? "",
@@ -265,7 +265,7 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
   );
   assert.match(
     publisher.run ?? "",
-    /\.\/publisher-source\/scripts\/publish-scherzo-branch/u,
+    /\.\/publisher-source\/scripts\/publish-um-branch/u,
   );
   assert.equal((publisher.run ?? "").includes("./scripts/"), false);
   assert.match(publisher.run ?? "", /"requestAttempted": True/u);
