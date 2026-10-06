@@ -326,7 +326,7 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
   assert.equal(JSON.stringify(publish).includes("OPENAI_API_KEY"), false);
   assert.equal(JSON.stringify(publish).includes("CODEX_HOME"), false);
   assert.equal(repair.with?.["execution-root"], "pr");
-  assert.equal(repair.with?.["source-root"], "automation/.scherzo");
+  assert.equal(repair.with?.["source-root"], "automation/.um");
   const publisherCheckout = publish.steps[0];
   assert.ok(publisherCheckout?.with);
   assert.equal(
@@ -342,7 +342,7 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
   }
   const scherzo = parse(
     readFileSync(
-      path.join(example, ".scherzo/workflows/resolve-pr-conflicts.yaml"),
+      path.join(example, ".um/workflows/resolve-pr-conflicts.yaml"),
       "utf8",
     ),
   ) as {

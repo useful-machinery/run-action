@@ -1,7 +1,7 @@
 # Nightly Sentry repair composition
 
 This example composes the Run Action with caller-owned GitHub Actions setup. Copy the
-`.github/` and `.scherzo/` files into the corresponding roots of the repository to repair.
+`.github/` and `.um/` files into the corresponding roots of the repository to repair.
 The workflow intentionally calls a repository-owned `scripts/publish-scherzo-branch`
 program that is not supplied by this Action.
 
@@ -26,7 +26,7 @@ asks the Action to retain the `changes` export as `git_branch`.
 
 ## Named JSON request
 
-The [repair workflow](.scherzo/workflows/repair-sentry-issue.yaml) declares JSON `request`
+The [repair workflow](.um/workflows/repair-sentry-issue.yaml) declares JSON `request`
 and supplies it directly as an `application/json` agent attachment. The prompt reads
 that issue object as untrusted context. No request copy is created in the caller
 workspace; the Action owns its private inline-input file and cleanup.

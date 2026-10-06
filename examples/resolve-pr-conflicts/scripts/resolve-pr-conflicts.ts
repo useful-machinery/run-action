@@ -226,7 +226,7 @@ export function prepareMerge(cwd: string, { head, base }: Snapshot): boolean {
 }
 
 function prepare(): void {
-  const input = path.join(requireValue("SCHERZO_STEP_INPUTS"), "values/pr");
+  const input = path.join(requireValue("UM_STEP_INPUTS"), "values/pr");
   const pr = JSON.parse(readFileSync(input, "utf8")) as Snapshot;
   const needed = prepareMerge(process.cwd(), pr);
   writeFileSync(".git/scherzo-merge-needed", String(needed));

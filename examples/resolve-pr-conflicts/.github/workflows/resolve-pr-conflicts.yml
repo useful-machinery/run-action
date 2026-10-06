@@ -70,8 +70,8 @@ jobs:
         id: repair
         uses: scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73
         with:
-          workflow: automation/.scherzo/workflows/resolve-pr-conflicts.yaml
-          source-root: automation/.scherzo
+          workflow: automation/.um/workflows/resolve-pr-conflicts.yaml
+          source-root: automation/.um
           execution-root: pr
           export: resolution
           inputs: >-

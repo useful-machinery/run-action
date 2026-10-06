@@ -40,8 +40,8 @@ jobs:
           SENTRY_ORG_SLUG: ${{ vars.SENTRY_ORG_SLUG }}
           SENTRY_PROJECT_SLUG: ${{ vars.SENTRY_PROJECT_SLUG }}
         with:
-          workflow: .scherzo/workflows/discover-sentry-issues.yaml
-          source-root: .scherzo
+          workflow: .um/workflows/discover-sentry-issues.yaml
+          source-root: .um
           execution-root: .
           export: issueMatrix
 
@@ -76,8 +76,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
-          workflow: .scherzo/workflows/repair-sentry-issue.yaml
-          source-root: .scherzo
+          workflow: .um/workflows/repair-sentry-issue.yaml
+          source-root: .um
           execution-root: .
           inputs: >-
             {"request":{"kind":"json","value":${{ toJSON(matrix.issue) }}}}

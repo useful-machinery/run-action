@@ -79,7 +79,7 @@ steps:
     id: scherzo
     uses: scherzo-systems/run-action@c4fc5925553593aa41fecf683e778b8e08fb8c73
     with:
-      workflow: .scherzo/workflows/ci.yaml
+      workflow: .um/workflows/ci.yaml
   - name: Consume the retained result in the same job
     if: ${{ always() && steps.scherzo.outputs.result-path != '' }}
     env:

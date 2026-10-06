@@ -12,9 +12,9 @@ GitHub.com only; open, same-repository PRs and commenters with write access.
 
 ## Set it up
 
-1. Copy this example's `.github/`, `.scherzo/`, and `scripts/` directories into
+1. Copy this example's `.github/`, `.um/`, and `scripts/` directories into
    your repository's **default branch**. All four files are supplied.
-2. In [the Scherzo workflow](.scherzo/workflows/resolve-pr-conflicts.yaml), replace
+2. In [the Scherzo workflow](.um/workflows/resolve-pr-conflicts.yaml), replace
    `npm ci && npm test` with your checks. Keep the final clean-worktree checks.
    Add any needed tools to the GitHub workflow's `resolve` job.
 3. Add two repository secrets:
@@ -26,7 +26,7 @@ GitHub.com only; open, same-repository PRs and commenters with write access.
    Resolve PR conflicts**, then review the resulting merge commit.
 
 The default checks assume an npm project with a lockfile and a `test` script.
-Change the [repair instructions](.scherzo/prompts/resolve-pr-conflicts.md) if your
+Change the [repair instructions](.um/prompts/resolve-pr-conflicts.md) if your
 repository needs additional guidance.
 
 ## How it fits together
@@ -63,7 +63,7 @@ either pin. Version tags can move, unlike immutable commit SHAs.
 
 ## Named Text request
 
-The [resolver workflow](.scherzo/workflows/resolve-pr-conflicts.yaml) declares Text
+The [resolver workflow](.um/workflows/resolve-pr-conflicts.yaml) declares Text
 `request`. The authorization job emits a serialized PR snapshot; `toJSON` quotes that
 string into the Action acquisition document without changing its bytes:
 

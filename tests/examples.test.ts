@@ -144,8 +144,8 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
   );
   assert.equal(discovery.uses, verifiedReference);
   assert.deepEqual(discovery.with, {
-    workflow: ".scherzo/workflows/discover-sentry-issues.yaml",
-    "source-root": ".scherzo",
+    workflow: ".um/workflows/discover-sentry-issues.yaml",
+    "source-root": ".um",
     "execution-root": ".",
     export: "issueMatrix",
   });
@@ -298,7 +298,7 @@ test("Sentry discovery and repair preserve the named JSON contract", async () =>
     await readFile(
       path.join(
         packageRoot,
-        "examples/nightly-sentry-repair/.scherzo/workflows/discover-sentry-issues.yaml",
+        "examples/nightly-sentry-repair/.um/workflows/discover-sentry-issues.yaml",
       ),
       "utf8",
     ),
@@ -342,7 +342,7 @@ test("Sentry discovery and repair preserve the named JSON contract", async () =>
     await readFile(
       path.join(
         packageRoot,
-        "examples/nightly-sentry-repair/.scherzo/schemas/sentry-issue-matrix.schema.json",
+        "examples/nightly-sentry-repair/.um/schemas/sentry-issue-matrix.schema.json",
       ),
       "utf8",
     ),
@@ -380,7 +380,7 @@ test("Sentry discovery and repair preserve the named JSON contract", async () =>
     await readFile(
       path.join(
         packageRoot,
-        "examples/nightly-sentry-repair/.scherzo/workflows/repair-sentry-issue.yaml",
+        "examples/nightly-sentry-repair/.um/workflows/repair-sentry-issue.yaml",
       ),
       "utf8",
     ),

@@ -102,13 +102,13 @@ jobs:
                   - -c
                   - |
                     set -euo pipefail
-                    test ! -s "$SCHERZO_STEP_INPUTS/values/emptyText"
-                    test "$(cat "$SCHERZO_STEP_INPUTS/values/pathText")" = native-behavior
-                    test "$(cat "$SCHERZO_STEP_INPUTS/values/inlineJson")" = null
-                    test "$(cat "$SCHERZO_STEP_INPUTS/values/pathJson")" = '{"ok":true}'
-                    test ! -s "$SCHERZO_STEP_INPUTS/values/emptyFile"
-                    test "$(find "$SCHERZO_STEP_INPUTS/collections/orderedItems" -type f | wc -l | tr -d ' ')" = 2
-                    test "$(find "$SCHERZO_STEP_INPUTS/collections/emptyItems" -type f | wc -l | tr -d ' ')" = 0
+                    test ! -s "$UM_STEP_INPUTS/values/emptyText"
+                    test "$(cat "$UM_STEP_INPUTS/values/pathText")" = native-behavior
+                    test "$(cat "$UM_STEP_INPUTS/values/inlineJson")" = null
+                    test "$(cat "$UM_STEP_INPUTS/values/pathJson")" = '{"ok":true}'
+                    test ! -s "$UM_STEP_INPUTS/values/emptyFile"
+                    test "$(find "$UM_STEP_INPUTS/collections/orderedItems" -type f | wc -l | tr -d ' ')" = 2
+                    test "$(find "$UM_STEP_INPUTS/collections/emptyItems" -type f | wc -l | tr -d ' ')" = 0
           YAML
           printf 'native-behavior\n' >"$fixture_root/text.txt"
           printf '{"ok":true}\n' >"$fixture_root/value.json"
@@ -160,9 +160,9 @@ jobs:
         run: |
           set -euo pipefail
           for example in resolve-pr-conflicts nightly-sentry-repair; do
-            for workflow in examples/"$example"/.scherzo/workflows/*.yaml; do
+            for workflow in examples/"$example"/.um/workflows/*.yaml; do
               scherzo-cloud workflow validate --json \
-                --source-root "examples/$example/.scherzo" "$workflow"
+                --source-root "examples/$example/.um" "$workflow"
             done
           done
       - name: Run failing command workflow
