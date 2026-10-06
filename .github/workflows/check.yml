@@ -123,12 +123,12 @@ jobs:
               command:
                 argv: ["bash", "-c", "exit 7"]
           YAML
-          cat >"$decoy_root/scherzo-cloud" <<'SH'
+          cat >"$decoy_root/um" <<'SH'
           #!/bin/sh
           echo "ambient CLI decoy executed" >&2
           exit 99
           SH
-          chmod +x "$decoy_root/scherzo-cloud"
+          chmod +x "$decoy_root/um"
           echo "$decoy_root" >>"$GITHUB_PATH"
       - name: Run successful command workflow
         id: success
@@ -152,8 +152,8 @@ jobs:
           test -d "$RUN_DIRECTORY"
           test -d "$ARTIFACT_SET"
           test -f "$RESULT_PATH"
-          test "$(command -v scherzo-cloud)" != "$RUNNER_TEMP/run-action-decoy/scherzo-cloud"
-          scherzo-cloud version --json >"$RUNNER_TEMP/verified-version.json"
+          test "$(command -v um)" != "$RUNNER_TEMP/run-action-decoy/um"
+          um version --json >"$RUNNER_TEMP/verified-version.json"
           test -s "$RUNNER_TEMP/verified-version.json"
       - name: Validate active example DAGs with the installed release
         shell: bash
@@ -161,7 +161,7 @@ jobs:
           set -euo pipefail
           for example in resolve-pr-conflicts nightly-sentry-repair; do
             for workflow in examples/"$example"/.um/workflows/*.yaml; do
-              scherzo-cloud workflow validate --json \
+              um workflow validate --json \
                 --source-root "examples/$example/.um" "$workflow"
             done
           done

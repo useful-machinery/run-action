@@ -18,7 +18,7 @@ import {
 } from "../src/bootstrap.ts";
 import { DEFAULT_ACTION_DEPENDENCIES, executeAction } from "../src/main.ts";
 
-const releaseBundle = process.env.SCHERZO_RUN_ACTION_RELEASE_BUNDLE;
+const releaseBundle = process.env.UM_RUN_ACTION_RELEASE_BUNDLE;
 
 test(
   "the staged pinned release executes one all-kind named-input Action invocation",
@@ -41,8 +41,8 @@ test(
         ...process.env,
         GITHUB_WORKSPACE: workspace,
         RUNNER_TEMP: runnerTemp,
-        RUNNER_OS: "Linux",
-        RUNNER_ARCH: "ARM64",
+        RUNNER_OS: process.platform === "darwin" ? "macOS" : "Linux",
+        RUNNER_ARCH: process.arch === "arm64" ? "ARM64" : "X64",
         GITHUB_OUTPUT: outputFile,
         GITHUB_PATH: pathFile,
         INPUT_WORKFLOW: "workflow.yaml",
@@ -92,11 +92,10 @@ test(
       const allocations = (
         await readdir(runnerTemp, { withFileTypes: true })
       ).filter(
-        (entry) =>
-          entry.isDirectory() && entry.name.startsWith(".scherzo-run-"),
+        (entry) => entry.isDirectory() && entry.name.startsWith(".um-run-"),
       );
       const actionAllocation = allocations.find(
-        (entry) => !entry.name.startsWith(".scherzo-run-cli-"),
+        (entry) => !entry.name.startsWith(".um-run-cli-"),
       );
       assert.ok(actionAllocation);
       const actionEntries = await readdir(

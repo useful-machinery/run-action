@@ -324,7 +324,7 @@ async function verifyVersion(
   const record = version as Record<string, unknown>;
   if (
     record.schemaVersion !== 1 ||
-    record.command !== "scherzo-cloud" ||
+    record.command !== "um" ||
     record.version !== release.version ||
     record.executablePath !== resolvedExecutable ||
     record.buildIdentity !== release.buildIdentity ||
@@ -358,7 +358,7 @@ export async function bootstrapCli(
 
   const archive = release.archives[target];
   const allocation = await mkdtemp(
-    path.join(canonicalRunnerTemp, ".scherzo-run-cli-"),
+    path.join(canonicalRunnerTemp, ".um-run-cli-"),
   ).catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
@@ -378,7 +378,7 @@ export async function bootstrapCli(
     await rm(archivePath, { force: true });
 
     const cliDirectory = path.join(allocation, archive.rootDirectory);
-    const executable = path.join(cliDirectory, "scherzo-cloud");
+    const executable = path.join(cliDirectory, "um");
     const executableStatus = await lstat(executable).catch(() => undefined);
     if (
       !executableStatus?.isFile() ||

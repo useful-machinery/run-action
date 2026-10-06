@@ -19,7 +19,7 @@ export class AdapterError extends Error {
   readonly code: FailureCode;
 
   constructor(code: FailureCode) {
-    super(`Scherzo Run failed [${code}].`);
+    super(`Useful Machinery Run failed [${code}].`);
     this.name = "AdapterError";
     this.code = code;
   }

@@ -1,4 +1,9 @@
-# Scherzo Run Action
+# Useful Machinery Run Action
+
+The current Action implementation pins the checksum-verified `um` v0.57.0 release
+from `useful-machinery/um`. The examples below still select the independently
+verified v0.36.0 mirror revision; their references and harness pins will advance
+together after the new mirror passes all native behavior checks.
 
 Run a checked-in Scherzo workflow inside a GitHub Actions job—without sending the
 run to Scherzo Cloud.

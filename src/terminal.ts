@@ -105,7 +105,7 @@ export async function readTerminalEnvelope(
   const exitStatus = values.get("exitStatus");
   if (
     schemaVersion !== 1 ||
-    command !== "scherzo-cloud workflow run" ||
+    command !== "um workflow run" ||
     !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
       String(outcome),
     ) ||

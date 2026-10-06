@@ -81,7 +81,7 @@ async function archiveBytes(
   }
   pack.entry(
     {
-      name: `${root}/scherzo-cloud`,
+      name: `${root}/um`,
       type: "file",
       mode: mutation === "mode" ? 0o700 : 0o755,
     },
@@ -112,7 +112,7 @@ async function archiveBytes(
         size: readme.length,
       },
       {
-        path: `${root}/scherzo-cloud`,
+        path: `${root}/um`,
         type: "file",
         mode: 0o755,
         size: executable.length,
@@ -202,7 +202,7 @@ function dependencies(
       );
       const version: Record<string, unknown> = {
         schemaVersion: 1,
-        command: "scherzo-cloud",
+        command: "um",
         version: fixtureValue.release.version,
         executablePath: await realpath(executable),
         buildIdentity: fixtureValue.release.buildIdentity,
@@ -265,10 +265,7 @@ test("all supported platforms verify and install only their closed archive", asy
         ]);
         assert.deepEqual(observed.executables, [result.executable]);
         assert.deepEqual(observed.appended, [result.cliDirectory]);
-        assert.equal(
-          result.executable,
-          path.join(result.cliDirectory, "scherzo-cloud"),
-        );
+        assert.equal(result.executable, path.join(result.cliDirectory, "um"));
         assert.equal(
           result.environment.PATH,
           `${result.cliDirectory}${path.delimiter}/ambient/decoy:/caller/bin`,

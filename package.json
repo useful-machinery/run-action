@@ -1,8 +1,8 @@
 {
-  "name": "@scherzo-systems/run-action",
+  "name": "@useful-machinery/run-action",
   "version": "0.0.0",
   "private": true,
-  "description": "Run one local Scherzo Workflow V1 invocation from GitHub Actions.",
+  "description": "Run one local Useful Machinery Workflow V1 invocation from GitHub Actions.",
   "license": "Apache-2.0",
   "type": "module",
   "packageManager": "npm@11.13.0",

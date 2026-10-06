@@ -234,7 +234,7 @@ test("child environment removes Action handles and preserves caller authority", 
       GITHUB_PATH: "/commands/path",
       GITHUB_STATE: "/commands/state",
       GITHUB_STEP_SUMMARY: "/commands/summary",
-      SCHERZO_RUN_ACTION_PRIVATE: "private",
+      UM_RUN_ACTION_PRIVATE: "private",
       ORDINARY_CALLER_VALUE: "retained",
       GITHUB_TOKEN: "caller-authorized",
     },
@@ -256,7 +256,7 @@ test("GitHub outputs use collision-resistant file commands without logging value
     outputs["export-value"] = "line one\n::warning::not a command\nline three";
     await writeOutputs(outputFile, outputs, () => Buffer.alloc(32, 0xab));
     const bytes = await readFile(outputFile, "utf8");
-    assert.match(bytes, /export-value<<scherzo_ab+/u);
+    assert.match(bytes, /export-value<<um_ab+/u);
     assert.match(bytes, /::warning::not a command/u);
     assert.equal(bytes.includes("undefined"), false);
   } finally {
@@ -274,7 +274,7 @@ test("untrusted presentation remains inside one stop-command interval", async ()
   await guard.stop();
   assert.equal(
     logBytes,
-    `::stop-commands::scherzo_${"cd".repeat(32)}\n::set-output name=owned::bad\n::scherzo_${"cd".repeat(32)}::\n`,
+    `::stop-commands::um_${"cd".repeat(32)}\n::set-output name=owned::bad\n::um_${"cd".repeat(32)}::\n`,
   );
 });
 
@@ -304,6 +304,6 @@ test("presentation waits for a buffered stop-command marker", async () => {
   await guard.stop();
   assert.equal(
     logBytes,
-    `::stop-commands::scherzo_${"ab".repeat(32)}\n::set-output name=owned::hostile\n::scherzo_${"ab".repeat(32)}::\n`,
+    `::stop-commands::um_${"ab".repeat(32)}\n::set-output name=owned::hostile\n::um_${"ab".repeat(32)}::\n`,
   );
 });

@@ -1,5 +1,5 @@
-name: Scherzo Run
-description: Run exactly one local Scherzo Workflow V1 invocation.
+name: Useful Machinery Run
+description: Run exactly one local Useful Machinery Workflow V1 invocation.
 inputs:
   workflow:
     description: Workflow file path.

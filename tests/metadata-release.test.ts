@@ -152,7 +152,7 @@ test("traceability accounts for every V1 invariant and requirement", async () =>
   }
 });
 
-test("release evidence is the closed observed v0.36.0 release", () => {
+test("release evidence is the closed observed v0.57.0 release", () => {
   assert.deepEqual(PINNED_RELEASE, evidence);
   assert.deepEqual(
     {
@@ -168,23 +168,22 @@ test("release evidence is the closed observed v0.36.0 release", () => {
       checksumAsset: evidence.checksumAsset,
     },
     {
-      repository: "scherzo-systems/scherzo-cloud-cli",
-      releaseUrl:
-        "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/tag/v0.36.0",
-      tag: "v0.36.0",
-      releaseId: 388669851,
-      releaseCommit: "f665784fccddee8be91d0d12f43b165089dda438",
-      sourceRevision: "7da44756c2f611f39c47ee28a697c01f8afe7a6e",
+      repository: "useful-machinery/um",
+      releaseUrl: "https://github.com/useful-machinery/um/releases/tag/v0.57.0",
+      tag: "v0.57.0",
+      releaseId: 404290732,
+      releaseCommit: "e92b2e06fc603767239a23a6076a93a2e3e32fa2",
+      sourceRevision: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
       requiredSourceAncestor: "7215869ca26439d305c097af1dca50ebb8066419",
-      version: "0.36.0",
-      buildIdentity: "7da44756c2f611f39c47ee28a697c01f8afe7a6e",
+      version: "0.57.0",
+      buildIdentity: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
       checksumAsset: {
-        id: 564106171,
+        id: 614393726,
         name: "SHA256SUMS",
-        size: 354,
+        size: 321,
         sha256:
-          "b1cd0eb17d23e8a51861f208b714b6fddae21ac6fd061147b789a1594b022fd2",
-        url: "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/SHA256SUMS",
+          "96ed3611bc4ec48733bce3a177d795b835f39c2b811918306e865765746a8a71",
+        url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/SHA256SUMS",
       },
     },
   );
@@ -197,22 +196,22 @@ test("release evidence is the closed observed v0.36.0 release", () => {
     ),
     {
       "x86_64-unknown-linux-gnu": [
-        564106172,
-        "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu.tar.gz",
-        11851127,
-        "66cac4647491087297b81a346c9469558d68f22393a2a033ab0d87981dbba96b",
+        614393724,
+        "um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
+        16432906,
+        "8c33e713ed96e89f2fff18d2f27d480875d5cc037df3b760d7bc096193b2c6e5",
       ],
       "aarch64-unknown-linux-gnu": [
-        564106176,
-        "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu.tar.gz",
-        12192345,
-        "9af8d51c7551063c4ee3c3c7f326905477c00cd7d7598b15e1479c260dff3a14",
+        614393727,
+        "um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
+        16902733,
+        "f9e1d4e5fc1126b839855ba91b38123dfe217944d978177fa782a28717569b5f",
       ],
       "aarch64-apple-darwin": [
-        564106175,
-        "scherzo-cloud-0.36.0-aarch64-apple-darwin.tar.gz",
-        10923729,
-        "0ff4a7e0382a4e31d7f935d0ebae511e2ac799b9023a0ee5d1574c15406a8771",
+        614393725,
+        "um-0.57.0-aarch64-apple-darwin.tar.gz",
+        15179976,
+        "a4f5f9bedb3f6a4570de2d898c9a4bb6d12b6c9cd6282ab469f43d0562da14ee",
       ],
     },
   );

@@ -164,7 +164,7 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
     };
 
     const running = runWorkflow(
-      "/verified/cli/scherzo-cloud",
+      "/verified/cli/um",
       actionInputs,
       allocation,
       { PATH: "/verified/cli:/caller/bin", ORDINARY: "retained" },
@@ -191,9 +191,9 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
     );
     assert.equal(
       presentationBytes,
-      `::stop-commands::scherzo_${"ef".repeat(32)}\n::set-output name=hostile::value\npresentation complete\n::scherzo_${"ef".repeat(32)}::\n`,
+      `::stop-commands::um_${"ef".repeat(32)}\n::set-output name=hostile::value\npresentation complete\n::um_${"ef".repeat(32)}::\n`,
     );
-    assert.equal(observed?.executable, "/verified/cli/scherzo-cloud");
+    assert.equal(observed?.executable, "/verified/cli/um");
     const inlineJsonPath = allocation.inputFiles[0]!.path;
     const inlineTextPath = allocation.inputFiles[1]!.path;
     const expectedArguments = [

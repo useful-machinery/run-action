@@ -3057,7 +3057,7 @@ var FILE_COMMAND_VARIABLES = /* @__PURE__ */ new Set([
 function sanitizedChildEnvironment(source, cliDirectory) {
   const child = {};
   for (const [name, value] of Object.entries(source)) {
-    if (name.startsWith("INPUT_") || name.startsWith("SCHERZO_RUN_ACTION_") || FILE_COMMAND_VARIABLES.has(name)) {
+    if (name.startsWith("INPUT_") || name.startsWith("UM_RUN_ACTION_") || FILE_COMMAND_VARIABLES.has(name)) {
       continue;
     }
     child[name] = value;
@@ -3071,7 +3071,7 @@ function sanitizedChildEnvironment(source, cliDirectory) {
 var AdapterError = class extends Error {
   code;
   constructor(code) {
-    super(`Scherzo Run failed [${code}].`);
+    super(`Useful Machinery Run failed [${code}].`);
     this.name = "AdapterError";
     this.code = code;
   }
@@ -3118,7 +3118,7 @@ async function writeOutputs(githubOutputFile, outputs, random = import_node_cryp
     const value = outputs[name];
     let delimiter;
     do {
-      delimiter = `scherzo_${random(32).toString("hex")}`;
+      delimiter = `um_${random(32).toString("hex")}`;
     } while (value.split(/\r?\n/u).includes(delimiter));
     payload += `${name}<<${delimiter}
 ${value}
@@ -3138,7 +3138,7 @@ var WorkflowCommandGuard = class {
   #lineStart = true;
   #pending = Promise.resolve();
   constructor(stream, random = import_node_crypto.randomBytes) {
-    this.#token = `scherzo_${random(32).toString("hex")}`;
+    this.#token = `um_${random(32).toString("hex")}`;
     this.#stream = stream;
   }
   async #write(bytes) {
@@ -3200,122 +3200,122 @@ var WorkflowCommandGuard = class {
 // release-evidence.json
 var release_evidence_default = {
   schemaVersion: 1,
-  repository: "scherzo-systems/scherzo-cloud-cli",
-  releaseUrl: "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/tag/v0.36.0",
-  tag: "v0.36.0",
-  releaseId: 388669851,
-  releaseCommit: "f665784fccddee8be91d0d12f43b165089dda438",
-  sourceRevision: "7da44756c2f611f39c47ee28a697c01f8afe7a6e",
+  repository: "useful-machinery/um",
+  releaseUrl: "https://github.com/useful-machinery/um/releases/tag/v0.57.0",
+  tag: "v0.57.0",
+  releaseId: 404290732,
+  releaseCommit: "e92b2e06fc603767239a23a6076a93a2e3e32fa2",
+  sourceRevision: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
   requiredSourceAncestor: "7215869ca26439d305c097af1dca50ebb8066419",
-  version: "0.36.0",
-  buildIdentity: "7da44756c2f611f39c47ee28a697c01f8afe7a6e",
+  version: "0.57.0",
+  buildIdentity: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
   checksumAsset: {
-    id: 564106171,
+    id: 614393726,
     name: "SHA256SUMS",
-    size: 354,
-    sha256: "b1cd0eb17d23e8a51861f208b714b6fddae21ac6fd061147b789a1594b022fd2",
-    url: "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/SHA256SUMS"
+    size: 321,
+    sha256: "96ed3611bc4ec48733bce3a177d795b835f39c2b811918306e865765746a8a71",
+    url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/SHA256SUMS"
   },
   archives: {
     "x86_64-unknown-linux-gnu": {
-      id: 564106172,
-      name: "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu.tar.gz",
-      size: 11851127,
-      sha256: "66cac4647491087297b81a346c9469558d68f22393a2a033ab0d87981dbba96b",
-      url: "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu",
+      id: 614393724,
+      name: "um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
+      size: 16432906,
+      sha256: "8c33e713ed96e89f2fff18d2f27d480875d5cc037df3b760d7bc096193b2c6e5",
+      url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "um-0.57.0-x86_64-unknown-linux-gnu",
       inventory: [
         {
-          path: "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu",
+          path: "um-0.57.0-x86_64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu/LICENSE",
+          path: "um-0.57.0-x86_64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu/README.md",
+          path: "um-0.57.0-x86_64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
-          size: 77222
+          size: 106126
         },
         {
-          path: "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu/scherzo-cloud",
+          path: "um-0.57.0-x86_64-unknown-linux-gnu/um",
           type: "file",
           mode: 493,
-          size: 40025376
+          size: 55608976
         }
       ]
     },
     "aarch64-unknown-linux-gnu": {
-      id: 564106176,
-      name: "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu.tar.gz",
-      size: 12192345,
-      sha256: "9af8d51c7551063c4ee3c3c7f326905477c00cd7d7598b15e1479c260dff3a14",
-      url: "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu",
+      id: 614393727,
+      name: "um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
+      size: 16902733,
+      sha256: "f9e1d4e5fc1126b839855ba91b38123dfe217944d978177fa782a28717569b5f",
+      url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "um-0.57.0-aarch64-unknown-linux-gnu",
       inventory: [
         {
-          path: "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu",
+          path: "um-0.57.0-aarch64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu/LICENSE",
+          path: "um-0.57.0-aarch64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu/README.md",
+          path: "um-0.57.0-aarch64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
-          size: 77222
+          size: 106126
         },
         {
-          path: "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu/scherzo-cloud",
+          path: "um-0.57.0-aarch64-unknown-linux-gnu/um",
           type: "file",
           mode: 493,
-          size: 38264632
+          size: 52945216
         }
       ]
     },
     "aarch64-apple-darwin": {
-      id: 564106175,
-      name: "scherzo-cloud-0.36.0-aarch64-apple-darwin.tar.gz",
-      size: 10923729,
-      sha256: "0ff4a7e0382a4e31d7f935d0ebae511e2ac799b9023a0ee5d1574c15406a8771",
-      url: "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/scherzo-cloud-0.36.0-aarch64-apple-darwin.tar.gz",
-      rootDirectory: "scherzo-cloud-0.36.0-aarch64-apple-darwin",
+      id: 614393725,
+      name: "um-0.57.0-aarch64-apple-darwin.tar.gz",
+      size: 15179976,
+      sha256: "a4f5f9bedb3f6a4570de2d898c9a4bb6d12b6c9cd6282ab469f43d0562da14ee",
+      url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-aarch64-apple-darwin.tar.gz",
+      rootDirectory: "um-0.57.0-aarch64-apple-darwin",
       inventory: [
         {
-          path: "scherzo-cloud-0.36.0-aarch64-apple-darwin",
+          path: "um-0.57.0-aarch64-apple-darwin",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "scherzo-cloud-0.36.0-aarch64-apple-darwin/LICENSE",
+          path: "um-0.57.0-aarch64-apple-darwin/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "scherzo-cloud-0.36.0-aarch64-apple-darwin/README.md",
+          path: "um-0.57.0-aarch64-apple-darwin/README.md",
           type: "file",
           mode: 420,
-          size: 77222
+          size: 106126
         },
         {
-          path: "scherzo-cloud-0.36.0-aarch64-apple-darwin/scherzo-cloud",
+          path: "um-0.57.0-aarch64-apple-darwin/um",
           type: "file",
           mode: 493,
-          size: 34111680
+          size: 47630480
         }
       ]
     }
@@ -3582,7 +3582,7 @@ async function verifyVersion(executable, cliDirectory, release, sourceEnvironmen
     throw new AdapterError("bootstrap_version_failed");
   }
   const record2 = version;
-  if (record2.schemaVersion !== 1 || record2.command !== "scherzo-cloud" || record2.version !== release.version || record2.executablePath !== resolvedExecutable || record2.buildIdentity !== release.buildIdentity || record2.buildIdentity === "unknown") {
+  if (record2.schemaVersion !== 1 || record2.command !== "um" || record2.version !== release.version || record2.executablePath !== resolvedExecutable || record2.buildIdentity !== release.buildIdentity || record2.buildIdentity === "unknown") {
     throw new AdapterError("bootstrap_version_failed");
   }
   return environment;
@@ -3603,7 +3603,7 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
   }
   const archive = release.archives[target];
   const allocation = await (0, import_promises2.mkdtemp)(
-    import_node_path2.default.join(canonicalRunnerTemp, ".scherzo-run-cli-")
+    import_node_path2.default.join(canonicalRunnerTemp, ".um-run-cli-")
   ).catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
@@ -3622,7 +3622,7 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
     await (0, import_promises2.rm)(checksumPath, { force: true });
     await (0, import_promises2.rm)(archivePath, { force: true });
     const cliDirectory = import_node_path2.default.join(allocation, archive.rootDirectory);
-    const executable = import_node_path2.default.join(cliDirectory, "scherzo-cloud");
+    const executable = import_node_path2.default.join(cliDirectory, "um");
     const executableStatus = await (0, import_promises2.lstat)(executable).catch(() => void 0);
     if (!executableStatus?.isFile() || executableStatus.isSymbolicLink() || (executableStatus.mode & 4095) !== 493 || await (0, import_promises2.realpath)(executable) !== executable) {
       throw new AdapterError("bootstrap_integrity_failed");
@@ -3668,7 +3668,7 @@ async function allocateExecution(runnerTemp, namedInputs) {
     throw new AdapterError("input_invalid");
   }
   const parent = await (0, import_promises4.mkdtemp)(
-    import_node_path3.default.join(canonicalRunnerTemp, ".scherzo-run-")
+    import_node_path3.default.join(canonicalRunnerTemp, ".um-run-")
   ).catch(() => {
     throw new AdapterError("allocation_failed");
   });
@@ -4009,7 +4009,7 @@ async function recoverDurableRun(executable, allocation, environment, dependenci
   const attempts = state?.attempts;
   const attempt = Array.isArray(attempts) ? record(attempts[0]) : void 0;
   const result = record(attempt?.result);
-  if (!document || !exactKeys(document, STATUS_KEYS) || document.schemaVersion !== 1 || document.command !== "scherzo-cloud workflow status" || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
+  if (!document || !exactKeys(document, STATUS_KEYS) || document.schemaVersion !== 1 || document.command !== "um workflow status" || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
     throw new AdapterError("result_identity_invalid");
   }
   if (result.status !== "published") {
@@ -4471,7 +4471,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
   }
   const record2 = document;
   const summary = record2.summary;
-  if (record2.schemaVersion !== 1 || record2.command !== "scherzo-cloud artifact validate" || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys2(summary, [
+  if (record2.schemaVersion !== 1 || record2.command !== "um artifact validate" || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys2(summary, [
     "declaredExports",
     "availableExports",
     "unavailableExports",
@@ -4910,7 +4910,7 @@ async function readTerminalEnvelope(file) {
   const command = values.get("command");
   const outcome = values.get("outcome");
   const exitStatus = values.get("exitStatus");
-  if (schemaVersion !== 1 || command !== "scherzo-cloud workflow run" || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
+  if (schemaVersion !== 1 || command !== "um workflow run" || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
     String(outcome)
   ) || typeof exitStatus !== "number" || !Number.isSafeInteger(exitStatus)) {
     throw new AdapterError("terminal_result_invalid");
@@ -5153,6 +5153,8 @@ async function runMain() {
 
 // src/index.ts
 void runMain().catch(() => {
-  process.stderr.write("Scherzo Run failed [result_projection_failed].\n");
+  process.stderr.write(
+    "Useful Machinery Run failed [result_projection_failed].\n"
+  );
   process.exitCode = 1;
 });

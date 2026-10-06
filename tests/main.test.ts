@@ -79,7 +79,7 @@ test("invalid acquisition documents fail before source reads and allocation", as
       },
       {
         bootstrap: async () => ({
-          executable: "/verified/scherzo-cloud",
+          executable: "/verified/um",
           cliDirectory: "/verified",
           environment: {},
         }),
@@ -179,13 +179,13 @@ test("result and process matrix preserves trustworthy outputs and failure preced
           selectedExport: "selected",
         };
         const bootstrap: BootstrapResult = {
-          executable: "/verified/scherzo-cloud",
+          executable: "/verified/um",
           cliDirectory: "/verified",
           environment: { PATH: "/verified:/caller" },
         };
         const terminal: TerminalEnvelope = {
           schemaVersion: 1,
-          command: "scherzo-cloud workflow run",
+          command: "um workflow run",
           outcome: scenario.outcome,
           exitStatus: scenario.code,
           runDirectory,
@@ -281,7 +281,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
       { GITHUB_OUTPUT: path.join(root, "github-output") },
       {
         bootstrap: async () => ({
-          executable: "/verified/scherzo-cloud",
+          executable: "/verified/um",
           cliDirectory: "/verified",
           environment: {},
         }),
@@ -316,7 +316,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
           }),
         project: async (executable, identity) => {
           validations += 1;
-          assert.equal(executable, "/verified/scherzo-cloud");
+          assert.equal(executable, "/verified/um");
           assert.equal(identity.outcome, undefined);
           assert.equal(identity.artifactDirectory, artifactDirectory);
           return { outcome: "failed" };
@@ -356,7 +356,7 @@ test("authenticated terminal-less recovery retains and validates its result", as
       { GITHUB_OUTPUT: path.join(root, "github-output") },
       {
         bootstrap: async () => ({
-          executable: "/verified/scherzo-cloud",
+          executable: "/verified/um",
           cliDirectory: "/verified",
           environment: {},
         }),
@@ -391,7 +391,7 @@ test("authenticated terminal-less recovery retains and validates its result", as
         }),
         project: async (executable, identity) => {
           validations += 1;
-          assert.equal(executable, "/verified/scherzo-cloud");
+          assert.equal(executable, "/verified/um");
           assert.equal(identity.outcome, "failed");
           assert.equal(identity.artifactDirectory, artifactDirectory);
           return { outcome: "failed" };
@@ -435,7 +435,7 @@ test("unexpected dependency errors cannot enter adapter-authored diagnostics", a
   assert.equal(result.failure?.message.includes(sentinel), false);
   assert.equal(
     result.failure?.message,
-    "Scherzo Run failed [result_projection_failed].",
+    "Useful Machinery Run failed [result_projection_failed].",
   );
 });
 
@@ -443,7 +443,7 @@ test("adapter-authored failure is a stable structured fact", () => {
   const error = new AdapterError("artifact_validation_failed");
   assert.equal(
     error.message,
-    "Scherzo Run failed [artifact_validation_failed].",
+    "Useful Machinery Run failed [artifact_validation_failed].",
   );
   for (const prohibited of [
     "prompt",
@@ -545,7 +545,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
                 assert.ok(allocated);
                 return {
                   schemaVersion: 1,
-                  command: "scherzo-cloud workflow run",
+                  command: "um workflow run",
                   outcome: "succeeded",
                   exitStatus: 0,
                   runDirectory: allocated.runDirectory,

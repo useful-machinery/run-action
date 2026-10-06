@@ -47,7 +47,7 @@ test("published terminal envelope recovers only the reserved committed identity"
       allocation.terminalPath,
       `${JSON.stringify({
         schemaVersion: 1,
-        command: "scherzo-cloud workflow run",
+        command: "um workflow run",
         outcome: "succeeded",
         exitStatus: 0,
         runDirectory: allocation.runDirectory,
@@ -80,7 +80,7 @@ test("terminal identity mismatch and unknown root fields fail closed", async () 
       file,
       JSON.stringify({
         schemaVersion: 1,
-        command: "scherzo-cloud workflow run",
+        command: "um workflow run",
         outcome: "failed",
         exitStatus: 1,
         runDirectory: path.join(directory, "other"),
@@ -103,7 +103,7 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
       '{"schemaVersion":1',
       JSON.stringify({
         schemaVersion: 2,
-        command: "scherzo-cloud workflow run",
+        command: "um workflow run",
         outcome: "rejected",
         exitStatus: 1,
       }),
@@ -141,7 +141,7 @@ test("bare durable markers do not authenticate terminal-less recovery", async ()
     let statusReads = 0;
     await assert.rejects(
       recoverDurableRun(
-        "/verified/scherzo-cloud",
+        "/verified/um",
         allocation,
         {},
         {
@@ -184,7 +184,7 @@ test("pinned status binds terminal-less recovery to the initial published result
     const localRunId = "52a51f00-96f1-4d6a-aa28-43f0cce8d16f";
     const status = {
       schemaVersion: 1,
-      command: "scherzo-cloud workflow status",
+      command: "um workflow status",
       outcome: "status",
       exitStatus: 0,
       runDirectory: allocation.runDirectory,
@@ -210,12 +210,12 @@ test("pinned status binds terminal-less recovery to the initial published result
     };
 
     const recovered = await recoverDurableRun(
-      "/verified/scherzo-cloud",
+      "/verified/um",
       allocation,
       { PATH: "/verified" },
       {
         readStatus: async (executable, runDirectory, environment) => {
-          assert.equal(executable, "/verified/scherzo-cloud");
+          assert.equal(executable, "/verified/um");
           assert.equal(runDirectory, allocation.runDirectory);
           assert.equal(environment.PATH, "/verified");
           return {
@@ -244,7 +244,7 @@ test("pinned status binds terminal-less recovery to the initial published result
       "attempts/000001/other";
     await assert.rejects(
       recoverDurableRun(
-        "/verified/scherzo-cloud",
+        "/verified/um",
         allocation,
         {},
         {

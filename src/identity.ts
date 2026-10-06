@@ -153,7 +153,7 @@ export async function recoverDurableRun(
     !document ||
     !exactKeys(document, STATUS_KEYS) ||
     document.schemaVersion !== 1 ||
-    document.command !== "scherzo-cloud workflow status" ||
+    document.command !== "um workflow status" ||
     document.outcome !== "status" ||
     document.exitStatus !== 0 ||
     document.runDirectory !== allocation.runDirectory ||

@@ -128,7 +128,7 @@ export const validateArtifactWithCli: ArtifactValidator = async (
   const summary = record.summary;
   if (
     record.schemaVersion !== 1 ||
-    record.command !== "scherzo-cloud artifact validate" ||
+    record.command !== "um artifact validate" ||
     record.outcome !== "valid" ||
     record.exitStatus !== 0 ||
     record.artifactSetVersion !== 1 ||

@@ -1,121 +1,121 @@
 {
   "schemaVersion": 1,
-  "repository": "scherzo-systems/scherzo-cloud-cli",
-  "releaseUrl": "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/tag/v0.36.0",
-  "tag": "v0.36.0",
-  "releaseId": 388669851,
-  "releaseCommit": "f665784fccddee8be91d0d12f43b165089dda438",
-  "sourceRevision": "7da44756c2f611f39c47ee28a697c01f8afe7a6e",
+  "repository": "useful-machinery/um",
+  "releaseUrl": "https://github.com/useful-machinery/um/releases/tag/v0.57.0",
+  "tag": "v0.57.0",
+  "releaseId": 404290732,
+  "releaseCommit": "e92b2e06fc603767239a23a6076a93a2e3e32fa2",
+  "sourceRevision": "c8deee65ec16c0f311c9d74cdccd6907561af53a",
   "requiredSourceAncestor": "7215869ca26439d305c097af1dca50ebb8066419",
-  "version": "0.36.0",
-  "buildIdentity": "7da44756c2f611f39c47ee28a697c01f8afe7a6e",
+  "version": "0.57.0",
+  "buildIdentity": "c8deee65ec16c0f311c9d74cdccd6907561af53a",
   "checksumAsset": {
-    "id": 564106171,
+    "id": 614393726,
     "name": "SHA256SUMS",
-    "size": 354,
-    "sha256": "b1cd0eb17d23e8a51861f208b714b6fddae21ac6fd061147b789a1594b022fd2",
-    "url": "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/SHA256SUMS"
+    "size": 321,
+    "sha256": "96ed3611bc4ec48733bce3a177d795b835f39c2b811918306e865765746a8a71",
+    "url": "https://github.com/useful-machinery/um/releases/download/v0.57.0/SHA256SUMS"
   },
   "archives": {
     "x86_64-unknown-linux-gnu": {
-      "id": 564106172,
-      "name": "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu.tar.gz",
-      "size": 11851127,
-      "sha256": "66cac4647491087297b81a346c9469558d68f22393a2a033ab0d87981dbba96b",
-      "url": "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu.tar.gz",
-      "rootDirectory": "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu",
+      "id": 614393724,
+      "name": "um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
+      "size": 16432906,
+      "sha256": "8c33e713ed96e89f2fff18d2f27d480875d5cc037df3b760d7bc096193b2c6e5",
+      "url": "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
+      "rootDirectory": "um-0.57.0-x86_64-unknown-linux-gnu",
       "inventory": [
         {
-          "path": "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu",
+          "path": "um-0.57.0-x86_64-unknown-linux-gnu",
           "type": "directory",
           "mode": 493,
           "size": 0
         },
         {
-          "path": "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu/LICENSE",
+          "path": "um-0.57.0-x86_64-unknown-linux-gnu/LICENSE",
           "type": "file",
           "mode": 420,
           "size": 11357
         },
         {
-          "path": "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu/README.md",
+          "path": "um-0.57.0-x86_64-unknown-linux-gnu/README.md",
           "type": "file",
           "mode": 420,
-          "size": 77222
+          "size": 106126
         },
         {
-          "path": "scherzo-cloud-0.36.0-x86_64-unknown-linux-gnu/scherzo-cloud",
+          "path": "um-0.57.0-x86_64-unknown-linux-gnu/um",
           "type": "file",
           "mode": 493,
-          "size": 40025376
+          "size": 55608976
         }
       ]
     },
     "aarch64-unknown-linux-gnu": {
-      "id": 564106176,
-      "name": "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu.tar.gz",
-      "size": 12192345,
-      "sha256": "9af8d51c7551063c4ee3c3c7f326905477c00cd7d7598b15e1479c260dff3a14",
-      "url": "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu.tar.gz",
-      "rootDirectory": "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu",
+      "id": 614393727,
+      "name": "um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
+      "size": 16902733,
+      "sha256": "f9e1d4e5fc1126b839855ba91b38123dfe217944d978177fa782a28717569b5f",
+      "url": "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
+      "rootDirectory": "um-0.57.0-aarch64-unknown-linux-gnu",
       "inventory": [
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu",
+          "path": "um-0.57.0-aarch64-unknown-linux-gnu",
           "type": "directory",
           "mode": 493,
           "size": 0
         },
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu/LICENSE",
+          "path": "um-0.57.0-aarch64-unknown-linux-gnu/LICENSE",
           "type": "file",
           "mode": 420,
           "size": 11357
         },
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu/README.md",
+          "path": "um-0.57.0-aarch64-unknown-linux-gnu/README.md",
           "type": "file",
           "mode": 420,
-          "size": 77222
+          "size": 106126
         },
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-unknown-linux-gnu/scherzo-cloud",
+          "path": "um-0.57.0-aarch64-unknown-linux-gnu/um",
           "type": "file",
           "mode": 493,
-          "size": 38264632
+          "size": 52945216
         }
       ]
     },
     "aarch64-apple-darwin": {
-      "id": 564106175,
-      "name": "scherzo-cloud-0.36.0-aarch64-apple-darwin.tar.gz",
-      "size": 10923729,
-      "sha256": "0ff4a7e0382a4e31d7f935d0ebae511e2ac799b9023a0ee5d1574c15406a8771",
-      "url": "https://github.com/scherzo-systems/scherzo-cloud-cli/releases/download/v0.36.0/scherzo-cloud-0.36.0-aarch64-apple-darwin.tar.gz",
-      "rootDirectory": "scherzo-cloud-0.36.0-aarch64-apple-darwin",
+      "id": 614393725,
+      "name": "um-0.57.0-aarch64-apple-darwin.tar.gz",
+      "size": 15179976,
+      "sha256": "a4f5f9bedb3f6a4570de2d898c9a4bb6d12b6c9cd6282ab469f43d0562da14ee",
+      "url": "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-aarch64-apple-darwin.tar.gz",
+      "rootDirectory": "um-0.57.0-aarch64-apple-darwin",
       "inventory": [
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-apple-darwin",
+          "path": "um-0.57.0-aarch64-apple-darwin",
           "type": "directory",
           "mode": 493,
           "size": 0
         },
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-apple-darwin/LICENSE",
+          "path": "um-0.57.0-aarch64-apple-darwin/LICENSE",
           "type": "file",
           "mode": 420,
           "size": 11357
         },
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-apple-darwin/README.md",
+          "path": "um-0.57.0-aarch64-apple-darwin/README.md",
           "type": "file",
           "mode": 420,
-          "size": 77222
+          "size": 106126
         },
         {
-          "path": "scherzo-cloud-0.36.0-aarch64-apple-darwin/scherzo-cloud",
+          "path": "um-0.57.0-aarch64-apple-darwin/um",
           "type": "file",
           "mode": 493,
-          "size": 34111680
+          "size": 47630480
         }
       ]
     }
