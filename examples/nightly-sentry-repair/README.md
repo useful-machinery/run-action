@@ -39,7 +39,7 @@ inputs: >-
 ```
 
 Both jobs install Pi 0.85.1, the independently qualified version within CLI v0.57.0's
-admitted `>=0.84.2 <0.88.0` range. Keep the Action reference, acquisition form, workflow,
+retained `>=0.84.2 <0.88.0` range (Pi 0.99.1 is admitted separately). Keep the Action reference, acquisition form, workflow,
 and harness pin paired on future upgrades. Publication checks do not authorize or prove
 provider-live dogfood.
 
