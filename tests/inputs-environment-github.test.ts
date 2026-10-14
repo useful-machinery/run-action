@@ -17,7 +17,7 @@ import { parseNamedInputs, readActionInputs } from "../src/inputs.ts";
 async function withWorkspace(
   callback: (workspace: string) => Promise<void>,
 ): Promise<void> {
-  const workspace = await mkdtemp(path.join(os.tmpdir(), "scherzo-inputs-"));
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "um-inputs-"));
   try {
     await callback(workspace);
   } finally {
@@ -248,7 +248,7 @@ test("child environment removes Action handles and preserves caller authority", 
 });
 
 test("GitHub outputs use collision-resistant file commands without logging values", async () => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "scherzo-outputs-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "um-outputs-"));
   try {
     const outputFile = path.join(directory, "output");
     await writeFile(outputFile, "", { mode: 0o600 });

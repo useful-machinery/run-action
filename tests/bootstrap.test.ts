@@ -225,9 +225,7 @@ function dependencies(
 async function withRunnerTemp(
   callback: (runnerTemp: string) => Promise<void>,
 ): Promise<void> {
-  const runnerTemp = await mkdtemp(
-    path.join(os.tmpdir(), "scherzo-bootstrap-"),
-  );
+  const runnerTemp = await mkdtemp(path.join(os.tmpdir(), "um-bootstrap-"));
   try {
     await callback(runnerTemp);
   } finally {
@@ -276,9 +274,7 @@ test("all supported platforms verify and install only their closed archive", asy
 });
 
 test("a supported runner temp may use a symlinked absolute path", async () => {
-  const directory = await mkdtemp(
-    path.join(os.tmpdir(), "scherzo-bootstrap-link-"),
-  );
+  const directory = await mkdtemp(path.join(os.tmpdir(), "um-bootstrap-link-"));
   try {
     const physicalTemp = path.join(directory, "physical");
     const runnerTemp = path.join(directory, "runner-temp");

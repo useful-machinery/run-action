@@ -25,9 +25,7 @@ test(
   { skip: releaseBundle === undefined },
   async () => {
     assert.ok(releaseBundle);
-    const root = await mkdtemp(
-      path.join(os.tmpdir(), "scherzo-release-action-"),
-    );
+    const root = await mkdtemp(path.join(os.tmpdir(), "um-release-action-"));
     try {
       const workspace = path.join(root, "workspace");
       const runnerTemp = path.join(root, "runner-temp");

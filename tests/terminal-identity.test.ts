@@ -19,7 +19,7 @@ import {
 async function withTemporary(
   callback: (directory: string) => Promise<void>,
 ): Promise<void> {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "scherzo-terminal-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "um-terminal-"));
   try {
     await callback(directory);
   } finally {

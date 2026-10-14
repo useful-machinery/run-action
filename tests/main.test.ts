@@ -62,9 +62,7 @@ test("bootstrap rejection precedes every workflow input read and launch", async 
 });
 
 test("invalid acquisition documents fail before source reads and allocation", async () => {
-  const workspace = await mkdtemp(
-    path.join(os.tmpdir(), "scherzo-main-inputs-"),
-  );
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "um-main-inputs-"));
   try {
     const source = path.join(workspace, "must-not-be-read");
     await writeFile(source, "private", { mode: 0o000 });
@@ -150,7 +148,7 @@ test("result and process matrix preserves trustworthy outputs and failure preced
 
   for (const scenario of scenarios) {
     await t.test(scenario.name, async () => {
-      const root = await mkdtemp(path.join(os.tmpdir(), "scherzo-main-"));
+      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-"));
       try {
         const runDirectory = path.join(root, "run");
         const artifactDirectory = path.join(
@@ -257,7 +255,7 @@ test("result and process matrix preserves trustworthy outputs and failure preced
 });
 
 test("bare durable markers cannot expose terminal-less result outputs", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "scherzo-main-recovery-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-recovery-"));
   try {
     const runDirectory = path.join(root, "run");
     const artifactDirectory = path.join(
@@ -334,7 +332,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
 });
 
 test("authenticated terminal-less recovery retains and validates its result", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "scherzo-main-recovery-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-recovery-"));
   try {
     const runDirectory = path.join(root, "run");
     const artifactDirectory = path.join(
@@ -467,9 +465,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
       `cancellation during ${phase} cleans private inputs (${signal})`,
       { timeout: 5000 },
       async () => {
-        const root = await mkdtemp(
-          path.join(os.tmpdir(), "scherzo-main-cancel-"),
-        );
+        const root = await mkdtemp(path.join(os.tmpdir(), "um-main-cancel-"));
         const before = [
           process.listenerCount("SIGINT"),
           process.listenerCount("SIGTERM"),

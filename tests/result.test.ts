@@ -47,7 +47,7 @@ async function withArtifact(
     artifactDirectory: string;
   }) => Promise<void>,
 ): Promise<void> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "scherzo-result-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "um-result-"));
   const artifactDirectory = path.join(
     root,
     "run",

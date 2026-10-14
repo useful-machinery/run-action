@@ -9,9 +9,7 @@ const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const temporary = await mkdtemp(
-  path.join(os.tmpdir(), "scherzo-run-licenses-"),
-);
+const temporary = await mkdtemp(path.join(os.tmpdir(), "um-run-licenses-"));
 try {
   const generated = path.join(temporary, "licenses.txt");
   await generateLicenses(generated);

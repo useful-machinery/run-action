@@ -98,7 +98,7 @@ export async function generateLicenses(output: string): Promise<void> {
         : 0,
   );
   const contents = [
-    "Scherzo Run Action third-party licenses",
+    "Useful Machinery Run Action third-party licenses",
     "Generated from the package-lock.json production dependency graph.",
     "",
     ...records.flatMap((record) => [

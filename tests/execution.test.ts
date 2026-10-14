@@ -90,7 +90,7 @@ function inputs(workspace: string): ActionInputs {
 async function withTemporary(
   callback: (directory: string) => Promise<void>,
 ): Promise<void> {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "scherzo-execution-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "um-execution-"));
   try {
     await callback(directory);
   } finally {
