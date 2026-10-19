@@ -20,6 +20,7 @@ import { DEFAULT_ACTION_DEPENDENCIES, executeAction } from "../src/main.ts";
 
 const releaseBundle = process.env.UM_RUN_ACTION_RELEASE_BUNDLE;
 
+// REQ-RUNACTION-32, REQ-RUNACTION-50, REQ-RUNACTION-58
 test(
   "the staged pinned release executes one all-kind named-input Action invocation",
   { skip: releaseBundle === undefined },

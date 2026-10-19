@@ -118,7 +118,7 @@
     {
       "id": "GHA-RUN-007",
       "owner": "cli-delegated",
-      "evidence": ["../../docs/specs/workflow-run-cli.md#41-execution-root"]
+      "evidence": ["../../docs/product/local-runs.md#execution-root"]
     },
     {
       "id": "GHA-RUN-008",
@@ -184,9 +184,7 @@
     {
       "id": "GHA-RUN-017",
       "owner": "cli-delegated",
-      "evidence": [
-        "../../docs/specs/workflow-run-cli.md#31-source-selection-and-resolution"
-      ]
+      "evidence": ["../../docs/product/local-runs.md#command-line"]
     },
     {
       "id": "GHA-RUN-018",

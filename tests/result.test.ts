@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { appendFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import {
+  appendFile,
+  mkdir,
+  mkdtemp,
+  realpath,
+  rm,
+  truncate,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -10,8 +18,10 @@ import type { CommittedIdentity } from "../src/identity.ts";
 import {
   MAXIMUM_INLINE_EXPORT_BYTES,
   validateAndProject,
+  validateArtifactWithCli,
   type ArtifactValidator,
 } from "../src/result.ts";
+import { fakeCli, paddedJson } from "./fake-cli.ts";
 
 type ExportEntry = Record<string, unknown>;
 
@@ -92,6 +102,7 @@ const validValidator =
     calls.push(artifactDirectory);
   };
 
+// REQ-RUNACTION-53, REQ-RUNACTION-54, REQ-RUNACTION-55, REQ-RUNACTION-57
 test("projection covers unavailable, file, text, JSON, changed Git, and zero-delta Git", async (t) => {
   const cases: readonly {
     name: string;
@@ -231,6 +242,8 @@ test("projection covers unavailable, file, text, JSON, changed Git, and zero-del
   }
 });
 
+// REQ-RUNACTION-55, REQ-RUNACTION-56
+// INV-EMBED-7
 test("inline text projection enforces all three byte boundaries", async (t) => {
   for (const size of [
     MAXIMUM_INLINE_EXPORT_BYTES - 1,
@@ -273,6 +286,7 @@ test("inline text projection enforces all three byte boundaries", async (t) => {
   }
 });
 
+// REQ-RUNACTION-51
 test("selected export lookup follows result metadata across alias ordinal shifts", async () => {
   const bytes = Buffer.from("shared");
   await withArtifact(
@@ -317,6 +331,7 @@ test("validated result supplies a missing recovered outcome", async () => {
   });
 });
 
+// REQ-RUNACTION-51, REQ-RUNACTION-52
 test("an absent exact export fails without guessing a path", async () => {
   await withArtifact({}, {}, async ({ identity }) => {
     await assert.rejects(
@@ -336,6 +351,8 @@ test("an absent exact export fails without guessing a path", async () => {
   });
 });
 
+// REQ-RUNACTION-48
+// INV-EMBED-7
 test("complete validation failure precedes selected carrier exposure", async () => {
   const bytes = Buffer.from("private export");
   await withArtifact(
@@ -362,6 +379,8 @@ test("complete validation failure precedes selected carrier exposure", async () 
   );
 });
 
+// REQ-RUNACTION-49
+// INV-EMBED-7
 test("post-validation metadata and carrier mutation both fail closed", async (t) => {
   const bytes = Buffer.from("immutable");
   await t.test("result metadata", async () => {
@@ -410,4 +429,95 @@ test("post-validation metadata and carrier mutation both fail closed", async (t)
       },
     );
   });
+});
+
+// REQ-RUNACTION-77
+test("a result.json beyond 202,027,692 bytes fails before artifact validation", async (t) => {
+  for (const [size, accepted] of [
+    [202_027_692, true],
+    [202_027_693, false],
+  ] as const) {
+    await t.test(String(size), async () => {
+      await withArtifact({}, {}, async ({ identity }) => {
+        await truncate(identity.resultPath, size);
+        const validated: string[] = [];
+        const stop = new AdapterError("artifact_validation_failed");
+        await assert.rejects(
+          validateAndProject(
+            "/verified/cli",
+            identity,
+            undefined,
+            {},
+            {
+              validateArtifact: async (_executable, artifactDirectory) => {
+                validated.push(artifactDirectory);
+                throw stop;
+              },
+            },
+          ),
+          (error: unknown) =>
+            accepted
+              ? error === stop
+              : error instanceof AdapterError &&
+                error.code === "result_projection_failed",
+        );
+        assert.equal(validated.length, accepted ? 1 : 0);
+      });
+    });
+  }
+});
+
+// REQ-RUNACTION-78
+test("artifact validation output is read up to its 1,048,576-byte bound", async (t) => {
+  for (const [size, accepted] of [
+    [1_048_576, true],
+    [1_048_577, false],
+  ] as const) {
+    await t.test(String(size), async () => {
+      await withArtifact({}, {}, async ({ artifactDirectory }) => {
+        const scratch = await mkdtemp(path.join(os.tmpdir(), "um-validate-"));
+        try {
+          const executable = await fakeCli(
+            scratch,
+            "um",
+            paddedJson(
+              {
+                schemaVersion: 1,
+                command: "um artifact validate",
+                outcome: "valid",
+                exitStatus: 0,
+                artifactSetVersion: 1,
+                artifactDirectory: await realpath(artifactDirectory),
+                summary: {
+                  declaredExports: 0,
+                  availableExports: 0,
+                  unavailableExports: 0,
+                  referencedCarriers: 0,
+                  carrierBytes: 0,
+                },
+              },
+              size,
+            ),
+          );
+          const validation = validateArtifactWithCli(
+            executable,
+            artifactDirectory,
+            {},
+          );
+          if (accepted) {
+            await validation;
+          } else {
+            await assert.rejects(
+              validation,
+              (error: unknown) =>
+                error instanceof AdapterError &&
+                error.code === "artifact_validation_failed",
+            );
+          }
+        } finally {
+          await rm(scratch, { recursive: true, force: true });
+        }
+      });
+    });
+  }
 });

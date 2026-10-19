@@ -15,6 +15,7 @@ import {
   readTerminalEnvelope,
   validateTerminalShape,
 } from "../src/terminal.ts";
+import { fakeCli, paddedJson } from "./fake-cli.ts";
 
 async function withTemporary(
   callback: (directory: string) => Promise<void>,
@@ -27,6 +28,8 @@ async function withTemporary(
   }
 }
 
+// REQ-RUNACTION-45, REQ-RUNACTION-46
+// INV-EMBED-6
 test("published terminal envelope recovers only the reserved committed identity", async () => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
@@ -73,6 +76,7 @@ test("published terminal envelope recovers only the reserved committed identity"
   });
 });
 
+// INV-EMBED-6
 test("terminal identity mismatch and unknown root fields fail closed", async () => {
   await withTemporary(async (directory) => {
     const file = path.join(directory, "terminal.json");
@@ -118,6 +122,8 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
   });
 });
 
+// REQ-RUNACTION-47, REQ-RUNACTION-75
+// INV-EMBED-6
 test("bare durable markers do not authenticate terminal-less recovery", async () => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
@@ -165,6 +171,8 @@ test("bare durable markers do not authenticate terminal-less recovery", async ()
   });
 });
 
+// REQ-RUNACTION-47
+// INV-EMBED-6
 test("pinned status binds terminal-less recovery to the initial published result", async () => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
@@ -260,4 +268,68 @@ test("pinned status binds terminal-less recovery to the initial published result
       AdapterError,
     );
   });
+});
+
+// REQ-RUNACTION-78
+test("workflow status output is read up to its 33,554,432-byte bound", async (t) => {
+  for (const [size, accepted] of [
+    [33_554_432, true],
+    [33_554_433, false],
+  ] as const) {
+    await t.test(String(size), async () => {
+      await withTemporary(async (directory) => {
+        const allocation: ExecutionAllocation = {
+          parent: directory,
+          runDirectory: path.join(directory, "run"),
+          terminalPath: path.join(directory, "terminal.json"),
+          inputFiles: [],
+        };
+        await mkdir(allocation.runDirectory);
+        const localRunId = "52a51f00-96f1-4d6a-aa28-43f0cce8d16f";
+        const executable = await fakeCli(
+          directory,
+          "um",
+          paddedJson(
+            {
+              schemaVersion: 1,
+              command: "um workflow status",
+              outcome: "status",
+              exitStatus: 0,
+              runDirectory: allocation.runDirectory,
+              run: { schemaVersion: 1, localRunId },
+              state: {
+                schemaVersion: 1,
+                localRunId,
+                currentAttemptNumber: 1,
+                attempts: [
+                  {
+                    attemptNumber: 1,
+                    trigger: "initial",
+                    state: "workflow_failed",
+                    result: { status: "not_published" },
+                  },
+                ],
+              },
+              recovery: { status: "settled" },
+              retry: { eligible: true },
+            },
+            size,
+          ),
+        );
+        const recovery = recoverDurableRun(executable, allocation, {});
+        if (accepted) {
+          assert.deepEqual(await recovery, {
+            runDirectory: allocation.runDirectory,
+          });
+        } else {
+          await assert.rejects(
+            recovery,
+            (error: unknown) =>
+              error instanceof AdapterError &&
+              error.code === "result_identity_invalid",
+          );
+        }
+      });
+    });
+  }
 });

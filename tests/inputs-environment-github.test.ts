@@ -8,6 +8,7 @@ import test from "node:test";
 import { sanitizedChildEnvironment } from "../src/environment.ts";
 import { AdapterError } from "../src/errors.ts";
 import {
+  appendVerifiedPath,
   emptyOutputs,
   WorkflowCommandGuard,
   writeOutputs,
@@ -36,6 +37,7 @@ function rejectsInput(
   );
 }
 
+// REQ-RUNACTION-15, REQ-RUNACTION-16, REQ-RUNACTION-21, REQ-RUNACTION-22, REQ-RUNACTION-23, REQ-RUNACTION-27, REQ-RUNACTION-29, REQ-RUNACTION-31
 test("named inputs preserve closed forms, lexical JSON, path identity, and byte order", async () => {
   await withWorkspace(async (workspace) => {
     const environment: NodeJS.ProcessEnv = {
@@ -122,6 +124,7 @@ test("named inputs preserve closed forms, lexical JSON, path identity, and byte 
   });
 });
 
+// REQ-RUNACTION-20
 test("absent, empty, and JSON empty objects select only the empty map", () => {
   const workspace = path.resolve("/workspace");
   for (const document of [undefined, "", "{}", " { \r\n } "]) {
@@ -130,6 +133,7 @@ test("absent, empty, and JSON empty objects select only the empty map", () => {
   rejectsInput("   ", workspace);
 });
 
+// REQ-RUNACTION-22, REQ-RUNACTION-24, REQ-RUNACTION-25
 test("the acquisition grammar rejects malformed, duplicate, unknown, and wrong-kind forms", () => {
   const malformed = [
     "null",
@@ -159,6 +163,7 @@ test("the acquisition grammar rejects malformed, duplicate, unknown, and wrong-k
   malformed.forEach((document) => rejectsInput(document));
 });
 
+// REQ-RUNACTION-18
 test("removed fixed Action inputs reject even empty values", async () => {
   await withWorkspace(async (workspace) => {
     for (const name of [
@@ -179,6 +184,7 @@ test("removed fixed Action inputs reject even empty values", async () => {
   });
 });
 
+// REQ-RUNACTION-29
 test("path acquisitions are passed without Action content reads", async () => {
   await withWorkspace(async (workspace) => {
     const source = path.join(workspace, "must-not-be-read");
@@ -200,6 +206,7 @@ test("path acquisitions are passed without Action content reads", async () => {
   });
 });
 
+// REQ-RUNACTION-19
 test("max-parallel accepts only exact digit strings in the CLI range", async () => {
   await withWorkspace(async (workspace) => {
     for (const accepted of ["1", "0001", "256", "0256"]) {
@@ -223,6 +230,8 @@ test("max-parallel accepts only exact digit strings in the CLI range", async () 
   });
 });
 
+// REQ-RUNACTION-37, REQ-RUNACTION-38, REQ-RUNACTION-39
+// INV-EMBED-3
 test("child environment removes Action handles and preserves caller authority", () => {
   const child = sanitizedChildEnvironment(
     {
@@ -247,6 +256,8 @@ test("child environment removes Action handles and preserves caller authority", 
   });
 });
 
+// REQ-RUNACTION-43
+// INV-EMBED-4
 test("GitHub outputs use collision-resistant file commands without logging values", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "um-outputs-"));
   try {
@@ -264,6 +275,8 @@ test("GitHub outputs use collision-resistant file commands without logging value
   }
 });
 
+// REQ-RUNACTION-35
+// INV-EMBED-4
 test("untrusted presentation remains inside one stop-command interval", async () => {
   const log = new PassThrough();
   let logBytes = "";
@@ -278,6 +291,8 @@ test("untrusted presentation remains inside one stop-command interval", async ()
   );
 });
 
+// REQ-RUNACTION-35
+// INV-EMBED-4
 test("presentation waits for a buffered stop-command marker", async () => {
   const log = new PassThrough();
   let logBytes = "";
@@ -306,4 +321,27 @@ test("presentation waits for a buffered stop-command marker", async () => {
     logBytes,
     `::stop-commands::um_${"ab".repeat(32)}\n::set-output name=owned::hostile\n::um_${"ab".repeat(32)}::\n`,
   );
+});
+
+// REQ-RUNACTION-74
+test("a missing or unwritable GITHUB_PATH or GITHUB_OUTPUT fails as github_file_command_failed", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "um-file-commands-"));
+  try {
+    const fileCommandFailure = (error: unknown) =>
+      error instanceof AdapterError &&
+      error.code === "github_file_command_failed";
+    // A directory stands in for a file command that exists but cannot be appended to.
+    for (const file of [undefined, directory]) {
+      await assert.rejects(
+        appendVerifiedPath(file, "/verified"),
+        fileCommandFailure,
+      );
+      await assert.rejects(
+        writeOutputs(file, emptyOutputs(), () => Buffer.alloc(32, 0xab)),
+        fileCommandFailure,
+      );
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });

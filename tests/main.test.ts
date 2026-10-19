@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import type { BootstrapResult } from "../src/bootstrap.ts";
-import { AdapterError } from "../src/errors.ts";
+import { AdapterError, type FailureCode } from "../src/errors.ts";
 import {
   allocateExecution,
   cleanupExecution,
@@ -26,6 +26,8 @@ function unreachable<T>(): Promise<T> {
   throw new Error("unexpected test dependency call");
 }
 
+// REQ-RUNACTION-13, REQ-RUNACTION-42
+// INV-EMBED-2
 test("bootstrap rejection precedes every workflow input read and launch", async () => {
   let inputReads = 0;
   let launches = 0;
@@ -61,6 +63,8 @@ test("bootstrap rejection precedes every workflow input read and launch", async 
   assert.deepEqual(observedOutputs, emptyOutputs());
 });
 
+// REQ-RUNACTION-26
+// INV-EMBED-2
 test("invalid acquisition documents fail before source reads and allocation", async () => {
   const workspace = await mkdtemp(path.join(os.tmpdir(), "um-main-inputs-"));
   try {
@@ -101,6 +105,73 @@ test("invalid acquisition documents fail before source reads and allocation", as
   }
 });
 
+// REQ-RUNACTION-17
+test("an unusable workspace or empty workflow fails before allocation and launch", async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "um-main-workspace-"));
+  try {
+    const regularFile = path.join(workspace, "not-a-directory");
+    await writeFile(regularFile, "");
+    const environments: readonly NodeJS.ProcessEnv[] = [
+      { INPUT_WORKFLOW: "workflow.yaml" },
+      { GITHUB_WORKSPACE: "", INPUT_WORKFLOW: "workflow.yaml" },
+      {
+        GITHUB_WORKSPACE: "relative/workspace",
+        INPUT_WORKFLOW: "workflow.yaml",
+      },
+      {
+        GITHUB_WORKSPACE: path.join(workspace, "missing"),
+        INPUT_WORKFLOW: "workflow.yaml",
+      },
+      { GITHUB_WORKSPACE: regularFile, INPUT_WORKFLOW: "workflow.yaml" },
+      { GITHUB_WORKSPACE: workspace },
+      { GITHUB_WORKSPACE: workspace, INPUT_WORKFLOW: "" },
+    ];
+    for (const environment of environments) {
+      let allocations = 0;
+      let launches = 0;
+      const result = await executeAction(
+        {
+          ...environment,
+          GITHUB_OUTPUT: path.join(workspace, "github-output"),
+        },
+        {
+          bootstrap: async () => ({
+            executable: "/verified/um",
+            cliDirectory: "/verified",
+            environment: {},
+          }),
+          readInputs: readActionInputs,
+          allocate: () => {
+            allocations += 1;
+            return unreachable<ExecutionAllocation>();
+          },
+          execute: async () => {
+            launches += 1;
+            return unreachable<WorkflowProcessResult>();
+          },
+          readTerminal: () => unreachable<TerminalEnvelope>(),
+          recover: async () => undefined,
+          project: () => unreachable<ValidatedResultProjection>(),
+          writeOutputs: async () => undefined,
+          cleanup: async () => undefined,
+        },
+      );
+      assert.equal(
+        result.failure?.code,
+        "input_invalid",
+        JSON.stringify(environment),
+      );
+      assert.equal(allocations, 0);
+      assert.equal(launches, 0);
+    }
+  } finally {
+    await rm(workspace, { recursive: true, force: true });
+  }
+});
+
+// REQ-RUNACTION-42, REQ-RUNACTION-44, REQ-RUNACTION-46, REQ-RUNACTION-48, REQ-RUNACTION-53, REQ-RUNACTION-56, REQ-RUNACTION-58, REQ-RUNACTION-59
+// REQ-RUNACTION-76, REQ-RUNACTION-77
+// INV-EMBED-5
 test("result and process matrix preserves trustworthy outputs and failure precedence", async (t) => {
   const scenarios: readonly {
     name: string;
@@ -108,6 +179,8 @@ test("result and process matrix preserves trustworthy outputs and failure preced
     code: number;
     projection?: SelectedProjection;
     projectionFailure?: AdapterError;
+    cleanupFailure?: AdapterError;
+    reported?: FailureCode;
     succeeds: boolean;
   }[] = [
     {
@@ -130,6 +203,23 @@ test("result and process matrix preserves trustworthy outputs and failure preced
       outcome: "succeeded",
       code: 0,
       projectionFailure: new AdapterError("artifact_validation_failed"),
+      succeeds: false,
+    },
+    {
+      name: "oversized result",
+      outcome: "succeeded",
+      code: 0,
+      projectionFailure: new AdapterError("result_projection_failed"),
+      reported: "result_projection_failed",
+      succeeds: false,
+    },
+    {
+      name: "cleanup failure",
+      outcome: "succeeded",
+      code: 0,
+      projection: { state: "unavailable" },
+      cleanupFailure: new AdapterError("cleanup_failed"),
+      reported: "cleanup_failed",
       succeeds: false,
     },
     {
@@ -226,7 +316,9 @@ test("result and process matrix preserves trustworthy outputs and failure preced
           writeOutputs: async () => {
             writes += 1;
           },
-          cleanup: async () => undefined,
+          cleanup: async () => {
+            if (scenario.cleanupFailure) throw scenario.cleanupFailure;
+          },
         };
         const result = await executeAction(
           { GITHUB_OUTPUT: path.join(root, "github-output") },
@@ -234,6 +326,9 @@ test("result and process matrix preserves trustworthy outputs and failure preced
         );
         assert.equal(writes, 1);
         assert.equal(result.failure === undefined, scenario.succeeds);
+        if (scenario.reported) {
+          assert.equal(result.failure?.code, scenario.reported);
+        }
         assert.equal(result.outputs.outcome, scenario.outcome);
         assert.equal(result.outputs["run-directory"], runDirectory);
         assert.equal(result.outputs["artifact-set-path"], artifactDirectory);
@@ -254,6 +349,8 @@ test("result and process matrix preserves trustworthy outputs and failure preced
   }
 });
 
+// REQ-RUNACTION-45, REQ-RUNACTION-47
+// INV-EMBED-6
 test("bare durable markers cannot expose terminal-less result outputs", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "um-main-recovery-"));
   try {
@@ -331,6 +428,8 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
   }
 });
 
+// REQ-RUNACTION-47
+// INV-EMBED-5
 test("authenticated terminal-less recovery retains and validates its result", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "um-main-recovery-"));
   try {
@@ -412,6 +511,8 @@ test("authenticated terminal-less recovery retains and validates its result", as
   }
 });
 
+// REQ-RUNACTION-61
+// INV-EMBED-5
 test("unexpected dependency errors cannot enter adapter-authored diagnostics", async () => {
   const sentinel = "prompt attachment export credential provider-secret";
   const result = await executeAction(
@@ -437,6 +538,7 @@ test("unexpected dependency errors cannot enter adapter-authored diagnostics", a
   );
 });
 
+// REQ-RUNACTION-60, REQ-RUNACTION-61
 test("adapter-authored failure is a stable structured fact", () => {
   const error = new AdapterError("artifact_validation_failed");
   assert.equal(
@@ -461,6 +563,8 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     "projection",
     "cleanup",
   ] as const) {
+    // REQ-RUNACTION-41
+    // INV-EMBED-8
     test(
       `cancellation during ${phase} cleans private inputs (${signal})`,
       { timeout: 5000 },
@@ -607,3 +711,50 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     );
   }
 }
+
+// REQ-RUNACTION-72
+test("a CLI launch failure starts no run and exposes no result", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-launch-"));
+  try {
+    const allocation = await allocateExecution(root, []);
+    let observedOutputs: ActionOutputs | undefined;
+    const result = await executeAction(
+      { GITHUB_OUTPUT: path.join(root, "github-output") },
+      {
+        bootstrap: async () => ({
+          executable: "/verified/um",
+          cliDirectory: "/verified",
+          environment: {},
+        }),
+        readInputs: async () => ({
+          workspace: root,
+          workflow: path.join(root, "workflow.yaml"),
+          sourceRoot: root,
+          executionRoot: root,
+          namedInputs: [],
+          maximumParallel: "1",
+          selectedExport: "selected",
+        }),
+        allocate: async () => allocation,
+        execute: async () => {
+          throw new AdapterError("child_launch_failed");
+        },
+        readTerminal: () => unreachable<TerminalEnvelope>(),
+        recover: (executable, allocated, environment) =>
+          recoverDurableRun(executable, allocated, environment, {
+            readStatus: () => unreachable(),
+          }),
+        project: () => unreachable<ValidatedResultProjection>(),
+        writeOutputs: async (_file, outputs) => {
+          observedOutputs = { ...outputs };
+        },
+        cleanup: cleanupExecution,
+      },
+    );
+    assert.equal(result.failure?.code, "child_launch_failed");
+    assert.deepEqual(observedOutputs, emptyOutputs());
+    await assert.rejects(access(allocation.parent));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

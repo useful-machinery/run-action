@@ -23,6 +23,7 @@ const inputNames = [
   "export",
 ];
 
+// REQ-RUNACTION-3, REQ-RUNACTION-14, REQ-RUNACTION-15, REQ-RUNACTION-42, REQ-RUNACTION-67
 test("action.yml exposes only the V1 metadata surface and Node 24 bundle", async () => {
   const metadata = parse(
     await readFile(path.join(packageRoot, "action.yml"), "utf8"),
@@ -152,6 +153,8 @@ test("traceability accounts for every V1 invariant and requirement", async () =>
   }
 });
 
+// REQ-RUNACTION-6
+// INV-EMBED-1
 test("release evidence is the closed observed v0.57.0 release", () => {
   assert.deepEqual(PINNED_RELEASE, evidence);
   assert.deepEqual(

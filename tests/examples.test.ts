@@ -89,6 +89,7 @@ function stepByName(job: ExampleJob, name: string): ActionStep {
   return step;
 }
 
+// REQ-RUNACTION-2
 test("customer examples select only the tested immutable mirror revision", async () => {
   const readme = await readFile(path.join(packageRoot, "README.md"), "utf8");
   const example = await readFile(workflowPath, "utf8");
@@ -129,6 +130,7 @@ test("moving, foreign, illustrative, and malformed Run Action references fail cl
   }
 });
 
+// REQ-RUNACTION-65, REQ-RUNACTION-66
 test("nightly composition keeps setup, bounded repair, and publication caller-owned", async () => {
   const workflow = parse(
     await readFile(workflowPath, "utf8"),
@@ -293,6 +295,7 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
   );
 });
 
+// REQ-RUNACTION-66
 test("Sentry discovery and repair preserve the named JSON contract", async () => {
   const discovery = parse(
     await readFile(

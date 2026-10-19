@@ -33,6 +33,7 @@ const pr = {
   base: { sha: base, ref: "main", repo: { full_name: repository } },
 };
 
+// REQ-RUNACTION-62
 test("conflict resolver refuses forks, closed PRs, and stale destinations", () => {
   assert.equal(eligible(pr, repository), true);
   assert.equal(eligible({ ...pr, state: "closed" }, repository), false);
@@ -83,6 +84,7 @@ function git(cwd: string, args: string[], input?: string): string {
   return result.stdout.trim();
 }
 
+// REQ-RUNACTION-63
 test("preparation starts only a conflicting merge and rejects wrong or dirty heads", () => {
   const cwd = mkdtempSync(path.join(tmpdir(), "prepare-merge-test-"));
   try {
@@ -125,6 +127,7 @@ test("preparation starts only a conflicting merge and rejects wrong or dirty hea
   }
 });
 
+// REQ-RUNACTION-64
 test("publisher accepts only the authorized merge graph from a real bundle", () => {
   const root = mkdtempSync(path.join(tmpdir(), "conflict-example-test-"));
   try {
@@ -204,6 +207,7 @@ test("publisher accepts only the authorized merge graph from a real bundle", () 
   }
 });
 
+// REQ-RUNACTION-64
 test("bundle handoff rejects extra files, directories, and symlinks", () => {
   const directory = mkdtempSync(path.join(tmpdir(), "resolution-handoff-"));
   try {
@@ -226,6 +230,7 @@ test("bundle handoff rejects extra files, directories, and symlinks", () => {
   }
 });
 
+// REQ-RUNACTION-65
 test("example gates agent secrets and isolates publication from the PR tree", () => {
   const example = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),

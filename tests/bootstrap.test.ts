@@ -8,7 +8,11 @@ import test from "node:test";
 import { gzipSync } from "node:zlib";
 import tarStream from "tar-stream";
 
-import { bootstrapCli, type BootstrapDependencies } from "../src/bootstrap.ts";
+import {
+  bootstrapCli,
+  DEFAULT_BOOTSTRAP_DEPENDENCIES,
+  type BootstrapDependencies,
+} from "../src/bootstrap.ts";
 import { AdapterError } from "../src/errors.ts";
 import {
   PINNED_RELEASE,
@@ -16,6 +20,7 @@ import {
   type TargetTriple,
 } from "../src/release.ts";
 import type { CapturedCommand } from "../src/subprocess.ts";
+import { fakeCli, paddedJson } from "./fake-cli.ts";
 
 const targets: readonly {
   runnerOS: string;
@@ -233,6 +238,9 @@ async function withRunnerTemp(
   }
 }
 
+// REQ-RUNACTION-4, REQ-RUNACTION-7, REQ-RUNACTION-11, REQ-RUNACTION-12, REQ-RUNACTION-38, REQ-RUNACTION-67
+// INV-EMBED-1
+// INV-EMBED-3
 test("all supported platforms verify and install only their closed archive", async (t) => {
   for (const platform of targets) {
     await t.test(platform.target, async () => {
@@ -273,6 +281,7 @@ test("all supported platforms verify and install only their closed archive", asy
   }
 });
 
+// REQ-RUNACTION-5
 test("a supported runner temp may use a symlinked absolute path", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "um-bootstrap-link-"));
   try {
@@ -304,6 +313,8 @@ test("a supported runner temp may use a symlinked absolute path", async () => {
   }
 });
 
+// REQ-RUNACTION-7, REQ-RUNACTION-9, REQ-RUNACTION-10, REQ-RUNACTION-11
+// INV-EMBED-1
 test("bootstrap failures stay closed before ambient fallback", async (t) => {
   await withRunnerTemp(async (runnerTemp) => {
     const platform = targets[0]!;
@@ -391,6 +402,8 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
   });
 });
 
+// REQ-RUNACTION-8
+// INV-EMBED-1
 test("checksum and archive byte corruption fail before version inspection", async () => {
   await withRunnerTemp(async (runnerTemp) => {
     const fixtureValue = await fixture();
@@ -434,6 +447,8 @@ test("checksum and archive byte corruption fail before version inspection", asyn
   });
 });
 
+// REQ-RUNACTION-8
+// INV-EMBED-1
 test("archive size and checksum layout drift fail before version inspection", async (t) => {
   await withRunnerTemp(async (runnerTemp) => {
     const platform = targets[0]!;
@@ -510,6 +525,8 @@ test("archive size and checksum layout drift fail before version inspection", as
   });
 });
 
+// REQ-RUNACTION-4
+// INV-EMBED-1
 test("unsupported platform fails without retrieval", async () => {
   let fetches = 0;
   await assert.rejects(
@@ -531,4 +548,63 @@ test("unsupported platform fails without retrieval", async () => {
       error.code === "bootstrap_platform_unsupported",
   );
   assert.equal(fetches, 0);
+});
+
+// REQ-RUNACTION-78
+test("CLI version output is read up to its 65,536-byte bound", async (t) => {
+  for (const [size, accepted] of [
+    [65_536, true],
+    [65_537, false],
+  ] as const) {
+    await t.test(String(size), async () => {
+      await withRunnerTemp(async (runnerTemp) => {
+        const scratch = await mkdtemp(path.join(os.tmpdir(), "um-version-"));
+        try {
+          const fixtureValue = await fixture();
+          const deps: BootstrapDependencies = {
+            ...dependencies(fixtureValue, {
+              fetched: [],
+              executables: [],
+              appended: [],
+            }),
+            runVersion: async (executable, environment) =>
+              DEFAULT_BOOTSTRAP_DEPENDENCIES.runVersion(
+                await fakeCli(
+                  scratch,
+                  "um",
+                  paddedJson(
+                    {
+                      schemaVersion: 1,
+                      command: "um",
+                      version: fixtureValue.release.version,
+                      executablePath: await realpath(executable),
+                      buildIdentity: fixtureValue.release.buildIdentity,
+                    },
+                    size,
+                  ),
+                ),
+                environment,
+              ),
+          };
+          const bootstrapping = bootstrapCli(
+            { RUNNER_OS: "Linux", RUNNER_ARCH: "X64", RUNNER_TEMP: runnerTemp },
+            deps,
+            fixtureValue.release,
+          );
+          if (accepted) {
+            await bootstrapping;
+          } else {
+            await assert.rejects(
+              bootstrapping,
+              (error: unknown) =>
+                error instanceof AdapterError &&
+                error.code === "bootstrap_version_failed",
+            );
+          }
+        } finally {
+          await rm(scratch, { recursive: true, force: true });
+        }
+      });
+    });
+  }
 });
