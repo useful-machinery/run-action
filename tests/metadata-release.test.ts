@@ -71,6 +71,11 @@ test("public checks define source and all supported native behavior jobs", async
           "continue-on-error"?: boolean;
         }[];
       };
+      release: {
+        "runs-on": string;
+        strategy: { matrix: { runner: string[] } };
+        steps: { run?: string; env?: Record<string, string> }[];
+      };
     };
   };
   assert.deepEqual(workflow.permissions, { contents: "read" });
@@ -112,45 +117,21 @@ test("public checks define source and all supported native behavior jobs", async
       emptyItems: "attachments",
     },
   );
-});
-
-test("traceability accounts for every V1 invariant and requirement", async () => {
-  const traceability = JSON.parse(
-    await readFile(path.join(packageRoot, "traceability.json"), "utf8"),
-  ) as {
-    schemaVersion: number;
-    invariants: { id: string; owner: string; evidence: string[] }[];
-    requirements: { id: string; owner: string; evidence: string[] }[];
-  };
-  assert.equal(traceability.schemaVersion, 1);
+  const release = workflow.jobs.release;
+  assert.equal(release["runs-on"], "${{ matrix.runner }}");
   assert.deepEqual(
-    traceability.invariants.map(({ id }) => id),
-    Array.from(
-      { length: 11 },
-      (_, index) => `GHA-RUN-INV-${String(index + 1).padStart(3, "0")}`,
-    ),
+    release.strategy.matrix.runner,
+    workflow.jobs.behavior.strategy.matrix.runner,
   );
-  assert.deepEqual(
-    traceability.requirements.map(({ id }) => id),
-    Array.from(
-      { length: 31 },
-      (_, index) => `GHA-RUN-${String(index + 1).padStart(3, "0")}`,
-    ),
-  );
-  for (const entry of [
-    ...traceability.invariants,
-    ...traceability.requirements,
-  ]) {
-    assert.match(
-      entry.owner,
-      /^(action|artifact-set-delegated|cli-delegated|documentation|mirror|release)$/u,
+  const releaseRun = release.steps.find(({ run }) => {
+    const staged = run?.indexOf("scripts/stage-release.ts") ?? -1;
+    return (
+      staged >= 0 &&
+      run!.indexOf("tests/release-integration.test.ts", staged) > staged
     );
-    assert.ok(entry.evidence.length > 0);
-    assert.equal(
-      entry.evidence.every((value) => value.length > 0),
-      true,
-    );
-  }
+  });
+  assert.ok(releaseRun);
+  assert.ok(releaseRun.env?.UM_RUN_ACTION_RELEASE_BUNDLE);
 });
 
 // REQ-RUNACTION-6

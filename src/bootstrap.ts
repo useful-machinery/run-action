@@ -246,7 +246,9 @@ async function extractArchive(
         await chmod(outputPath, entry.mode);
       }
       next();
-    })().catch((error: unknown) => extract.destroy(asAdapterError(error)));
+    })().catch((error: unknown) =>
+      extract.destroy(asAdapterError(error, "bootstrap")),
+    );
   });
 
   await pipeline(createReadStream(archivePath), createGunzip(), extract).catch(
@@ -401,6 +403,6 @@ export async function bootstrapCli(
     await rm(allocation, { recursive: true, force: true }).catch(
       () => undefined,
     );
-    throw asAdapterError(error);
+    throw asAdapterError(error, "bootstrap");
   }
 }

@@ -349,7 +349,7 @@ export async function runWorkflow(
       ...(forwarded === undefined ? {} : { signalForwarded: forwarded }),
     };
   } catch (error) {
-    throw asAdapterError(error);
+    throw asAdapterError(error, "execution");
   } finally {
     active = false;
     dependencies.signals.off("SIGINT", onInterrupt);

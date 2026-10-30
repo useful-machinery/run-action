@@ -3036,6 +3036,56 @@ var require_stream_json = __commonJS({
   }
 });
 
+// src/errors.ts
+function failureLine(code, diagnostic) {
+  if (diagnostic === void 0) return `Useful Machinery Run failed [${code}].`;
+  const members = [
+    `stage=${diagnostic.stage}`,
+    `errorType=${diagnostic.errorType}`,
+    ...diagnostic.ioError === void 0 ? [] : [`ioError=${diagnostic.ioError}`]
+  ];
+  return `Useful Machinery Run failed [${code}] (${members.join(" ")}).`;
+}
+var AdapterError = class extends Error {
+  code;
+  diagnostic;
+  constructor(code, diagnostic) {
+    super(failureLine(code, diagnostic));
+    this.name = "AdapterError";
+    this.code = code;
+    if (diagnostic !== void 0) this.diagnostic = diagnostic;
+  }
+};
+var IO_ERRORS = /* @__PURE__ */ new Map([
+  ["ENOENT", "not_found"],
+  ["EACCES", "permission_denied"],
+  ["EPERM", "permission_denied"],
+  ["EEXIST", "already_exists"],
+  ["EROFS", "read_only_filesystem"],
+  ["ENOSPC", "storage_full"],
+  ["EDQUOT", "storage_full"]
+]);
+function classify(error) {
+  if (!(error instanceof Error)) return { errorType: "non_error" };
+  const { code, syscall } = error;
+  if (typeof code === "string" && typeof syscall === "string") {
+    return {
+      errorType: "system_error",
+      ioError: IO_ERRORS.get(code) ?? "other"
+    };
+  }
+  if (error instanceof TypeError) return { errorType: "type_error" };
+  if (error instanceof RangeError) return { errorType: "range_error" };
+  if (error instanceof SyntaxError) return { errorType: "syntax_error" };
+  return { errorType: "error" };
+}
+function asAdapterError(error, stage) {
+  return error instanceof AdapterError ? error : new AdapterError("result_projection_failed", {
+    stage,
+    ...classify(error)
+  });
+}
+
 // src/bootstrap.ts
 var import_node_crypto2 = require("node:crypto");
 var import_node_fs = require("node:fs");
@@ -3065,19 +3115,6 @@ function sanitizedChildEnvironment(source, cliDirectory) {
   const inheritedPath = source.PATH;
   child.PATH = inheritedPath ? `${cliDirectory}${import_node_path.default.delimiter}${inheritedPath}` : cliDirectory;
   return child;
-}
-
-// src/errors.ts
-var AdapterError = class extends Error {
-  code;
-  constructor(code) {
-    super(`Useful Machinery Run failed [${code}].`);
-    this.name = "AdapterError";
-    this.code = code;
-  }
-};
-function asAdapterError(error) {
-  return error instanceof AdapterError ? error : new AdapterError("result_projection_failed");
 }
 
 // src/github.ts
@@ -3534,7 +3571,9 @@ async function extractArchive(archivePath, destination, archive) {
         await (0, import_promises2.chmod)(outputPath, entry.mode);
       }
       next();
-    })().catch((error) => extract2.destroy(asAdapterError(error)));
+    })().catch(
+      (error) => extract2.destroy(asAdapterError(error, "bootstrap"))
+    );
   });
   await (0, import_promises3.pipeline)((0, import_node_fs.createReadStream)(archivePath), (0, import_node_zlib.createGunzip)(), extract2).catch(
     () => {
@@ -3640,7 +3679,7 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
     await (0, import_promises2.rm)(allocation, { recursive: true, force: true }).catch(
       () => void 0
     );
-    throw asAdapterError(error);
+    throw asAdapterError(error, "bootstrap");
   }
 }
 
@@ -3889,7 +3928,7 @@ async function runWorkflow(executable, inputs, allocation, environment, dependen
       ...forwarded === void 0 ? {} : { signalForwarded: forwarded }
     };
   } catch (error) {
-    throw asAdapterError(error);
+    throw asAdapterError(error, "execution");
   } finally {
     active = false;
     dependencies.signals.off("SIGINT", onInterrupt);
@@ -5016,8 +5055,9 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
   let inputs;
   let bootstrap;
   let processResult;
-  const fail = (error) => {
-    failure ??= asAdapterError(error);
+  let phase = "bootstrap";
+  const fail = (error, stage = phase) => {
+    failure ??= asAdapterError(error, stage);
   };
   const cancellation = new AbortController();
   let workflowActive = false;
@@ -5025,7 +5065,9 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
   const cleanupOnce = () => {
     const allocated = allocation;
     if (!allocated) return Promise.resolve();
-    cleanup ??= Promise.resolve().then(() => dependencies.cleanup(allocated)).catch(fail);
+    cleanup ??= Promise.resolve().then(() => dependencies.cleanup(allocated)).catch((error) => {
+      fail(error, "cleanup");
+    });
     return cleanup;
   };
   const cancel = (signal) => () => {
@@ -5039,13 +5081,16 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
   process.on("SIGTERM", onTerminate);
   try {
     bootstrap = await dependencies.bootstrap(environment);
+    phase = "inputs";
     inputs = await dependencies.readInputs(environment);
+    phase = "allocation";
     allocation = await dependencies.allocate(
       environment.RUNNER_TEMP,
       inputs.namedInputs
     );
     if (cancellation.signal.aborted) throw new AdapterError("workflow_failed");
     workflowActive = true;
+    phase = "execution";
     try {
       processResult = await dependencies.execute(
         bootstrap.executable,
@@ -5060,6 +5105,7 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
       workflowActive = false;
       if (cancellation.signal.aborted) await cleanupOnce();
     }
+    phase = "terminal";
     if (processResult) {
       if (processResult.terminalOverflow) {
         fail(new AdapterError("terminal_result_invalid"));
@@ -5078,6 +5124,7 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
         }
       }
     }
+    phase = "identity";
     const runDirectory = await recoverRunDirectory(allocation, terminal);
     outputs["run-directory"] = runDirectory ?? "";
     let identity;
@@ -5089,6 +5136,7 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
       }
     }
     if (!identity) {
+      phase = "recovery";
       const recovered = await dependencies.recover(bootstrap.executable, allocation, bootstrap.environment).catch((error) => {
         fail(error);
         return void 0;
@@ -5102,6 +5150,7 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
       outputs.outcome = identity.outcome ?? "";
       outputs["artifact-set-path"] = identity.artifactDirectory;
       outputs["result-path"] = identity.resultPath;
+      phase = "projection";
       try {
         const validated = await dependencies.project(
           bootstrap.executable,
@@ -5136,7 +5185,9 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
       process.off("SIGTERM", onTerminate);
     }
   }
-  await dependencies.writeOutputs(environment.GITHUB_OUTPUT, outputs).catch(fail);
+  await dependencies.writeOutputs(environment.GITHUB_OUTPUT, outputs).catch((error) => {
+    fail(error, "outputs");
+  });
   return {
     outputs,
     ...failure === void 0 ? {} : { failure }
@@ -5152,9 +5203,8 @@ async function runMain() {
 }
 
 // src/index.ts
-void runMain().catch(() => {
-  process.stderr.write(
-    "Useful Machinery Run failed [result_projection_failed].\n"
-  );
+void runMain().catch((error) => {
+  process.stderr.write(`${asAdapterError(error, "entry").message}
+`);
   process.exitCode = 1;
 });

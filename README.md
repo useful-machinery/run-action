@@ -189,8 +189,10 @@ user and can use the files, environment, processes, credentials, and network acc
 the job makes available. Do not expose a credential to the Action step unless the whole
 workflow may exercise that authority.
 
-Before launching the workflow, the Action removes its `INPUT_` variables and GitHub's
-file-command handles from the child environment. It also prevents workflow log lines
+Before launching the workflow, the Action removes every variable whose name starts with
+`INPUT_` or `UM_RUN_ACTION_`, and GitHub's file-command handles `GITHUB_OUTPUT`,
+`GITHUB_ENV`, `GITHUB_PATH`, `GITHUB_STATE` and `GITHUB_STEP_SUMMARY`, from the child
+environment. It also prevents workflow log lines
 from being interpreted as GitHub workflow commands. Other caller-provided environment
 values remain available under the local Workflow V1 environment policy.
 

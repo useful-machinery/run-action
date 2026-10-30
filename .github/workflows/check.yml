@@ -186,3 +186,37 @@ jobs:
           test "$ACTION_OUTCOME" = failed
           test -d "$ARTIFACT_SET"
           test -f "$RESULT_PATH"
+
+  release:
+    name: Pinned release on ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - macos-15
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.16.0
+          cache: npm
+      - name: Install pinned npm
+        run: npm install --global npm@11.13.0
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run the staged pinned release
+        shell: bash
+        env:
+          UM_RUN_ACTION_RELEASE_BUNDLE: ${{ runner.temp }}/um-release
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types scripts/stage-release.ts "$UM_RUN_ACTION_RELEASE_BUNDLE"
+          node --experimental-strip-types --test tests/release-integration.test.ts

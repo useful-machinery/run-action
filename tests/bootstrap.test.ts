@@ -13,7 +13,7 @@ import {
   DEFAULT_BOOTSTRAP_DEPENDENCIES,
   type BootstrapDependencies,
 } from "../src/bootstrap.ts";
-import { AdapterError } from "../src/errors.ts";
+import { AdapterError, type FailureCode } from "../src/errors.ts";
 import {
   PINNED_RELEASE,
   type ReleaseEvidence,
@@ -320,6 +320,7 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
     const platform = targets[0]!;
     const cases: readonly {
       name: string;
+      code: FailureCode;
       prepare: (fixtureValue: BootstrapFixture) => Promise<{
         fixtureValue: BootstrapFixture;
         deps: BootstrapDependencies;
@@ -327,6 +328,7 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
     }[] = [
       {
         name: "retrieval",
+        code: "bootstrap_download_failed",
         prepare: async (fixtureValue) => ({
           fixtureValue,
           deps: {
@@ -341,9 +343,25 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
           },
         }),
       },
+      {
+        name: "retrieval-status",
+        code: "bootstrap_download_failed",
+        prepare: async (fixtureValue) => ({
+          fixtureValue,
+          deps: {
+            ...dependencies(fixtureValue, {
+              fetched: [],
+              executables: [],
+              appended: [],
+            }),
+            fetch: async () => new Response(null, { status: 404 }),
+          },
+        }),
+      },
       ...(["traversal", "link", "inventory", "mode"] as const).map(
         (mutation) => ({
           name: `tar-${mutation}`,
+          code: "bootstrap_integrity_failed" as const,
           prepare: async () => {
             const fixtureValue = await fixture(platform.target, mutation);
             return {
@@ -367,6 +385,7 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
         ] as const
       ).map((field) => ({
         name: `version-${field}`,
+        code: "bootstrap_version_failed" as const,
         prepare: async (fixtureValue: BootstrapFixture) => ({
           fixtureValue,
           deps: dependencies(
@@ -395,7 +414,8 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
             prepared.deps,
             prepared.fixtureValue.release,
           ),
-          AdapterError,
+          (error: unknown) =>
+            error instanceof AdapterError && error.code === scenario.code,
         );
       });
     }

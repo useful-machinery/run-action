@@ -5,7 +5,11 @@ import path from "node:path";
 import test from "node:test";
 
 import type { BootstrapResult } from "../src/bootstrap.ts";
-import { AdapterError, type FailureCode } from "../src/errors.ts";
+import {
+  AdapterError,
+  type FailureCode,
+  type FailureDiagnostic,
+} from "../src/errors.ts";
 import {
   allocateExecution,
   cleanupExecution,
@@ -169,6 +173,93 @@ test("an unusable workspace or empty workflow fails before allocation and launch
   }
 });
 
+interface CommittedRun {
+  readonly runDirectory: string;
+  readonly artifactDirectory: string;
+  readonly dependencies: ActionDependencies;
+}
+
+// Fakes for a run whose CLI commits a result under `root`; every phase
+// succeeds unless a test overrides its dependency.
+async function committedRun(
+  root: string,
+  outcome: ValidatedResultProjection["outcome"] = "succeeded",
+  code = 0,
+): Promise<CommittedRun> {
+  const runDirectory = path.join(root, "run");
+  const artifactDirectory = path.join(
+    runDirectory,
+    "attempts",
+    "000001",
+    "result",
+  );
+  await mkdir(path.join(artifactDirectory, "exports"), { recursive: true });
+  await writeFile(path.join(artifactDirectory, "result.json"), "{}\n");
+  const allocation: ExecutionAllocation = {
+    parent: root,
+    runDirectory,
+    terminalPath: path.join(root, ".terminal.json"),
+    inputFiles: [],
+  };
+  const actionInputs: ActionInputs = {
+    workspace: root,
+    workflow: path.join(root, "workflow.yaml"),
+    sourceRoot: root,
+    executionRoot: root,
+    namedInputs: [],
+    maximumParallel: "1",
+    selectedExport: "selected",
+  };
+  const bootstrap: BootstrapResult = {
+    executable: "/verified/um",
+    cliDirectory: "/verified",
+    environment: { PATH: "/verified:/caller" },
+  };
+  const terminal: TerminalEnvelope = {
+    schemaVersion: 1,
+    command: "um workflow run",
+    outcome,
+    exitStatus: code,
+    runDirectory,
+    attemptNumber: 1,
+    resultDirectory: artifactDirectory,
+    rootKeys: new Set([
+      "schemaVersion",
+      "command",
+      "outcome",
+      "exitStatus",
+      "runDirectory",
+      "attemptNumber",
+      "resultDirectory",
+      "result",
+    ]),
+  };
+  return {
+    runDirectory,
+    artifactDirectory,
+    dependencies: {
+      bootstrap: async () => bootstrap,
+      readInputs: async () => actionInputs,
+      allocate: async () => allocation,
+      execute: async () => ({
+        code,
+        signal: null,
+        terminalPath: allocation.terminalPath,
+        terminalBytes: 2,
+        terminalOverflow: false,
+      }),
+      readTerminal: async () => terminal,
+      recover: async () => undefined,
+      project: async () => ({
+        outcome,
+        selected: { state: "unavailable" },
+      }),
+      writeOutputs: async () => undefined,
+      cleanup: async () => undefined,
+    },
+  };
+}
+
 // REQ-RUNACTION-42, REQ-RUNACTION-44, REQ-RUNACTION-46, REQ-RUNACTION-48, REQ-RUNACTION-53, REQ-RUNACTION-56, REQ-RUNACTION-58, REQ-RUNACTION-59
 // REQ-RUNACTION-76, REQ-RUNACTION-77
 // INV-EMBED-5
@@ -240,70 +331,14 @@ test("result and process matrix preserves trustworthy outputs and failure preced
     await t.test(scenario.name, async () => {
       const root = await mkdtemp(path.join(os.tmpdir(), "um-main-"));
       try {
-        const runDirectory = path.join(root, "run");
-        const artifactDirectory = path.join(
+        const {
           runDirectory,
-          "attempts",
-          "000001",
-          "result",
-        );
-        await mkdir(path.join(artifactDirectory, "exports"), {
-          recursive: true,
-        });
-        await writeFile(path.join(artifactDirectory, "result.json"), "{}\n");
-        const allocation: ExecutionAllocation = {
-          parent: root,
-          runDirectory,
-          terminalPath: path.join(root, ".terminal.json"),
-          inputFiles: [],
-        };
-        const actionInputs: ActionInputs = {
-          workspace: root,
-          workflow: path.join(root, "workflow.yaml"),
-          sourceRoot: root,
-          executionRoot: root,
-          namedInputs: [],
-          maximumParallel: "1",
-          selectedExport: "selected",
-        };
-        const bootstrap: BootstrapResult = {
-          executable: "/verified/um",
-          cliDirectory: "/verified",
-          environment: { PATH: "/verified:/caller" },
-        };
-        const terminal: TerminalEnvelope = {
-          schemaVersion: 1,
-          command: "um workflow run",
-          outcome: scenario.outcome,
-          exitStatus: scenario.code,
-          runDirectory,
-          attemptNumber: 1,
-          resultDirectory: artifactDirectory,
-          rootKeys: new Set([
-            "schemaVersion",
-            "command",
-            "outcome",
-            "exitStatus",
-            "runDirectory",
-            "attemptNumber",
-            "resultDirectory",
-            "result",
-          ]),
-        };
+          artifactDirectory,
+          dependencies: fakes,
+        } = await committedRun(root, scenario.outcome, scenario.code);
         let writes = 0;
         const dependencies: ActionDependencies = {
-          bootstrap: async () => bootstrap,
-          readInputs: async () => actionInputs,
-          allocate: async () => allocation,
-          execute: async () => ({
-            code: scenario.code,
-            signal: null,
-            terminalPath: allocation.terminalPath,
-            terminalBytes: 2,
-            terminalOverflow: false,
-          }),
-          readTerminal: async () => terminal,
-          recover: async () => undefined,
+          ...fakes,
           project: async () => {
             if (scenario.projectionFailure) throw scenario.projectionFailure;
             return {
@@ -511,31 +546,92 @@ test("authenticated terminal-less recovery retains and validates its result", as
   }
 });
 
-// REQ-RUNACTION-61
+// REQ-RUNACTION-79, REQ-RUNACTION-60, REQ-RUNACTION-61
 // INV-EMBED-5
-test("unexpected dependency errors cannot enter adapter-authored diagnostics", async () => {
+test("an unclassified error names its phase and class but never its text", async (t) => {
   const sentinel = "prompt attachment export credential provider-secret";
-  const result = await executeAction(
-    { GITHUB_OUTPUT: "/retained/output" },
+  const systemError = (code: string, errno: number) =>
+    Object.assign(new Error(sentinel), { code, errno, syscall: "open" });
+  const cases: readonly {
+    name: string;
+    dependencies: Partial<ActionDependencies>;
+    diagnostic: FailureDiagnostic;
+    line?: string;
+  }[] = [
     {
-      bootstrap: async () => {
-        throw new Error(sentinel);
+      name: "bootstrap error",
+      dependencies: {
+        bootstrap: async () => {
+          throw new Error(sentinel);
+        },
       },
-      readInputs: () => unreachable<ActionInputs>(),
-      allocate: () => unreachable<ExecutionAllocation>(),
-      execute: () => unreachable<WorkflowProcessResult>(),
-      readTerminal: () => unreachable<TerminalEnvelope>(),
-      recover: async () => undefined,
-      project: () => unreachable<ValidatedResultProjection>(),
-      writeOutputs: async () => undefined,
-      cleanup: async () => undefined,
+      diagnostic: { stage: "bootstrap", errorType: "error" },
     },
-  );
-  assert.equal(result.failure?.message.includes(sentinel), false);
-  assert.equal(
-    result.failure?.message,
-    "Useful Machinery Run failed [result_projection_failed].",
-  );
+    {
+      name: "terminal type error",
+      dependencies: {
+        readTerminal: async () => {
+          throw new TypeError(sentinel);
+        },
+      },
+      diagnostic: { stage: "terminal", errorType: "type_error" },
+    },
+    {
+      name: "projection permission error",
+      dependencies: {
+        project: async () => {
+          throw systemError("EACCES", -13);
+        },
+      },
+      diagnostic: {
+        stage: "projection",
+        errorType: "system_error",
+        ioError: "permission_denied",
+      },
+      line: "Useful Machinery Run failed [result_projection_failed] (stage=projection errorType=system_error ioError=permission_denied).",
+    },
+    {
+      name: "output storage error",
+      dependencies: {
+        writeOutputs: async () => {
+          throw systemError("ENOSPC", -28);
+        },
+      },
+      diagnostic: {
+        stage: "outputs",
+        errorType: "system_error",
+        ioError: "storage_full",
+      },
+    },
+    {
+      name: "cleanup non-error",
+      dependencies: {
+        cleanup: async () => {
+          throw sentinel;
+        },
+      },
+      diagnostic: { stage: "cleanup", errorType: "non_error" },
+    },
+  ];
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-catch-all-"));
+      try {
+        const { dependencies } = await committedRun(root);
+        const { failure } = await executeAction(
+          { GITHUB_OUTPUT: path.join(root, "github-output") },
+          { ...dependencies, ...scenario.dependencies },
+        );
+        assert.ok(failure);
+        assert.equal(failure.code, "result_projection_failed");
+        assert.deepEqual(failure.diagnostic, scenario.diagnostic);
+        assert.equal(failure.message.includes(sentinel), false);
+        if (scenario.line) assert.equal(failure.message, scenario.line);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
 });
 
 // REQ-RUNACTION-60, REQ-RUNACTION-61
@@ -545,6 +641,7 @@ test("adapter-authored failure is a stable structured fact", () => {
     error.message,
     "Useful Machinery Run failed [artifact_validation_failed].",
   );
+  assert.equal(error.diagnostic, undefined);
   for (const prohibited of [
     "prompt",
     "token",

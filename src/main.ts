@@ -1,5 +1,5 @@
 import { bootstrapCli, type BootstrapResult } from "./bootstrap.ts";
-import { AdapterError, asAdapterError } from "./errors.ts";
+import { AdapterError, asAdapterError, type FailureStage } from "./errors.ts";
 import {
   allocateExecution,
   cleanupExecution,
@@ -113,8 +113,10 @@ export async function executeAction(
   let bootstrap: BootstrapResult | undefined;
   let processResult: WorkflowProcessResult | undefined;
 
-  const fail = (error: unknown): void => {
-    failure ??= asAdapterError(error);
+  // The phase in progress names where an unclassified error escaped.
+  let phase: FailureStage = "bootstrap";
+  const fail = (error: unknown, stage: FailureStage = phase): void => {
+    failure ??= asAdapterError(error, stage);
   };
   const cancellation = new AbortController();
   let workflowActive = false;
@@ -124,7 +126,10 @@ export async function executeAction(
     if (!allocated) return Promise.resolve();
     cleanup ??= Promise.resolve()
       .then(() => dependencies.cleanup(allocated))
-      .catch(fail);
+      .catch((error: unknown) => {
+        // Cleanup can start from a signal handler during another phase.
+        fail(error, "cleanup");
+      });
     return cleanup;
   };
   const cancel = (signal: "SIGINT" | "SIGTERM") => () => {
@@ -142,13 +147,16 @@ export async function executeAction(
   try {
     // Bootstrap deliberately precedes every INPUT_ read.
     bootstrap = await dependencies.bootstrap(environment);
+    phase = "inputs";
     inputs = await dependencies.readInputs(environment);
+    phase = "allocation";
     allocation = await dependencies.allocate(
       environment.RUNNER_TEMP,
       inputs.namedInputs,
     );
     if (cancellation.signal.aborted) throw new AdapterError("workflow_failed");
     workflowActive = true;
+    phase = "execution";
     try {
       processResult = await dependencies.execute(
         bootstrap.executable,
@@ -164,6 +172,7 @@ export async function executeAction(
       if (cancellation.signal.aborted) await cleanupOnce();
     }
 
+    phase = "terminal";
     if (processResult) {
       if (processResult.terminalOverflow) {
         fail(new AdapterError("terminal_result_invalid"));
@@ -187,6 +196,7 @@ export async function executeAction(
       }
     }
 
+    phase = "identity";
     const runDirectory = await recoverRunDirectory(allocation, terminal);
     outputs["run-directory"] = runDirectory ?? "";
 
@@ -199,6 +209,7 @@ export async function executeAction(
       }
     }
     if (!identity) {
+      phase = "recovery";
       const recovered = await dependencies
         .recover(bootstrap.executable, allocation, bootstrap.environment)
         .catch((error: unknown) => {
@@ -214,6 +225,7 @@ export async function executeAction(
       outputs.outcome = identity.outcome ?? "";
       outputs["artifact-set-path"] = identity.artifactDirectory;
       outputs["result-path"] = identity.resultPath;
+      phase = "projection";
       try {
         const validated = await dependencies.project(
           bootstrap.executable,
@@ -257,7 +269,9 @@ export async function executeAction(
 
   await dependencies
     .writeOutputs(environment.GITHUB_OUTPUT, outputs)
-    .catch(fail);
+    .catch((error: unknown) => {
+      fail(error, "outputs");
+    });
   return {
     outputs,
     ...(failure === undefined ? {} : { failure }),
