@@ -68,7 +68,7 @@ jobs:
           CODEX_HOME: ${{ runner.temp }}/codex
       - name: Prepare, resolve, and check the merge
         id: repair
-        uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
+        uses: useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d
         with:
           workflow: automation/.um/workflows/resolve-pr-conflicts.yaml
           source-root: automation/.um

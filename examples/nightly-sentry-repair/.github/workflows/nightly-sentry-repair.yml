@@ -33,7 +33,7 @@ jobs:
         run: npm install --global @earendil-works/pi-coding-agent@0.85.1
       - name: Discover a bounded Sentry issue matrix
         id: discovery
-        uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
+        uses: useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -72,7 +72,7 @@ jobs:
         run: npm install --global @earendil-works/pi-coding-agent@0.85.1
       - name: Diagnose, repair, and retain one Git branch artifact
         id: repair
-        uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
+        uses: useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:

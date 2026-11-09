@@ -6,9 +6,10 @@ The workflow intentionally calls a repository-owned `scripts/publish-um-branch`
 program that is not supplied by this Action.
 
 The executable workflow pins verified public mirror
-`0572ca6153d1d030a1490d2f46298264aebd1cb3`, its named-input interface, CLI v0.57.0,
-and qualified Pi 0.85.1. Source and all three native public jobs passed for that exact
-mirror. A provider-live trial of this composition is a separate qualification.
+`b9de88cc55fb9301697eccb72e42030a49ec495d`, its named-input interface, the bundled CLI
+v0.72.1 (the workflow sets no `um-version`), and Pi 0.85.1. Source, all three native public
+jobs and the pinned-release jobs passed for that exact mirror. A provider-live trial of this
+composition is a separate qualification.
 
 Before enabling the schedule, configure:
 
@@ -38,9 +39,10 @@ inputs: >-
   {"request":{"kind":"json","value":${{ toJSON(matrix.issue) }}}}
 ```
 
-Both jobs install Pi 0.85.1, the independently qualified version within CLI v0.57.0's
-retained `>=0.84.2 <0.88.0` range (Pi 0.99.1 is admitted separately). Keep the Action reference, acquisition form, workflow,
-and harness pin paired on future upgrades. Publication checks do not authorize or prove
+Both jobs install Pi 0.85.1, which sits inside CLI v0.72.1's admitted Pi range
+`>=0.84.2 <0.88.0 || =0.99.1 || =1.2.0 || =1.3.0`. Keep the Action reference, acquisition
+form, workflow, and harness pin paired on future upgrades; a CLI selected through
+`um-version` may admit a different range. Publication checks do not authorize or prove
 provider-live dogfood.
 
 Action output paths remain local to the repair runner. The caller copies the complete,

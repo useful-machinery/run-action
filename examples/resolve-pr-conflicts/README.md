@@ -4,9 +4,10 @@ Comment `/resolve-conflicts` on a pull request. Codex resolves the merge, Useful
 runs your checks, and a separate job pushes one merge commit back to the PR.
 
 This executable example pins verified public mirror
-`0572ca6153d1d030a1490d2f46298264aebd1cb3`, its named-input interface, CLI v0.57.0,
-and qualified Codex 0.153.4. Source and all three native public jobs passed for that exact
-mirror. A live GitHub/model trial remains outstanding.
+`b9de88cc55fb9301697eccb72e42030a49ec495d`, its named-input interface, the bundled CLI
+v0.72.1 (the workflow sets no `um-version`), and Codex 0.153.4. Source, all three native
+public jobs and the pinned-release jobs passed for that exact mirror. A live GitHub/model
+trial remains outstanding.
 
 GitHub.com only; open, same-repository PRs and commenters with write access.
 
@@ -57,8 +58,8 @@ commands. The DAG currently expects the trusted `automation` checkout alongside
 its execution root; importable Useful Machinery DAGs can replace this packaging later.
 
 GitHub's actions use readable version tags. Only the Useful Machinery Run Action keeps its
-SHA, since it has no version tags yet. Codex stays at `0.153.4`, the qualified
-version for CLI v0.57.0 (`>=0.147.0 <0.159.0`); check compatibility before upgrading
+SHA, since it has no version tags yet. Codex stays at `0.153.4`, inside CLI v0.72.1's
+admitted Codex range (`>=0.147.0 <0.164.0`); check compatibility before upgrading
 either pin. Version tags can move, unlike immutable commit SHAs.
 
 ## Named Text request
@@ -72,8 +73,9 @@ inputs: >-
   {"request":{"kind":"text","value":${{ toJSON(needs.authorize.outputs.pr) }}}}
 ```
 
-CLI v0.57.0 retains the same admitted Codex range and qualified 0.153.4 release. Do not
-update only the reference, acquisition form, or Useful Machinery workflow on a future upgrade.
+CLI v0.72.1 admits Codex `>=0.147.0 <0.164.0`, which includes the pinned 0.153.4 release;
+a CLI selected through `um-version` may admit a different range. Do not update only the
+reference, acquisition form, or Useful Machinery workflow on a future upgrade.
 
 ## Why the separate publisher?
 

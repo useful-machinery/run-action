@@ -1,9 +1,9 @@
 # Useful Machinery Run Action
 
-The implementation pins the checksum-verified `um` v0.72.1 release. Until the example
-cutover, the examples still pin public mirror revision
-`0572ca6153d1d030a1490d2f46298264aebd1cb3`, which carries `um` v0.57.0;
-[source and all three native behavior jobs passed](https://github.com/useful-machinery/run-action/actions/runs/37415128498)
+The implementation pins the checksum-verified `um` v0.72.1 release. This README and both
+executable examples select public mirror revision
+`b9de88cc55fb9301697eccb72e42030a49ec495d`, which carries that release;
+[source, all three native behavior jobs and the pinned-release jobs passed](https://github.com/useful-machinery/run-action/actions/runs/42555199928)
 for that exact mirror revision.
 
 Run a checked-in Useful Machinery workflow inside a GitHub Actions job—without sending the
@@ -84,7 +84,7 @@ steps:
       persist-credentials: false
   - name: Run checked-in Useful Machinery workflow
     id: um
-    uses: useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3
+    uses: useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d
     with:
       workflow: .um/workflows/ci.yaml
   - name: Consume the retained result in the same job
@@ -106,8 +106,11 @@ The source tree also contains a working
 [nightly Sentry repair composition](examples/nightly-sentry-repair/README.md). The latter
 adds agent-produced JSON discovery, a bounded GitHub matrix, and publisher
 failure-isolation verification. Both executable examples use named `request` inputs and
-pin the same verified v0.57.0 Action mirror: JSON for Sentry and Text for the conflict
-resolver. Their harness versions are compatible with that released CLI.
+pin the same verified Action mirror: JSON for Sentry and Text for the conflict resolver.
+Neither sets `um-version`, so each installs the `um` v0.72.1 release this revision bundles,
+and their harness pins sit inside that CLI's admitted ranges. To follow new CLI releases
+instead, add `um-version: latest` to the step's `with:` block, as
+[Choosing the CLI version](#choosing-the-cli-version) describes.
 
 Keep each example's reference, acquisition form, workflow, and harness requirements
 paired when upgrading. V1 provides no moving `v1`, `latest`, or semantic-version tag; do not

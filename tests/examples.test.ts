@@ -10,7 +10,7 @@ const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const verifiedNamedInputSha = "0572ca6153d1d030a1490d2f46298264aebd1cb3";
+const verifiedNamedInputSha = "b9de88cc55fb9301697eccb72e42030a49ec495d";
 const verifiedReference = `useful-machinery/run-action@${verifiedNamedInputSha}`;
 const workflowPath = path.join(
   packageRoot,

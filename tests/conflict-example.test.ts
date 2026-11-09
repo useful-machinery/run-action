@@ -24,7 +24,7 @@ import {
 
 const repository = "example/project";
 const verifiedRunAction =
-  "useful-machinery/run-action@0572ca6153d1d030a1490d2f46298264aebd1cb3";
+  "useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d";
 const head = "1".repeat(40);
 const base = "2".repeat(40);
 const pr = {
