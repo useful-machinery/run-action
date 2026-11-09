@@ -4,6 +4,7 @@ import { appendFile } from "node:fs/promises";
 import { AdapterError } from "./errors.ts";
 
 export const OUTPUT_NAMES = [
+  "um-version",
   "outcome",
   "run-directory",
   "artifact-set-path",

@@ -17,26 +17,41 @@ import { createGunzip } from "node:zlib";
 import * as tar from "tar-stream";
 
 import { sanitizedChildEnvironment } from "./environment.ts";
-import { AdapterError, asAdapterError } from "./errors.ts";
+import { AdapterError, asAdapterError, type FailureCode } from "./errors.ts";
 import { appendVerifiedPath } from "./github.ts";
 import {
+  LATEST_RELEASE_URL,
+  LATEST_TAG_PATTERN,
   PINNED_RELEASE,
+  selectedReleaseAssets,
   selectTarget,
-  type ArchiveEvidence,
   type ReleaseEvidence,
+  type TargetTriple,
+  type VersionSelection,
+  type VersionSource,
 } from "./release.ts";
 import { captureCommand, type CapturedCommand } from "./subprocess.ts";
 
 const VERSION_OUTPUT_LIMIT = 65_536;
+// Bounds of a selected release's downloads, which have no pinned size.
+export const MAXIMUM_CHECKSUM_BYTES = 4096;
+export const MAXIMUM_ARCHIVE_BYTES = 256 * 1024 * 1024;
+const BUILD_IDENTITY_PATTERN = /^[0-9a-f]{40}$/u;
 
 export interface BootstrapResult {
   readonly executable: string;
   readonly cliDirectory: string;
   readonly environment: NodeJS.ProcessEnv;
+  readonly version: string;
+  readonly source: VersionSource;
+  readonly buildIdentity: string;
 }
 
 export interface BootstrapDependencies {
-  readonly fetch: (url: string) => Promise<Response>;
+  readonly fetch: (
+    url: string,
+    redirect: "follow" | "manual",
+  ) => Promise<Response>;
   readonly runVersion: (
     executable: string,
     environment: NodeJS.ProcessEnv,
@@ -48,7 +63,7 @@ export interface BootstrapDependencies {
 }
 
 export const DEFAULT_BOOTSTRAP_DEPENDENCIES: BootstrapDependencies = {
-  fetch: (url) => fetch(url, { redirect: "follow" }),
+  fetch: (url, redirect) => fetch(url, { redirect }),
   runVersion: (executable, environment) =>
     captureCommand(
       executable,
@@ -60,20 +75,135 @@ export const DEFAULT_BOOTSTRAP_DEPENDENCIES: BootstrapDependencies = {
   appendPath: appendVerifiedPath,
 };
 
+// A download's expectation: `limit` always bounds it; `size` and `sha256` are
+// compared only when pinned. `missing` names the code of a 404 answer.
 interface DownloadIdentity {
-  readonly size: number;
-  readonly sha256: string;
   readonly url: string;
+  readonly limit: number;
+  readonly size?: number | undefined;
+  readonly sha256?: string | undefined;
+  readonly missing?: FailureCode | undefined;
+}
+
+interface InventoryEntry {
+  readonly path: string;
+  readonly type: string;
+  readonly mode: number;
+  readonly size?: number;
+}
+
+// An archive's expectation: the pinned evidence, or for a selected release
+// the constructed name and the canonical layout with sizes unpinned.
+interface ArchiveExpectation {
+  readonly name: string;
+  readonly url: string;
+  readonly rootDirectory: string;
+  readonly size?: number;
+  readonly sha256?: string;
+  readonly inventory: readonly InventoryEntry[];
+}
+
+// What one bootstrap installs and how it is verified.
+interface Installation {
+  readonly version: string;
+  readonly source: VersionSource;
+  readonly checksums: DownloadIdentity;
+  // Every archive name the checksum list must hold, with its pinned digest
+  // when there is a pin.
+  readonly listed: ReadonlyMap<string, string | undefined>;
+  readonly archive: ArchiveExpectation;
+  // The pinned build identity, or undefined for a selected release.
+  readonly buildIdentity: string | undefined;
+}
+
+function pinnedInstallation(
+  release: ReleaseEvidence,
+  target: TargetTriple,
+): Installation {
+  const archive = release.archives[target];
+  return {
+    version: release.version,
+    source: "bundled",
+    checksums: {
+      ...release.checksumAsset,
+      limit: release.checksumAsset.size,
+    },
+    listed: new Map(
+      Object.values(release.archives).map((entry) => [
+        entry.name,
+        entry.sha256,
+      ]),
+    ),
+    archive,
+    buildIdentity: release.buildIdentity,
+  };
+}
+
+function selectedInstallation(
+  version: string,
+  source: VersionSource,
+  target: TargetTriple,
+): Installation {
+  const assets = selectedReleaseAssets(version);
+  const archive = assets.archives[target];
+  const root = archive.rootDirectory;
+  return {
+    version,
+    source,
+    checksums: {
+      url: assets.checksumsUrl,
+      limit: MAXIMUM_CHECKSUM_BYTES,
+      missing:
+        source === "requested" ? "bootstrap_release_unavailable" : undefined,
+    },
+    listed: new Map(
+      Object.values(assets.archives).map((entry) => [entry.name, undefined]),
+    ),
+    archive: {
+      ...archive,
+      inventory: [
+        { path: root, type: "directory", mode: 0o755 },
+        { path: `${root}/LICENSE`, type: "file", mode: 0o644 },
+        { path: `${root}/README.md`, type: "file", mode: 0o644 },
+        { path: `${root}/um`, type: "file", mode: 0o755 },
+      ],
+    },
+    buildIdentity: undefined,
+  };
+}
+
+// Resolves `latest` from the release page's redirect alone (REQ-RUNACTION-83).
+async function discoverLatest(
+  fetchRelease: BootstrapDependencies["fetch"],
+): Promise<string> {
+  const response = await fetchRelease(LATEST_RELEASE_URL, "manual").catch(
+    () => {
+      throw new AdapterError("bootstrap_release_discovery_failed");
+    },
+  );
+  await response.body?.cancel().catch(() => undefined);
+  const location = response.headers.get("location");
+  const match =
+    response.status >= 300 && response.status < 400 && location !== null
+      ? LATEST_TAG_PATTERN.exec(location)
+      : null;
+  if (!match) {
+    throw new AdapterError("bootstrap_release_discovery_failed");
+  }
+  return match[1]!;
 }
 
 async function downloadVerified(
   destination: string,
   identity: DownloadIdentity,
-  fetchRelease: (url: string) => Promise<Response>,
+  fetchRelease: BootstrapDependencies["fetch"],
 ): Promise<void> {
-  const response = await fetchRelease(identity.url).catch(() => {
+  const response = await fetchRelease(identity.url, "follow").catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
+  if (response.status === 404 && identity.missing !== undefined) {
+    throw new AdapterError(identity.missing);
+  }
   if (!response.ok || response.body === null) {
     throw new AdapterError("bootstrap_download_failed");
   }
@@ -81,7 +211,8 @@ async function downloadVerified(
   if (
     contentLength !== null &&
     (!/^[0-9]+$/u.test(contentLength) ||
-      Number(contentLength) !== identity.size)
+      Number(contentLength) > identity.limit ||
+      (identity.size !== undefined && Number(contentLength) !== identity.size))
   ) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
@@ -99,7 +230,10 @@ async function downloadVerified(
     for await (const value of response.body) {
       const chunk = Buffer.from(value);
       bytes += chunk.length;
-      if (bytes > identity.size) {
+      if (
+        bytes > identity.limit ||
+        (identity.size !== undefined && bytes > identity.size)
+      ) {
         throw new AdapterError("bootstrap_integrity_failed");
       }
       digest.update(chunk);
@@ -114,12 +248,20 @@ async function downloadVerified(
     await handle.close().catch(() => undefined);
   }
 
-  if (bytes !== identity.size || digest.digest("hex") !== identity.sha256) {
+  if (
+    (identity.size !== undefined && bytes !== identity.size) ||
+    (identity.sha256 !== undefined && digest.digest("hex") !== identity.sha256)
+  ) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
 }
 
-function verifyChecksumAsset(bytes: Buffer, release: ReleaseEvidence): void {
+// Requires the checksum list to hold exactly the `listed` names, once each,
+// with their pinned digests where pinned, and returns every listed digest.
+function verifyChecksumAsset(
+  bytes: Buffer,
+  listed: ReadonlyMap<string, string | undefined>,
+): ReadonlyMap<string, string> {
   if (bytes.includes(0) || !bytes.every((byte) => byte < 0x80)) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
@@ -128,7 +270,7 @@ function verifyChecksumAsset(bytes: Buffer, release: ReleaseEvidence): void {
     throw new AdapterError("bootstrap_integrity_failed");
   }
   const lines = text.slice(0, -1).split("\n");
-  if (lines.length !== Object.keys(release.archives).length) {
+  if (lines.length !== listed.size) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
 
@@ -140,11 +282,13 @@ function verifyChecksumAsset(bytes: Buffer, release: ReleaseEvidence): void {
     }
     observed.set(match[2]!, match[1]!);
   }
-  for (const archive of Object.values(release.archives)) {
-    if (observed.get(archive.name) !== archive.sha256) {
+  for (const [name, pinned] of listed) {
+    const digest = observed.get(name);
+    if (digest === undefined || (pinned !== undefined && digest !== pinned)) {
       throw new AdapterError("bootstrap_integrity_failed");
     }
   }
+  return observed;
 }
 
 function safeTarPath(name: string, directory: boolean): string {
@@ -169,7 +313,7 @@ function safeTarPath(name: string, directory: boolean): string {
 async function extractArchive(
   archivePath: string,
   destination: string,
-  archive: ArchiveEvidence,
+  archive: ArchiveExpectation,
 ): Promise<void> {
   const expected = new Map(
     archive.inventory.map((entry) => [entry.path, entry]),
@@ -192,7 +336,7 @@ async function extractArchive(
         entry.type !== (isDirectory ? "directory" : "file") ||
         header.mode === undefined ||
         entry.mode !== (header.mode & 0o7777) ||
-        entry.size !== header.size
+        (entry.size !== undefined && entry.size !== header.size)
       ) {
         throw new AdapterError("bootstrap_integrity_failed");
       }
@@ -226,12 +370,17 @@ async function extractArchive(
           fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_WRONLY,
           0o600,
         );
+        // An unpinned size is bounded by the entry's own header.
+        const size = entry.size ?? header.size;
+        if (size === undefined) {
+          throw new AdapterError("bootstrap_integrity_failed");
+        }
         let written = 0;
         try {
           for await (const value of stream) {
             const chunk = Buffer.from(value as Uint8Array);
             written += chunk.length;
-            if (written > entry.size) {
+            if (written > size) {
               throw new AdapterError("bootstrap_integrity_failed");
             }
             await handle.write(chunk);
@@ -240,7 +389,7 @@ async function extractArchive(
         } finally {
           await handle.close().catch(() => undefined);
         }
-        if (written !== entry.size) {
+        if (written !== size) {
           throw new AdapterError("bootstrap_integrity_failed");
         }
         await chmod(outputPath, entry.mode);
@@ -268,7 +417,9 @@ async function extractArchive(
       status.isSymbolicLink() ||
       (entry.type === "file" ? !status.isFile() : !status.isDirectory()) ||
       (status.mode & 0o7777) !== entry.mode ||
-      (entry.type === "file" && status.size !== entry.size)
+      (entry.type === "file" &&
+        entry.size !== undefined &&
+        status.size !== entry.size)
     ) {
       throw new AdapterError("bootstrap_integrity_failed");
     }
@@ -286,10 +437,10 @@ function exactObjectKeys(value: object, expected: readonly string[]): boolean {
 async function verifyVersion(
   executable: string,
   cliDirectory: string,
-  release: ReleaseEvidence,
+  installation: Installation,
   sourceEnvironment: NodeJS.ProcessEnv,
   runVersion: BootstrapDependencies["runVersion"],
-): Promise<NodeJS.ProcessEnv> {
+): Promise<{ environment: NodeJS.ProcessEnv; buildIdentity: string }> {
   const environment = sanitizedChildEnvironment(
     sourceEnvironment,
     cliDirectory,
@@ -327,20 +478,24 @@ async function verifyVersion(
   if (
     record.schemaVersion !== 1 ||
     record.command !== "um" ||
-    record.version !== release.version ||
+    record.version !== installation.version ||
     record.executablePath !== resolvedExecutable ||
-    record.buildIdentity !== release.buildIdentity ||
-    record.buildIdentity === "unknown"
+    typeof record.buildIdentity !== "string" ||
+    record.buildIdentity === "unknown" ||
+    (installation.buildIdentity === undefined
+      ? !BUILD_IDENTITY_PATTERN.test(record.buildIdentity)
+      : record.buildIdentity !== installation.buildIdentity)
   ) {
     throw new AdapterError("bootstrap_version_failed");
   }
-  return environment;
+  return { environment, buildIdentity: record.buildIdentity };
 }
 
 export async function bootstrapCli(
   environment: NodeJS.ProcessEnv,
   dependencies: BootstrapDependencies = DEFAULT_BOOTSTRAP_DEPENDENCIES,
   release: ReleaseEvidence = PINNED_RELEASE,
+  selection: VersionSelection = { kind: "bundled" },
 ): Promise<BootstrapResult> {
   const target = selectTarget(environment.RUNNER_OS, environment.RUNNER_ARCH);
   if (!target) {
@@ -358,23 +513,47 @@ export async function bootstrapCli(
     throw new AdapterError("bootstrap_platform_unsupported");
   }
 
-  const archive = release.archives[target];
+  // Discovery follows the platform and RUNNER_TEMP checks and precedes
+  // allocation; a selected release never falls back to the pin.
+  const installation =
+    selection.kind === "bundled"
+      ? pinnedInstallation(release, target)
+      : selection.kind === "latest"
+        ? selectedInstallation(
+            await discoverLatest(dependencies.fetch),
+            "latest",
+            target,
+          )
+        : selectedInstallation(selection.version, "requested", target);
+  const archive = installation.archive;
   const allocation = await mkdtemp(
     path.join(canonicalRunnerTemp, ".um-run-cli-"),
   ).catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
-  const checksumPath = path.join(allocation, release.checksumAsset.name);
+  const checksumPath = path.join(allocation, "SHA256SUMS");
   const archivePath = path.join(allocation, archive.name);
   try {
     await chmod(allocation, 0o700);
     await downloadVerified(
       checksumPath,
-      release.checksumAsset,
+      installation.checksums,
       dependencies.fetch,
     );
-    verifyChecksumAsset(await readFile(checksumPath), release);
-    await downloadVerified(archivePath, archive, dependencies.fetch);
+    const listed = verifyChecksumAsset(
+      await readFile(checksumPath),
+      installation.listed,
+    );
+    await downloadVerified(
+      archivePath,
+      {
+        url: archive.url,
+        limit: archive.size ?? MAXIMUM_ARCHIVE_BYTES,
+        size: archive.size,
+        sha256: archive.sha256 ?? listed.get(archive.name),
+      },
+      dependencies.fetch,
+    );
     await extractArchive(archivePath, allocation, archive);
     await rm(checksumPath, { force: true });
     await rm(archivePath, { force: true });
@@ -390,15 +569,22 @@ export async function bootstrapCli(
     ) {
       throw new AdapterError("bootstrap_integrity_failed");
     }
-    const childEnvironment = await verifyVersion(
+    const verified = await verifyVersion(
       executable,
       cliDirectory,
-      release,
+      installation,
       environment,
       dependencies.runVersion,
     );
     await dependencies.appendPath(environment.GITHUB_PATH, cliDirectory);
-    return { executable, cliDirectory, environment: childEnvironment };
+    return {
+      executable,
+      cliDirectory,
+      environment: verified.environment,
+      version: installation.version,
+      source: installation.source,
+      buildIdentity: verified.buildIdentity,
+    };
   } catch (error) {
     await rm(allocation, { recursive: true, force: true }).catch(
       () => undefined,

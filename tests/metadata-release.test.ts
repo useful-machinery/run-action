@@ -21,6 +21,7 @@ const inputNames = [
   "inputs",
   "max-parallel",
   "export",
+  "um-version",
 ];
 
 // REQ-RUNACTION-3, REQ-RUNACTION-14, REQ-RUNACTION-15, REQ-RUNACTION-42, REQ-RUNACTION-67
@@ -34,6 +35,7 @@ test("action.yml exposes only the V1 metadata surface and Node 24 bundle", async
   };
   assert.deepEqual(Object.keys(metadata.inputs), inputNames);
   assert.deepEqual(Object.keys(metadata.outputs), [...OUTPUT_NAMES]);
+  assert.equal(OUTPUT_NAMES[0], "um-version");
   assert.deepEqual(metadata.runs, { using: "node24", main: "dist/index.cjs" });
   assert.equal(
     (metadata.inputs.workflow as { required: boolean }).required,
@@ -49,6 +51,9 @@ test("action.yml exposes only the V1 metadata surface and Node 24 bundle", async
     (metadata.inputs["max-parallel"] as { default: string }).default,
     "1",
   );
+  const umVersion = metadata.inputs["um-version"] as Record<string, unknown>;
+  assert.equal(umVersion.required, false);
+  assert.equal(Object.hasOwn(umVersion, "default"), false);
 });
 
 test("public checks define source and all supported native behavior jobs", async () => {
@@ -134,71 +139,69 @@ test("public checks define source and all supported native behavior jobs", async
   assert.ok(releaseRun.env?.UM_RUN_ACTION_RELEASE_BUNDLE);
 });
 
-// REQ-RUNACTION-6
+// REQ-RUNACTION-6, REQ-RUNACTION-81, REQ-ONBOARD-4
 // INV-EMBED-1
-test("release evidence is the closed observed v0.57.0 release", () => {
+test("release evidence is a closed, internally consistent stable release", async () => {
   assert.deepEqual(PINNED_RELEASE, evidence);
-  assert.deepEqual(
-    {
-      repository: evidence.repository,
-      releaseUrl: evidence.releaseUrl,
-      tag: evidence.tag,
-      releaseId: evidence.releaseId,
-      releaseCommit: evidence.releaseCommit,
-      sourceRevision: evidence.sourceRevision,
-      requiredSourceAncestor: evidence.requiredSourceAncestor,
-      version: evidence.version,
-      buildIdentity: evidence.buildIdentity,
-      checksumAsset: evidence.checksumAsset,
-    },
-    {
-      repository: "useful-machinery/um",
-      releaseUrl: "https://github.com/useful-machinery/um/releases/tag/v0.57.0",
-      tag: "v0.57.0",
-      releaseId: 404290732,
-      releaseCommit: "e92b2e06fc603767239a23a6076a93a2e3e32fa2",
-      sourceRevision: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
-      requiredSourceAncestor: "7215869ca26439d305c097af1dca50ebb8066419",
-      version: "0.57.0",
-      buildIdentity: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
-      checksumAsset: {
-        id: 614393726,
-        name: "SHA256SUMS",
-        size: 321,
-        sha256:
-          "96ed3611bc4ec48733bce3a177d795b835f39c2b811918306e865765746a8a71",
-        url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/SHA256SUMS",
-      },
-    },
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.repository, "useful-machinery/um");
+  assert.match(evidence.version, /^\d+\.\d+\.\d+$/u);
+  const { tag, version } = evidence;
+  assert.equal(tag, `v${version}`);
+  assert.equal(
+    evidence.releaseUrl,
+    `https://github.com/useful-machinery/um/releases/tag/${tag}`,
   );
-  assert.deepEqual(
-    Object.fromEntries(
-      Object.entries(evidence.archives).map(([target, archive]) => [
-        target,
-        [archive.id, archive.name, archive.size, archive.sha256],
-      ]),
-    ),
-    {
-      "x86_64-unknown-linux-gnu": [
-        614393724,
-        "um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
-        16432906,
-        "8c33e713ed96e89f2fff18d2f27d480875d5cc037df3b760d7bc096193b2c6e5",
-      ],
-      "aarch64-unknown-linux-gnu": [
-        614393727,
-        "um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
-        16902733,
-        "f9e1d4e5fc1126b839855ba91b38123dfe217944d978177fa782a28717569b5f",
-      ],
-      "aarch64-apple-darwin": [
-        614393725,
-        "um-0.57.0-aarch64-apple-darwin.tar.gz",
-        15179976,
-        "a4f5f9bedb3f6a4570de2d898c9a4bb6d12b6c9cd6282ab469f43d0562da14ee",
-      ],
-    },
+  assert.ok(Number.isInteger(evidence.releaseId) && evidence.releaseId > 0);
+  for (const revision of [
+    evidence.releaseCommit,
+    evidence.sourceRevision,
+    evidence.requiredSourceAncestor,
+  ]) {
+    assert.match(revision, /^[0-9a-f]{40}$/u);
+  }
+  assert.equal(evidence.buildIdentity, evidence.releaseCommit);
+  assert.equal(
+    evidence.requiredSourceAncestor,
+    "7215869ca26439d305c097af1dca50ebb8066419",
   );
+  const download = `https://github.com/useful-machinery/um/releases/download/${tag}`;
+  assert.equal(evidence.checksumAsset.name, "SHA256SUMS");
+  assert.equal(evidence.checksumAsset.url, `${download}/SHA256SUMS`);
+  assert.match(evidence.checksumAsset.sha256, /^[0-9a-f]{64}$/u);
+  assert.ok(evidence.checksumAsset.size > 0);
+  assert.deepEqual(Object.keys(evidence.archives), [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+  ]);
+  for (const [target, archive] of Object.entries(evidence.archives)) {
+    const root = `um-${version}-${target}`;
+    assert.equal(archive.name, `${root}.tar.gz`);
+    assert.equal(archive.url, `${download}/${archive.name}`);
+    assert.equal(archive.rootDirectory, root);
+    assert.deepEqual(
+      archive.inventory.map((entry) => ({
+        path: entry.path,
+        type: entry.type,
+        mode: entry.mode,
+      })),
+      [
+        { path: root, type: "directory", mode: 493 },
+        { path: `${root}/LICENSE`, type: "file", mode: 420 },
+        { path: `${root}/README.md`, type: "file", mode: 420 },
+        { path: `${root}/um`, type: "file", mode: 493 },
+      ],
+    );
+    assert.equal(archive.inventory[0]?.size, 0);
+    for (const entry of archive.inventory.slice(1)) {
+      assert.ok(Number.isInteger(entry.size) && entry.size > 0);
+    }
+    assert.match(archive.sha256, /^[0-9a-f]{64}$/u);
+    assert.ok(archive.size > 0);
+  }
+  const readme = await readFile(path.join(packageRoot, "README.md"), "utf8");
+  assert.ok(readme.includes(`\`um\` v${version}`));
   const serialized = JSON.stringify(evidence).toLowerCase();
   for (const forbidden of [
     "latest",

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import {
   appendFile,
   mkdir,
@@ -22,12 +21,9 @@ import {
   type ArtifactValidator,
 } from "../src/result.ts";
 import { fakeCli, paddedJson } from "./fake-cli.ts";
+import { sha256 as digest } from "./fake-release.ts";
 
 type ExportEntry = Record<string, unknown>;
-
-function digest(bytes: Uint8Array): string {
-  return createHash("sha256").update(bytes).digest("hex");
-}
 
 function byteEntry(
   kind: "file" | "text" | "json",

@@ -22,7 +22,12 @@ inputs:
   export:
     description: Named workflow export to bridge after validation.
     required: false
+  um-version:
+    description: CLI release to install; empty for the bundled pin, latest, or an exact MAJOR.MINOR.PATCH.
+    required: false
 outputs:
+  um-version:
+    description: Verified and installed CLI version, when bootstrap completed.
   outcome:
     description: Committed workflow outcome, when available.
   run-directory:

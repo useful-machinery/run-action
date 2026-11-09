@@ -14,6 +14,7 @@ import {
   writeOutputs,
 } from "../src/github.ts";
 import { parseNamedInputs, readActionInputs } from "../src/inputs.ts";
+import { parseVersionSelection } from "../src/release.ts";
 
 async function withWorkspace(
   callback: (workspace: string) => Promise<void>,
@@ -161,6 +162,36 @@ test("the acquisition grammar rejects malformed, duplicate, unknown, and wrong-k
     `{"name":{"kind":"text","value":"${String.fromCharCode(0xd800)}"}}`,
   ];
   malformed.forEach((document) => rejectsInput(document));
+});
+
+// REQ-RUNACTION-82
+test("um-version selects the bundled, latest, or one exact release", () => {
+  for (const value of [undefined, ""]) {
+    assert.deepEqual(parseVersionSelection(value), { kind: "bundled" });
+  }
+  assert.deepEqual(parseVersionSelection("latest"), { kind: "latest" });
+  for (const version of ["0.72.1", "10.0.3"]) {
+    assert.deepEqual(parseVersionSelection(version), {
+      kind: "requested",
+      version,
+    });
+  }
+  for (const value of [
+    "1.2",
+    "v1.2.3",
+    "01.2.3",
+    "1.2.3-rc1",
+    " 1.2.3",
+    "1.2.3\n",
+    "Latest",
+    "LATEST",
+  ]) {
+    assert.throws(
+      () => parseVersionSelection(value),
+      (error: unknown) =>
+        error instanceof AdapterError && error.code === "input_invalid",
+    );
+  }
 });
 
 // REQ-RUNACTION-18

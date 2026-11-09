@@ -3121,6 +3121,7 @@ function sanitizedChildEnvironment(source, cliDirectory) {
 var import_node_crypto = require("node:crypto");
 var import_promises = require("node:fs/promises");
 var OUTPUT_NAMES = [
+  "um-version",
   "outcome",
   "run-directory",
   "artifact-set-path",
@@ -3238,121 +3239,121 @@ var WorkflowCommandGuard = class {
 var release_evidence_default = {
   schemaVersion: 1,
   repository: "useful-machinery/um",
-  releaseUrl: "https://github.com/useful-machinery/um/releases/tag/v0.57.0",
-  tag: "v0.57.0",
-  releaseId: 404290732,
-  releaseCommit: "e92b2e06fc603767239a23a6076a93a2e3e32fa2",
-  sourceRevision: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
+  releaseUrl: "https://github.com/useful-machinery/um/releases/tag/v0.72.1",
+  tag: "v0.72.1",
+  releaseId: 436506372,
+  releaseCommit: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
+  sourceRevision: "d84ce7c3212633b3f4d8b5cfb1304f83e15d9ab9",
   requiredSourceAncestor: "7215869ca26439d305c097af1dca50ebb8066419",
-  version: "0.57.0",
-  buildIdentity: "c8deee65ec16c0f311c9d74cdccd6907561af53a",
+  version: "0.72.1",
+  buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
   checksumAsset: {
-    id: 614393726,
+    id: 717190901,
     name: "SHA256SUMS",
     size: 321,
-    sha256: "96ed3611bc4ec48733bce3a177d795b835f39c2b811918306e865765746a8a71",
-    url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/SHA256SUMS"
+    sha256: "cbaad98f589b1eeeb3310bb3127a179cc5232ab9e8f189b2a5c1775e0bbaec58",
+    url: "https://github.com/useful-machinery/um/releases/download/v0.72.1/SHA256SUMS"
   },
   archives: {
     "x86_64-unknown-linux-gnu": {
-      id: 614393724,
-      name: "um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
-      size: 16432906,
-      sha256: "8c33e713ed96e89f2fff18d2f27d480875d5cc037df3b760d7bc096193b2c6e5",
-      url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-x86_64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "um-0.57.0-x86_64-unknown-linux-gnu",
+      id: 717190897,
+      name: "um-0.72.1-x86_64-unknown-linux-gnu.tar.gz",
+      size: 18707904,
+      sha256: "77b77c44f02a4eba3f3fcb24c172a0a71e0026a647acc343943e0fe94fcc67ca",
+      url: "https://github.com/useful-machinery/um/releases/download/v0.72.1/um-0.72.1-x86_64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "um-0.72.1-x86_64-unknown-linux-gnu",
       inventory: [
         {
-          path: "um-0.57.0-x86_64-unknown-linux-gnu",
+          path: "um-0.72.1-x86_64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "um-0.57.0-x86_64-unknown-linux-gnu/LICENSE",
+          path: "um-0.72.1-x86_64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "um-0.57.0-x86_64-unknown-linux-gnu/README.md",
+          path: "um-0.72.1-x86_64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
-          size: 106126
+          size: 131786
         },
         {
-          path: "um-0.57.0-x86_64-unknown-linux-gnu/um",
+          path: "um-0.72.1-x86_64-unknown-linux-gnu/um",
           type: "file",
           mode: 493,
-          size: 55608976
+          size: 64641488
         }
       ]
     },
     "aarch64-unknown-linux-gnu": {
-      id: 614393727,
-      name: "um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
-      size: 16902733,
-      sha256: "f9e1d4e5fc1126b839855ba91b38123dfe217944d978177fa782a28717569b5f",
-      url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-aarch64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "um-0.57.0-aarch64-unknown-linux-gnu",
+      id: 717190900,
+      name: "um-0.72.1-aarch64-unknown-linux-gnu.tar.gz",
+      size: 19293225,
+      sha256: "1462132c82cf97ba910cc71c4b5b9a65f45fe0777be5be2a79b320becc883325",
+      url: "https://github.com/useful-machinery/um/releases/download/v0.72.1/um-0.72.1-aarch64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "um-0.72.1-aarch64-unknown-linux-gnu",
       inventory: [
         {
-          path: "um-0.57.0-aarch64-unknown-linux-gnu",
+          path: "um-0.72.1-aarch64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "um-0.57.0-aarch64-unknown-linux-gnu/LICENSE",
+          path: "um-0.72.1-aarch64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "um-0.57.0-aarch64-unknown-linux-gnu/README.md",
+          path: "um-0.72.1-aarch64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
-          size: 106126
+          size: 131786
         },
         {
-          path: "um-0.57.0-aarch64-unknown-linux-gnu/um",
+          path: "um-0.72.1-aarch64-unknown-linux-gnu/um",
           type: "file",
           mode: 493,
-          size: 52945216
+          size: 61496976
         }
       ]
     },
     "aarch64-apple-darwin": {
-      id: 614393725,
-      name: "um-0.57.0-aarch64-apple-darwin.tar.gz",
-      size: 15179976,
-      sha256: "a4f5f9bedb3f6a4570de2d898c9a4bb6d12b6c9cd6282ab469f43d0562da14ee",
-      url: "https://github.com/useful-machinery/um/releases/download/v0.57.0/um-0.57.0-aarch64-apple-darwin.tar.gz",
-      rootDirectory: "um-0.57.0-aarch64-apple-darwin",
+      id: 717190903,
+      name: "um-0.72.1-aarch64-apple-darwin.tar.gz",
+      size: 17296019,
+      sha256: "d8d87fb661e0fd6ef14ffa82d46e10716a592afda1462bfd8c2c682e58f1a4b9",
+      url: "https://github.com/useful-machinery/um/releases/download/v0.72.1/um-0.72.1-aarch64-apple-darwin.tar.gz",
+      rootDirectory: "um-0.72.1-aarch64-apple-darwin",
       inventory: [
         {
-          path: "um-0.57.0-aarch64-apple-darwin",
+          path: "um-0.72.1-aarch64-apple-darwin",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "um-0.57.0-aarch64-apple-darwin/LICENSE",
+          path: "um-0.72.1-aarch64-apple-darwin/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "um-0.57.0-aarch64-apple-darwin/README.md",
+          path: "um-0.72.1-aarch64-apple-darwin/README.md",
           type: "file",
           mode: 420,
-          size: 106126
+          size: 131786
         },
         {
-          path: "um-0.57.0-aarch64-apple-darwin/um",
+          path: "um-0.72.1-aarch64-apple-darwin/um",
           type: "file",
           mode: 493,
-          size: 47630480
+          size: 55489760
         }
       ]
     }
@@ -3368,6 +3369,40 @@ var PLATFORM_TARGETS = {
 };
 function selectTarget(runnerOS, runnerArch) {
   return PLATFORM_TARGETS[`${runnerOS ?? ""}/${runnerArch ?? ""}`];
+}
+var VERSION_SOURCE = "(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)";
+var VERSION_PATTERN = new RegExp(`^${VERSION_SOURCE}$`, "u");
+function parseVersionSelection(value) {
+  if (value === void 0 || value === "") return { kind: "bundled" };
+  if (value === "latest") return { kind: "latest" };
+  if (VERSION_PATTERN.test(value)) return { kind: "requested", version: value };
+  throw new AdapterError("input_invalid");
+}
+var RELEASE_REPOSITORY_URL = "https://github.com/useful-machinery/um";
+var LATEST_RELEASE_URL = `${RELEASE_REPOSITORY_URL}/releases/latest`;
+var LATEST_TAG_PATTERN = new RegExp(
+  `^https://github\\.com/useful-machinery/um/releases/tag/v(${VERSION_SOURCE})$`,
+  "u"
+);
+function selectedReleaseAssets(version) {
+  const base = `${RELEASE_REPOSITORY_URL}/releases/download/v${version}`;
+  const targets = Object.keys(PINNED_RELEASE.archives);
+  return {
+    checksumsUrl: `${base}/SHA256SUMS`,
+    archives: Object.fromEntries(
+      targets.map((target) => {
+        const name = `um-${version}-${target}.tar.gz`;
+        return [
+          target,
+          {
+            name,
+            url: `${base}/${name}`,
+            rootDirectory: `um-${version}-${target}`
+          }
+        ];
+      })
+    )
+  };
 }
 
 // src/subprocess.ts
@@ -3418,8 +3453,11 @@ async function captureCommand(executable, arguments_, environment, maximumBytes,
 
 // src/bootstrap.ts
 var VERSION_OUTPUT_LIMIT = 65536;
+var MAXIMUM_CHECKSUM_BYTES = 4096;
+var MAXIMUM_ARCHIVE_BYTES = 256 * 1024 * 1024;
+var BUILD_IDENTITY_PATTERN = /^[0-9a-f]{40}$/u;
 var DEFAULT_BOOTSTRAP_DEPENDENCIES = {
-  fetch: (url) => fetch(url, { redirect: "follow" }),
+  fetch: (url, redirect) => fetch(url, { redirect }),
   runVersion: (executable, environment) => captureCommand(
     executable,
     ["version", "--json"],
@@ -3429,15 +3467,78 @@ var DEFAULT_BOOTSTRAP_DEPENDENCIES = {
   ),
   appendPath: appendVerifiedPath
 };
+function pinnedInstallation(release, target) {
+  const archive = release.archives[target];
+  return {
+    version: release.version,
+    source: "bundled",
+    checksums: {
+      ...release.checksumAsset,
+      limit: release.checksumAsset.size
+    },
+    listed: new Map(
+      Object.values(release.archives).map((entry) => [
+        entry.name,
+        entry.sha256
+      ])
+    ),
+    archive,
+    buildIdentity: release.buildIdentity
+  };
+}
+function selectedInstallation(version, source, target) {
+  const assets = selectedReleaseAssets(version);
+  const archive = assets.archives[target];
+  const root = archive.rootDirectory;
+  return {
+    version,
+    source,
+    checksums: {
+      url: assets.checksumsUrl,
+      limit: MAXIMUM_CHECKSUM_BYTES,
+      missing: source === "requested" ? "bootstrap_release_unavailable" : void 0
+    },
+    listed: new Map(
+      Object.values(assets.archives).map((entry) => [entry.name, void 0])
+    ),
+    archive: {
+      ...archive,
+      inventory: [
+        { path: root, type: "directory", mode: 493 },
+        { path: `${root}/LICENSE`, type: "file", mode: 420 },
+        { path: `${root}/README.md`, type: "file", mode: 420 },
+        { path: `${root}/um`, type: "file", mode: 493 }
+      ]
+    },
+    buildIdentity: void 0
+  };
+}
+async function discoverLatest(fetchRelease) {
+  const response = await fetchRelease(LATEST_RELEASE_URL, "manual").catch(
+    () => {
+      throw new AdapterError("bootstrap_release_discovery_failed");
+    }
+  );
+  await response.body?.cancel().catch(() => void 0);
+  const location = response.headers.get("location");
+  const match = response.status >= 300 && response.status < 400 && location !== null ? LATEST_TAG_PATTERN.exec(location) : null;
+  if (!match) {
+    throw new AdapterError("bootstrap_release_discovery_failed");
+  }
+  return match[1];
+}
 async function downloadVerified(destination, identity, fetchRelease) {
-  const response = await fetchRelease(identity.url).catch(() => {
+  const response = await fetchRelease(identity.url, "follow").catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
+  if (response.status === 404 && identity.missing !== void 0) {
+    throw new AdapterError(identity.missing);
+  }
   if (!response.ok || response.body === null) {
     throw new AdapterError("bootstrap_download_failed");
   }
   const contentLength = response.headers.get("content-length");
-  if (contentLength !== null && (!/^[0-9]+$/u.test(contentLength) || Number(contentLength) !== identity.size)) {
+  if (contentLength !== null && (!/^[0-9]+$/u.test(contentLength) || Number(contentLength) > identity.limit || identity.size !== void 0 && Number(contentLength) !== identity.size)) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
   const handle = await (0, import_promises2.open)(
@@ -3453,7 +3554,7 @@ async function downloadVerified(destination, identity, fetchRelease) {
     for await (const value of response.body) {
       const chunk = Buffer.from(value);
       bytes += chunk.length;
-      if (bytes > identity.size) {
+      if (bytes > identity.limit || identity.size !== void 0 && bytes > identity.size) {
         throw new AdapterError("bootstrap_integrity_failed");
       }
       digest.update(chunk);
@@ -3465,11 +3566,11 @@ async function downloadVerified(destination, identity, fetchRelease) {
   } finally {
     await handle.close().catch(() => void 0);
   }
-  if (bytes !== identity.size || digest.digest("hex") !== identity.sha256) {
+  if (identity.size !== void 0 && bytes !== identity.size || identity.sha256 !== void 0 && digest.digest("hex") !== identity.sha256) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
 }
-function verifyChecksumAsset(bytes, release) {
+function verifyChecksumAsset(bytes, listed) {
   if (bytes.includes(0) || !bytes.every((byte) => byte < 128)) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
@@ -3478,7 +3579,7 @@ function verifyChecksumAsset(bytes, release) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
   const lines = text.slice(0, -1).split("\n");
-  if (lines.length !== Object.keys(release.archives).length) {
+  if (lines.length !== listed.size) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
   const observed = /* @__PURE__ */ new Map();
@@ -3489,11 +3590,13 @@ function verifyChecksumAsset(bytes, release) {
     }
     observed.set(match[2], match[1]);
   }
-  for (const archive of Object.values(release.archives)) {
-    if (observed.get(archive.name) !== archive.sha256) {
+  for (const [name, pinned] of listed) {
+    const digest = observed.get(name);
+    if (digest === void 0 || pinned !== void 0 && digest !== pinned) {
       throw new AdapterError("bootstrap_integrity_failed");
     }
   }
+  return observed;
 }
 function safeTarPath(name, directory) {
   const candidate = directory && name.endsWith("/") ? name.slice(0, -1) : name;
@@ -3520,7 +3623,7 @@ async function extractArchive(archivePath, destination, archive) {
       }
       const relative = safeTarPath(header.name, isDirectory);
       const entry = expected.get(relative);
-      if (!entry || seen.has(relative) || entry.type !== (isDirectory ? "directory" : "file") || header.mode === void 0 || entry.mode !== (header.mode & 4095) || entry.size !== header.size) {
+      if (!entry || seen.has(relative) || entry.type !== (isDirectory ? "directory" : "file") || header.mode === void 0 || entry.mode !== (header.mode & 4095) || entry.size !== void 0 && entry.size !== header.size) {
         throw new AdapterError("bootstrap_integrity_failed");
       }
       seen.add(relative);
@@ -3551,12 +3654,16 @@ async function extractArchive(archivePath, destination, archive) {
           import_node_fs.constants.O_CREAT | import_node_fs.constants.O_EXCL | import_node_fs.constants.O_WRONLY,
           384
         );
+        const size = entry.size ?? header.size;
+        if (size === void 0) {
+          throw new AdapterError("bootstrap_integrity_failed");
+        }
         let written = 0;
         try {
           for await (const value of stream) {
             const chunk = Buffer.from(value);
             written += chunk.length;
-            if (written > entry.size) {
+            if (written > size) {
               throw new AdapterError("bootstrap_integrity_failed");
             }
             await handle.write(chunk);
@@ -3565,7 +3672,7 @@ async function extractArchive(archivePath, destination, archive) {
         } finally {
           await handle.close().catch(() => void 0);
         }
-        if (written !== entry.size) {
+        if (written !== size) {
           throw new AdapterError("bootstrap_integrity_failed");
         }
         await (0, import_promises2.chmod)(outputPath, entry.mode);
@@ -3586,7 +3693,7 @@ async function extractArchive(archivePath, destination, archive) {
   for (const entry of archive.inventory) {
     const outputPath = import_node_path2.default.join(destination, ...entry.path.split("/"));
     const status = await (0, import_promises2.lstat)(outputPath).catch(() => void 0);
-    if (!status || status.isSymbolicLink() || (entry.type === "file" ? !status.isFile() : !status.isDirectory()) || (status.mode & 4095) !== entry.mode || entry.type === "file" && status.size !== entry.size) {
+    if (!status || status.isSymbolicLink() || (entry.type === "file" ? !status.isFile() : !status.isDirectory()) || (status.mode & 4095) !== entry.mode || entry.type === "file" && entry.size !== void 0 && status.size !== entry.size) {
       throw new AdapterError("bootstrap_integrity_failed");
     }
   }
@@ -3595,7 +3702,7 @@ function exactObjectKeys(value, expected) {
   const actual = Object.keys(value).sort();
   return actual.length === expected.length && actual.every((key, index) => key === [...expected].sort()[index]);
 }
-async function verifyVersion(executable, cliDirectory, release, sourceEnvironment, runVersion) {
+async function verifyVersion(executable, cliDirectory, installation, sourceEnvironment, runVersion) {
   const environment = sanitizedChildEnvironment(
     sourceEnvironment,
     cliDirectory
@@ -3621,12 +3728,12 @@ async function verifyVersion(executable, cliDirectory, release, sourceEnvironmen
     throw new AdapterError("bootstrap_version_failed");
   }
   const record2 = version;
-  if (record2.schemaVersion !== 1 || record2.command !== "um" || record2.version !== release.version || record2.executablePath !== resolvedExecutable || record2.buildIdentity !== release.buildIdentity || record2.buildIdentity === "unknown") {
+  if (record2.schemaVersion !== 1 || record2.command !== "um" || record2.version !== installation.version || record2.executablePath !== resolvedExecutable || typeof record2.buildIdentity !== "string" || record2.buildIdentity === "unknown" || (installation.buildIdentity === void 0 ? !BUILD_IDENTITY_PATTERN.test(record2.buildIdentity) : record2.buildIdentity !== installation.buildIdentity)) {
     throw new AdapterError("bootstrap_version_failed");
   }
-  return environment;
+  return { environment, buildIdentity: record2.buildIdentity };
 }
-async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPENDENCIES, release = PINNED_RELEASE) {
+async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPENDENCIES, release = PINNED_RELEASE, selection = { kind: "bundled" }) {
   const target = selectTarget(environment.RUNNER_OS, environment.RUNNER_ARCH);
   if (!target) {
     throw new AdapterError("bootstrap_platform_unsupported");
@@ -3640,23 +3747,40 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
   if (!canonicalRunnerTemp || !temporaryStatus?.isDirectory()) {
     throw new AdapterError("bootstrap_platform_unsupported");
   }
-  const archive = release.archives[target];
+  const installation = selection.kind === "bundled" ? pinnedInstallation(release, target) : selection.kind === "latest" ? selectedInstallation(
+    await discoverLatest(dependencies.fetch),
+    "latest",
+    target
+  ) : selectedInstallation(selection.version, "requested", target);
+  const archive = installation.archive;
   const allocation = await (0, import_promises2.mkdtemp)(
     import_node_path2.default.join(canonicalRunnerTemp, ".um-run-cli-")
   ).catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
-  const checksumPath = import_node_path2.default.join(allocation, release.checksumAsset.name);
+  const checksumPath = import_node_path2.default.join(allocation, "SHA256SUMS");
   const archivePath = import_node_path2.default.join(allocation, archive.name);
   try {
     await (0, import_promises2.chmod)(allocation, 448);
     await downloadVerified(
       checksumPath,
-      release.checksumAsset,
+      installation.checksums,
       dependencies.fetch
     );
-    verifyChecksumAsset(await (0, import_promises2.readFile)(checksumPath), release);
-    await downloadVerified(archivePath, archive, dependencies.fetch);
+    const listed = verifyChecksumAsset(
+      await (0, import_promises2.readFile)(checksumPath),
+      installation.listed
+    );
+    await downloadVerified(
+      archivePath,
+      {
+        url: archive.url,
+        limit: archive.size ?? MAXIMUM_ARCHIVE_BYTES,
+        size: archive.size,
+        sha256: archive.sha256 ?? listed.get(archive.name)
+      },
+      dependencies.fetch
+    );
     await extractArchive(archivePath, allocation, archive);
     await (0, import_promises2.rm)(checksumPath, { force: true });
     await (0, import_promises2.rm)(archivePath, { force: true });
@@ -3666,15 +3790,22 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
     if (!executableStatus?.isFile() || executableStatus.isSymbolicLink() || (executableStatus.mode & 4095) !== 493 || await (0, import_promises2.realpath)(executable) !== executable) {
       throw new AdapterError("bootstrap_integrity_failed");
     }
-    const childEnvironment = await verifyVersion(
+    const verified = await verifyVersion(
       executable,
       cliDirectory,
-      release,
+      installation,
       environment,
       dependencies.runVersion
     );
     await dependencies.appendPath(environment.GITHUB_PATH, cliDirectory);
-    return { executable, cliDirectory, environment: childEnvironment };
+    return {
+      executable,
+      cliDirectory,
+      environment: verified.environment,
+      version: installation.version,
+      source: installation.source,
+      buildIdentity: verified.buildIdentity
+    };
   } catch (error) {
     await (0, import_promises2.rm)(allocation, { recursive: true, force: true }).catch(
       () => void 0
@@ -5024,7 +5155,13 @@ function validateTerminalShape(envelope) {
 
 // src/main.ts
 var DEFAULT_ACTION_DEPENDENCIES = {
-  bootstrap: bootstrapCli,
+  bootstrap: (environment, selection) => bootstrapCli(
+    environment,
+    DEFAULT_BOOTSTRAP_DEPENDENCIES,
+    PINNED_RELEASE,
+    selection
+  ),
+  report: writeStdoutLine,
   readInputs: readActionInputs,
   allocate: allocateExecution,
   execute: (executable, inputs, allocation, environment, cancellation) => runWorkflow(
@@ -5041,6 +5178,15 @@ var DEFAULT_ACTION_DEPENDENCIES = {
   writeOutputs,
   cleanup: cleanupExecution
 };
+function writeStdoutLine(line) {
+  return new Promise((resolve, reject) => {
+    process.stdout.write(`${line}
+`, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
 function applyProjection(outputs, projection) {
   outputs["export-state"] = projection.state;
   outputs["export-kind"] = projection.kind ?? "";
@@ -5080,7 +5226,12 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
   process.on("SIGINT", onInterrupt);
   process.on("SIGTERM", onTerminate);
   try {
-    bootstrap = await dependencies.bootstrap(environment);
+    const selection = parseVersionSelection(environment["INPUT_UM-VERSION"]);
+    bootstrap = await dependencies.bootstrap(environment, selection);
+    outputs["um-version"] = bootstrap.version;
+    await dependencies.report(
+      `Useful Machinery Run selected um ${bootstrap.version} (${bootstrap.source}) build ${bootstrap.buildIdentity}.`
+    );
     phase = "inputs";
     inputs = await dependencies.readInputs(environment);
     phase = "allocation";

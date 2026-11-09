@@ -1,4 +1,8 @@
-import { bootstrapCli, type BootstrapResult } from "./bootstrap.ts";
+import {
+  bootstrapCli,
+  DEFAULT_BOOTSTRAP_DEPENDENCIES,
+  type BootstrapResult,
+} from "./bootstrap.ts";
 import { AdapterError, asAdapterError, type FailureStage } from "./errors.ts";
 import {
   allocateExecution,
@@ -18,6 +22,11 @@ import {
 } from "./identity.ts";
 import { readActionInputs, type ActionInputs } from "./inputs.ts";
 import {
+  parseVersionSelection,
+  PINNED_RELEASE,
+  type VersionSelection,
+} from "./release.ts";
+import {
   validateAndProject,
   type SelectedProjection,
   type ValidatedResultProjection,
@@ -31,7 +40,9 @@ import {
 export interface ActionDependencies {
   readonly bootstrap: (
     environment: NodeJS.ProcessEnv,
+    selection: VersionSelection,
   ) => Promise<BootstrapResult>;
+  readonly report: (line: string) => Promise<void>;
   readonly readInputs: (
     environment: NodeJS.ProcessEnv,
   ) => Promise<ActionInputs>;
@@ -66,7 +77,14 @@ export interface ActionDependencies {
 }
 
 export const DEFAULT_ACTION_DEPENDENCIES: ActionDependencies = {
-  bootstrap: bootstrapCli,
+  bootstrap: (environment, selection) =>
+    bootstrapCli(
+      environment,
+      DEFAULT_BOOTSTRAP_DEPENDENCIES,
+      PINNED_RELEASE,
+      selection,
+    ),
+  report: writeStdoutLine,
   readInputs: readActionInputs,
   allocate: allocateExecution,
   execute: (executable, inputs, allocation, environment, cancellation) =>
@@ -85,6 +103,15 @@ export const DEFAULT_ACTION_DEPENDENCIES: ActionDependencies = {
   writeOutputs,
   cleanup: cleanupExecution,
 };
+
+function writeStdoutLine(line: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    process.stdout.write(`${line}\n`, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
 
 export interface ActionResult {
   readonly outputs: ActionOutputs;
@@ -145,8 +172,14 @@ export async function executeAction(
   process.on("SIGTERM", onTerminate);
 
   try {
-    // Bootstrap deliberately precedes every INPUT_ read.
-    bootstrap = await dependencies.bootstrap(environment);
+    // Bootstrap deliberately precedes every INPUT_ read but the CLI version
+    // selection, whose grammar check is pure and precedes every download.
+    const selection = parseVersionSelection(environment["INPUT_UM-VERSION"]);
+    bootstrap = await dependencies.bootstrap(environment, selection);
+    outputs["um-version"] = bootstrap.version;
+    await dependencies.report(
+      `Useful Machinery Run selected um ${bootstrap.version} (${bootstrap.source}) build ${bootstrap.buildIdentity}.`,
+    );
     phase = "inputs";
     inputs = await dependencies.readInputs(environment);
     phase = "allocation";

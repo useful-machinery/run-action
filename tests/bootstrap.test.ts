@@ -1,26 +1,36 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
-import { once } from "node:events";
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  realpath,
+  rm,
+  symlink,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { gzipSync } from "node:zlib";
-import tarStream from "tar-stream";
 
 import {
   bootstrapCli,
   DEFAULT_BOOTSTRAP_DEPENDENCIES,
+  MAXIMUM_ARCHIVE_BYTES,
+  MAXIMUM_CHECKSUM_BYTES,
   type BootstrapDependencies,
 } from "../src/bootstrap.ts";
 import { AdapterError, type FailureCode } from "../src/errors.ts";
 import {
+  LATEST_RELEASE_URL,
   PINNED_RELEASE,
+  RELEASE_REPOSITORY_URL,
+  selectedReleaseAssets,
   type ReleaseEvidence,
   type TargetTriple,
+  type VersionSelection,
 } from "../src/release.ts";
 import type { CapturedCommand } from "../src/subprocess.ts";
 import { fakeCli, paddedJson } from "./fake-cli.ts";
+import { archiveBytes, sha256, type TarMutation } from "./fake-release.ts";
 
 const targets: readonly {
   runnerOS: string;
@@ -36,99 +46,25 @@ const targets: readonly {
   { runnerOS: "macOS", runnerArch: "ARM64", target: "aarch64-apple-darwin" },
 ];
 
-type TarMutation = "traversal" | "link" | "inventory" | "mode";
-
-function sha256(bytes: Uint8Array): string {
-  return createHash("sha256").update(bytes).digest("hex");
-}
-
-async function archiveBytes(
-  root: string,
-  mutation?: TarMutation,
-): Promise<{
-  bytes: Buffer;
-  inventory: {
-    path: string;
-    type: "directory" | "file";
-    mode: number;
-    size: number;
-  }[];
-}> {
-  const pack = tarStream.pack();
-  const chunks: Buffer[] = [];
-  pack.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
-  const ended = once(pack, "end");
-  const license = Buffer.from("license\n");
-  const readme = Buffer.from("readme\n");
-  const executable = Buffer.from("fake executable\n");
-  pack.entry({ name: `${root}/`, type: "directory", mode: 0o755, size: 0 });
-  pack.entry({ name: `${root}/LICENSE`, type: "file", mode: 0o644 }, license);
-  if (mutation === "link") {
-    pack.entry({
-      name: `${root}/README.md`,
-      type: "symlink",
-      linkname: "/outside",
-      mode: 0o644,
-      size: 0,
-    });
-  } else {
-    pack.entry(
-      {
-        name:
-          mutation === "traversal"
-            ? `${root}/../README.md`
-            : `${root}/README.md`,
-        type: "file",
-        mode: 0o644,
-      },
-      readme,
-    );
-  }
-  pack.entry(
-    {
-      name: `${root}/um`,
-      type: "file",
-      mode: mutation === "mode" ? 0o700 : 0o755,
-    },
-    executable,
-  );
-  if (mutation === "inventory") {
-    pack.entry(
-      { name: `${root}/extra`, type: "file", mode: 0o644 },
-      Buffer.from("x"),
-    );
-  }
-  pack.finalize();
-  await ended;
-  return {
-    bytes: gzipSync(Buffer.concat(chunks)),
-    inventory: [
-      { path: root, type: "directory", mode: 0o755, size: 0 },
-      {
-        path: `${root}/LICENSE`,
-        type: "file",
-        mode: 0o644,
-        size: license.length,
-      },
-      {
-        path: `${root}/README.md`,
-        type: "file",
-        mode: 0o644,
-        size: readme.length,
-      },
-      {
-        path: `${root}/um`,
-        type: "file",
-        mode: 0o755,
-        size: executable.length,
-      },
-    ],
-  };
+interface Redirect {
+  readonly status: number;
+  readonly location?: string;
 }
 
 interface BootstrapFixture {
   readonly release: ReleaseEvidence;
+  readonly version: string;
+  readonly buildIdentity?: string;
   readonly responses: ReadonlyMap<string, Buffer>;
+  readonly answers?: ReadonlyMap<string, () => Response>;
+  readonly redirects?: ReadonlyMap<string, Redirect>;
+}
+
+interface Observations {
+  fetched: string[];
+  executables: string[];
+  appended: string[];
+  manual?: string[];
 }
 
 async function fixture(
@@ -175,21 +111,29 @@ async function fixture(
   mutable.checksumAsset.size = checksums.length;
   mutable.checksumAsset.sha256 = sha256(checksums);
   responses.set(mutable.checksumAsset.url, checksums);
-  return { release, responses };
+  return { release, version: release.version, responses };
 }
 
 function dependencies(
   fixtureValue: BootstrapFixture,
-  observations: {
-    fetched: string[];
-    executables: string[];
-    appended: string[];
-  },
+  observations: Observations,
   versionChange?: (version: Record<string, unknown>) => void,
 ): BootstrapDependencies {
   return {
-    fetch: async (url) => {
+    fetch: async (url, redirect) => {
+      if (redirect === "manual") {
+        observations.manual?.push(url);
+        const answer = fixtureValue.redirects?.get(url);
+        if (!answer) return new Response(null, { status: 404 });
+        return new Response(null, {
+          status: answer.status,
+          headers:
+            answer.location === undefined ? {} : { location: answer.location },
+        });
+      }
       observations.fetched.push(url);
+      const answer = fixtureValue.answers?.get(url);
+      if (answer) return answer();
       const bytes = fixtureValue.responses.get(url);
       if (!bytes) return new Response(null, { status: 404 });
       return new Response(new Uint8Array(bytes), {
@@ -208,9 +152,10 @@ function dependencies(
       const version: Record<string, unknown> = {
         schemaVersion: 1,
         command: "um",
-        version: fixtureValue.release.version,
+        version: fixtureValue.version,
         executablePath: await realpath(executable),
-        buildIdentity: fixtureValue.release.buildIdentity,
+        buildIdentity:
+          fixtureValue.buildIdentity ?? fixtureValue.release.buildIdentity,
       };
       versionChange?.(version);
       return {
@@ -271,6 +216,9 @@ test("all supported platforms verify and install only their closed archive", asy
         ]);
         assert.deepEqual(observed.executables, [result.executable]);
         assert.deepEqual(observed.appended, [result.cliDirectory]);
+        assert.equal(result.version, fixtureValue.release.version);
+        assert.equal(result.source, "bundled");
+        assert.equal(result.buildIdentity, fixtureValue.release.buildIdentity);
         assert.equal(result.executable, path.join(result.cliDirectory, "um"));
         assert.equal(
           result.environment.PATH,
@@ -524,7 +472,7 @@ test("archive size and checksum layout drift fail before version inspection", as
       mutableChecksum.sha256 = sha256(changedBytes);
       const responses = new Map(fixtureValue.responses);
       responses.set(checksumUrl, changedBytes);
-      const changed = { release, responses };
+      const changed = { ...fixtureValue, release, responses };
       await assert.rejects(
         bootstrapCli(
           {
@@ -625,6 +573,402 @@ test("CLI version output is read up to its 65,536-byte bound", async (t) => {
           await rm(scratch, { recursive: true, force: true });
         }
       });
+    });
+  }
+});
+
+const SELECTED_VERSION = "9.8.7";
+const SELECTED_IDENTITY = "0123456789abcdef0123456789abcdef01234567";
+const SELECTED_TARGET: TargetTriple = "x86_64-unknown-linux-gnu";
+const PINNED_URLS: ReadonlySet<string> = new Set([
+  PINNED_RELEASE.checksumAsset.url,
+  ...Object.values(PINNED_RELEASE.archives).map((archive) => archive.url),
+]);
+
+// Builds a published release `version` keyed by the URLs the Action constructs
+// for it, with `releases/latest` redirecting to its tag.
+async function selectedFixture(
+  version: string,
+  options: {
+    mutation?: TarMutation;
+    checksums?: (lines: string[]) => string;
+  } = {},
+): Promise<BootstrapFixture> {
+  const assets = selectedReleaseAssets(version);
+  const responses = new Map<string, Buffer>();
+  const lines: string[] = [];
+  for (const { target } of targets) {
+    const archive = assets.archives[target];
+    const built = await archiveBytes(
+      archive.rootDirectory,
+      target === SELECTED_TARGET ? options.mutation : undefined,
+    );
+    responses.set(archive.url, built.bytes);
+    lines.push(`${sha256(built.bytes)}  ${archive.name}`);
+  }
+  responses.set(
+    assets.checksumsUrl,
+    Buffer.from(options.checksums?.(lines) ?? `${lines.join("\n")}\n`),
+  );
+  return {
+    release: PINNED_RELEASE,
+    version,
+    buildIdentity: SELECTED_IDENTITY,
+    responses,
+    redirects: new Map([
+      [
+        LATEST_RELEASE_URL,
+        {
+          status: 302,
+          location: `${RELEASE_REPOSITORY_URL}/releases/tag/v${version}`,
+        },
+      ],
+    ]),
+  };
+}
+
+function newObservations(): Required<Observations> {
+  return { fetched: [], executables: [], appended: [], manual: [] };
+}
+
+// Runs a selected-release bootstrap that must fail with `code`, and checks
+// that the failure installed nothing and substituted nothing.
+async function selectedFailure(
+  fixtureValue: BootstrapFixture,
+  selection: VersionSelection,
+  code: FailureCode,
+  versionChange?: (version: Record<string, unknown>) => void,
+): Promise<Required<Observations>> {
+  const observed = newObservations();
+  await withRunnerTemp(async (runnerTemp) => {
+    await assert.rejects(
+      bootstrapCli(
+        {
+          RUNNER_OS: "Linux",
+          RUNNER_ARCH: "X64",
+          RUNNER_TEMP: runnerTemp,
+          PATH: "/ambient/successful-decoy",
+        },
+        dependencies(fixtureValue, observed, versionChange),
+        undefined,
+        selection,
+      ),
+      (error: unknown) => error instanceof AdapterError && error.code === code,
+    );
+    assert.deepEqual(await readdir(runnerTemp), []);
+  });
+  assert.deepEqual(observed.appended, []);
+  assert.ok(observed.fetched.every((url) => !PINNED_URLS.has(url)));
+  return observed;
+}
+
+const requested: VersionSelection = {
+  kind: "requested",
+  version: SELECTED_VERSION,
+};
+
+// REQ-RUNACTION-82, REQ-RUNACTION-83
+// INV-EMBED-22
+test("a selected release installs from its constructed URLs", async (t) => {
+  for (const [selection, source] of [
+    [{ kind: "latest" }, "latest"],
+    [requested, "requested"],
+  ] as const) {
+    await t.test(source, async () => {
+      await withRunnerTemp(async (runnerTemp) => {
+        const fixtureValue = await selectedFixture(SELECTED_VERSION);
+        const observed = newObservations();
+        const result = await bootstrapCli(
+          {
+            RUNNER_OS: "Linux",
+            RUNNER_ARCH: "X64",
+            RUNNER_TEMP: runnerTemp,
+            PATH: "/ambient/decoy",
+          },
+          dependencies(fixtureValue, observed),
+          undefined,
+          selection,
+        );
+        const assets = selectedReleaseAssets(SELECTED_VERSION);
+        const archive = assets.archives[SELECTED_TARGET];
+        assert.deepEqual(
+          observed.manual,
+          source === "latest" ? [LATEST_RELEASE_URL] : [],
+        );
+        assert.deepEqual(observed.fetched, [assets.checksumsUrl, archive.url]);
+        assert.equal(result.version, SELECTED_VERSION);
+        assert.equal(result.source, source);
+        assert.equal(result.buildIdentity, SELECTED_IDENTITY);
+        assert.equal(path.basename(result.cliDirectory), archive.rootDirectory);
+        assert.equal(result.executable, path.join(result.cliDirectory, "um"));
+        assert.deepEqual(observed.executables, [result.executable]);
+        assert.deepEqual(observed.appended, [result.cliDirectory]);
+      });
+    });
+  }
+});
+
+// REQ-RUNACTION-7, REQ-RUNACTION-11
+// INV-EMBED-22
+test("an unpublished or unreachable selected checksum list stops before the archive", async (t) => {
+  const checksumsUrl = selectedReleaseAssets(SELECTED_VERSION).checksumsUrl;
+  await t.test("unpublished", async () => {
+    const fixtureValue = await selectedFixture(SELECTED_VERSION);
+    const responses = new Map(fixtureValue.responses);
+    responses.delete(checksumsUrl);
+    const observed = await selectedFailure(
+      { ...fixtureValue, responses },
+      requested,
+      "bootstrap_release_unavailable",
+    );
+    assert.deepEqual(observed.fetched, [checksumsUrl]);
+  });
+  await t.test("server error", async () => {
+    const fixtureValue = await selectedFixture(SELECTED_VERSION);
+    const observed = await selectedFailure(
+      {
+        ...fixtureValue,
+        answers: new Map([
+          [checksumsUrl, () => new Response(null, { status: 500 })],
+        ]),
+      },
+      requested,
+      "bootstrap_download_failed",
+    );
+    assert.deepEqual(observed.fetched, [checksumsUrl]);
+  });
+});
+
+// REQ-RUNACTION-83, REQ-RUNACTION-67
+// INV-EMBED-22
+test("latest resolves only from a release-page redirect to a stable tag", async (t) => {
+  const cases: readonly [string, Redirect | undefined][] = [
+    ["not found", undefined],
+    ["not a redirect", { status: 200 }],
+    ["no location", { status: 302 }],
+    [
+      "prerelease tag",
+      {
+        status: 302,
+        location: `${RELEASE_REPOSITORY_URL}/releases/tag/v${SELECTED_VERSION}-rc1`,
+      },
+    ],
+    [
+      "another repository",
+      {
+        status: 302,
+        location: `https://github.com/useful-machinery/other/releases/tag/v${SELECTED_VERSION}`,
+      },
+    ],
+    [
+      "leading-zero tag",
+      {
+        status: 302,
+        location: `${RELEASE_REPOSITORY_URL}/releases/tag/v09.8.7`,
+      },
+    ],
+  ];
+  for (const [name, redirect] of cases) {
+    await t.test(name, async () => {
+      const fixtureValue = await selectedFixture(SELECTED_VERSION);
+      const observed = await selectedFailure(
+        {
+          ...fixtureValue,
+          redirects: new Map(
+            redirect === undefined ? [] : [[LATEST_RELEASE_URL, redirect]],
+          ),
+        },
+        { kind: "latest" },
+        "bootstrap_release_discovery_failed",
+      );
+      assert.deepEqual(observed.manual, [LATEST_RELEASE_URL]);
+      assert.deepEqual(observed.fetched, []);
+    });
+  }
+});
+
+// REQ-RUNACTION-8, REQ-RUNACTION-9, REQ-RUNACTION-11
+// INV-EMBED-22
+test("a selected release's checksum list, archive and layout fail closed before the probe", async (t) => {
+  const assets = selectedReleaseAssets(SELECTED_VERSION);
+  const archiveUrl = assets.archives[SELECTED_TARGET].url;
+  const listed = (lines: string[]): string => `${lines.join("\n")}\n`;
+  const cases: readonly [string, () => Promise<BootstrapFixture>][] = [
+    [
+      "checksum list over its bound",
+      () =>
+        selectedFixture(SELECTED_VERSION, {
+          checksums: (lines) =>
+            listed(lines).padEnd(MAXIMUM_CHECKSUM_BYTES + 1, "\n"),
+        }),
+    ],
+    [
+      "checksum list not ASCII",
+      () =>
+        selectedFixture(SELECTED_VERSION, {
+          checksums: (lines) =>
+            listed([lines[0]!, lines[1]!, lines[2]!.replace("um-", "üm-")]),
+        }),
+    ],
+    [
+      "two lines",
+      () =>
+        selectedFixture(SELECTED_VERSION, {
+          checksums: (lines) => listed(lines.slice(0, 2)),
+        }),
+    ],
+    [
+      "four lines",
+      () =>
+        selectedFixture(SELECTED_VERSION, {
+          checksums: (lines) =>
+            listed([...lines, `${"0".repeat(64)}  um-extra.tar.gz`]),
+        }),
+    ],
+    [
+      "wrong archive",
+      () =>
+        selectedFixture(SELECTED_VERSION, {
+          checksums: (lines) =>
+            listed([
+              lines[0]!,
+              lines[1]!,
+              lines[2]!.replace("aarch64-apple-darwin", "x86_64-apple-darwin"),
+            ]),
+        }),
+    ],
+    [
+      "duplicate archive",
+      () =>
+        selectedFixture(SELECTED_VERSION, {
+          checksums: (lines) => listed([lines[0]!, lines[1]!, lines[1]!]),
+        }),
+    ],
+    [
+      "archive digest differs from its line",
+      async () => {
+        const fixtureValue = await selectedFixture(SELECTED_VERSION);
+        const responses = new Map(fixtureValue.responses);
+        const bytes = Buffer.from(responses.get(archiveUrl)!);
+        bytes[0] = (bytes[0] ?? 0) ^ 0xff;
+        responses.set(archiveUrl, bytes);
+        return { ...fixtureValue, responses };
+      },
+    ],
+    [
+      "archive content-length over its bound",
+      async () => ({
+        ...(await selectedFixture(SELECTED_VERSION)),
+        answers: new Map([
+          [
+            archiveUrl,
+            () =>
+              new Response(new Uint8Array(1), {
+                headers: {
+                  "content-length": String(MAXIMUM_ARCHIVE_BYTES + 1),
+                },
+              }),
+          ],
+        ]),
+      }),
+    ],
+    [
+      "archive body over its bound",
+      async () => ({
+        ...(await selectedFixture(SELECTED_VERSION)),
+        answers: new Map([
+          [
+            archiveUrl,
+            () =>
+              new Response(
+                new ReadableStream<Uint8Array>({
+                  start(controller) {
+                    controller.enqueue(
+                      new Uint8Array(MAXIMUM_ARCHIVE_BYTES + 1),
+                    );
+                    controller.close();
+                  },
+                }),
+              ),
+          ],
+        ]),
+      }),
+    ],
+    ...(["inventory", "link", "traversal", "mode"] as const).map(
+      (mutation): [string, () => Promise<BootstrapFixture>] => [
+        `tar-${mutation}`,
+        () => selectedFixture(SELECTED_VERSION, { mutation }),
+      ],
+    ),
+  ];
+  for (const [name, prepare] of cases) {
+    await t.test(name, async () => {
+      const observed = await selectedFailure(
+        await prepare(),
+        requested,
+        "bootstrap_integrity_failed",
+      );
+      assert.deepEqual(observed.executables, []);
+    });
+  }
+});
+
+// REQ-RUNACTION-10, REQ-RUNACTION-11
+// INV-EMBED-22
+test("a selected release's probe must report its version and a commit identity", async (t) => {
+  const cases: readonly [string, string, string][] = [
+    ["another version", "version", "9.8.8"],
+    ["unknown identity", "buildIdentity", "unknown"],
+    ["short identity", "buildIdentity", "a".repeat(39)],
+  ];
+  for (const [name, field, value] of cases) {
+    await t.test(name, async () => {
+      const observed = await selectedFailure(
+        await selectedFixture(SELECTED_VERSION),
+        { kind: "latest" },
+        "bootstrap_version_failed",
+        (version) => {
+          version[field] = value;
+        },
+      );
+      assert.equal(observed.executables.length, 1);
+    });
+  }
+});
+
+// REQ-RUNACTION-4, REQ-RUNACTION-5, REQ-RUNACTION-83
+test("latest is not resolved on an unsupported platform or runner temp", async (t) => {
+  const environments: readonly [string, NodeJS.ProcessEnv][] = [
+    ["platform", { RUNNER_OS: "Windows", RUNNER_ARCH: "X64" }],
+    [
+      "relative runner temp",
+      { RUNNER_OS: "Linux", RUNNER_ARCH: "X64", RUNNER_TEMP: "temp" },
+    ],
+    [
+      "missing runner temp",
+      {
+        RUNNER_OS: "Linux",
+        RUNNER_ARCH: "X64",
+        RUNNER_TEMP: path.join(os.tmpdir(), "um-missing-runner-temp-0"),
+      },
+    ],
+  ];
+  for (const [name, environment] of environments) {
+    await t.test(name, async () => {
+      const observed = newObservations();
+      await assert.rejects(
+        bootstrapCli(
+          environment,
+          dependencies(await selectedFixture(SELECTED_VERSION), observed),
+          undefined,
+          { kind: "latest" },
+        ),
+        (error: unknown) =>
+          error instanceof AdapterError &&
+          error.code === "bootstrap_platform_unsupported",
+      );
+      assert.deepEqual(observed.manual, []);
+      assert.deepEqual(observed.fetched, []);
     });
   }
 });

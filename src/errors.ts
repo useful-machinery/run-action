@@ -4,6 +4,8 @@ export type FailureCode =
   | "bootstrap_download_failed"
   | "bootstrap_integrity_failed"
   | "bootstrap_platform_unsupported"
+  | "bootstrap_release_discovery_failed"
+  | "bootstrap_release_unavailable"
   | "bootstrap_version_failed"
   | "child_launch_failed"
   | "child_output_failed"

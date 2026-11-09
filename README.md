@@ -1,8 +1,9 @@
 # Useful Machinery Run Action
 
-The implementation and examples pin the checksum-verified `um` v0.57.0 release
-through public mirror revision `0572ca6153d1d030a1490d2f46298264aebd1cb3`.
-[Source and all three native behavior jobs passed](https://github.com/useful-machinery/run-action/actions/runs/37415128498)
+The implementation pins the checksum-verified `um` v0.72.1 release. Until the example
+cutover, the examples still pin public mirror revision
+`0572ca6153d1d030a1490d2f46298264aebd1cb3`, which carries `um` v0.57.0;
+[source and all three native behavior jobs passed](https://github.com/useful-machinery/run-action/actions/runs/37415128498)
 for that exact mirror revision.
 
 Run a checked-in Useful Machinery workflow inside a GitHub Actions job—without sending the
@@ -35,7 +36,8 @@ steps.
 
 The Action:
 
-1. downloads the exact Useful Machinery CLI release pinned by the selected Action revision;
+1. downloads the exact Useful Machinery CLI release pinned by the selected Action revision,
+   or the published release its `um-version` input selects;
 2. verifies the release checksum and CLI build identity;
 3. runs exactly one fresh local Workflow V1 invocation;
 4. validates the complete Portable Artifact Set; and
@@ -112,6 +114,34 @@ paired when upgrading. V1 provides no moving `v1`, `latest`, or semantic-version
 improvise with `main`, another branch or tag, an abbreviation, a placeholder, or a
 Useful Machinery monorepo commit.
 
+## Choosing the CLI version
+
+The optional `um-version` input chooses the `um` release the step installs:
+
+- omit it, or leave it empty, to install the release this Action revision pins (v0.72.1
+  here); the CLI is reproducible for each Action revision and is the one the revision
+  was tested with;
+- set an exact published version such as `0.72.1` to install that release; the CLI stays
+  the same across Action revisions; or
+- set `latest` to install the newest published release; upgrades arrive automatically,
+  and a step may run a CLI this Action revision was not tested with.
+
+```yaml
+with:
+  workflow: .um/workflows/ci.yaml
+  um-version: latest
+```
+
+Any other value, such as `1.2`, `v1.2.3` or `Latest`, fails naming `input_invalid` before
+anything is downloaded. A version that is not published fails naming
+`bootstrap_release_unavailable`. A release the input selects has no pin in this revision:
+the Action checks it against that release's own `SHA256SUMS` over TLS to `github.com`,
+checks the archive's layout, and probes `um version --json` for the selected version and
+a build identity. Any failure fails the step; the Action never falls back to the pinned
+release, another version, or a `um` already on `PATH`. The step's `um-version` output and
+one log line name the version installed, how it was chosen (`bundled`, `requested` or
+`latest`) and its build identity.
+
 ## Inputs
 
 | Input | Default | Purpose |
@@ -122,6 +152,7 @@ Useful Machinery monorepo commit.
 | `inputs` | absent | Closed JSON acquisition map for named Text, JSON, File, and attachment-collection values. |
 | `max-parallel` | `1` | Maximum number of workflow nodes to run concurrently, from 1 through 256. |
 | `export` | absent | Exact declared workflow export to bridge to selected-export outputs. |
+| `um-version` | absent | CLI release to install: omit for the pinned v0.72.1, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
 
 Absent or empty `inputs`, and the document `{}`, all supply the empty named map. A
 nonempty value is one JSON object keyed by declared Workflow V1 input names. Each member
@@ -165,6 +196,7 @@ repository or workflow-directory boundary.
 
 | Output | Purpose |
 | --- | --- |
+| `um-version` | The `um` version verified and installed; empty when bootstrap did not complete. |
 | `outcome` | Committed workflow outcome: `succeeded`, `failed`, or `cancelled`. |
 | `run-directory` | Durable local run directory when a trustworthy run identity is available. |
 | `artifact-set-path` | Complete validated Portable Artifact Set path. |
@@ -204,9 +236,11 @@ Pin `uses:` to a full 40-character commit SHA from that repository. Branches and
 references do not provide the immutable selection required by V1.
 
 Each Action revision carries its exact CLI release contract in
-[`release-evidence.json`](release-evidence.json). Runtime bootstrap consumes that closed
-record directly, verifies the downloaded release, and never performs a `latest` lookup
-or falls back to an ambient CLI.
+[`release-evidence.json`](release-evidence.json). That pinned release is the default:
+runtime bootstrap consumes the closed record directly and verifies the downloaded release
+against it. The `um-version` input selects another published release instead, verified
+against that release's own checksum list, and looks up `latest` only when asked to. The
+Action never falls back to an ambient CLI.
 
 ## Recovery
 

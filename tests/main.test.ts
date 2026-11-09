@@ -20,6 +20,7 @@ import { emptyOutputs, type ActionOutputs } from "../src/github.ts";
 import { recoverDurableRun } from "../src/identity.ts";
 import { readActionInputs, type ActionInputs } from "../src/inputs.ts";
 import { executeAction, type ActionDependencies } from "../src/main.ts";
+import type { VersionSelection } from "../src/release.ts";
 import type {
   SelectedProjection,
   ValidatedResultProjection,
@@ -30,11 +31,12 @@ function unreachable<T>(): Promise<T> {
   throw new Error("unexpected test dependency call");
 }
 
-// REQ-RUNACTION-13, REQ-RUNACTION-42
+// REQ-RUNACTION-13, REQ-RUNACTION-42, REQ-RUNACTION-84
 // INV-EMBED-2
 test("bootstrap rejection precedes every workflow input read and launch", async () => {
   let inputReads = 0;
   let launches = 0;
+  let reports = 0;
   let observedOutputs: ActionOutputs | undefined;
   const dependencies: ActionDependencies = {
     bootstrap: async () => {
@@ -56,6 +58,9 @@ test("bootstrap rejection precedes every workflow input read and launch", async 
       observedOutputs = { ...outputs };
     },
     cleanup: async () => undefined,
+    report: async () => {
+      reports += 1;
+    },
   };
   const result = await executeAction(
     { GITHUB_OUTPUT: "/retained/output" },
@@ -64,6 +69,108 @@ test("bootstrap rejection precedes every workflow input read and launch", async 
   assert.equal(result.failure?.code, "bootstrap_integrity_failed");
   assert.equal(inputReads, 0);
   assert.equal(launches, 0);
+  assert.equal(reports, 0);
+  assert.equal(observedOutputs?.["um-version"], "");
+  assert.deepEqual(observedOutputs, emptyOutputs());
+});
+
+// REQ-RUNACTION-13, REQ-RUNACTION-82
+// INV-EMBED-2
+test("only the um-version input is read before bootstrap", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-selection-"));
+  try {
+    const { dependencies } = await committedRun(root);
+    const reads: string[] = [];
+    const record = (key: string | symbol): void => {
+      reads.push(String(key));
+    };
+    const environment = new Proxy<NodeJS.ProcessEnv>(
+      {
+        GITHUB_OUTPUT: path.join(root, "github-output"),
+        INPUT_WORKFLOW: "workflow.yaml",
+        "INPUT_UM-VERSION": "latest",
+        RUNNER_TEMP: root,
+      },
+      {
+        get: (target, key, receiver) => {
+          record(key);
+          return Reflect.get(target, key, receiver);
+        },
+        has: (target, key) => {
+          record(key);
+          return Reflect.has(target, key);
+        },
+        ownKeys: (target) => {
+          record("<keys>");
+          return Reflect.ownKeys(target);
+        },
+        getOwnPropertyDescriptor: (target, key) => {
+          record(key);
+          return Reflect.getOwnPropertyDescriptor(target, key);
+        },
+      },
+    );
+    let readsBeforeBootstrap: string[] | undefined;
+    let received: VersionSelection | undefined;
+    const result = await executeAction(environment, {
+      ...dependencies,
+      bootstrap: async (bootstrapEnvironment, selection) => {
+        readsBeforeBootstrap = [...reads];
+        received = selection;
+        return dependencies.bootstrap(bootstrapEnvironment, selection);
+      },
+    });
+    assert.equal(result.failure, undefined);
+    assert.deepEqual(readsBeforeBootstrap, ["INPUT_UM-VERSION"]);
+    assert.deepEqual(received, { kind: "latest" });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+// REQ-RUNACTION-82, REQ-RUNACTION-42, REQ-RUNACTION-84
+// INV-EMBED-2
+test("an invalid um-version fails before bootstrap and writes every output empty", async () => {
+  let bootstraps = 0;
+  let inputReads = 0;
+  let launches = 0;
+  let reports = 0;
+  let observedOutputs: ActionOutputs | undefined;
+  const result = await executeAction(
+    { GITHUB_OUTPUT: "/retained/output", "INPUT_UM-VERSION": "1.2" },
+    {
+      bootstrap: async () => {
+        bootstraps += 1;
+        return unreachable<BootstrapResult>();
+      },
+      readInputs: async () => {
+        inputReads += 1;
+        return unreachable<ActionInputs>();
+      },
+      allocate: () => unreachable<ExecutionAllocation>(),
+      execute: async () => {
+        launches += 1;
+        return unreachable<WorkflowProcessResult>();
+      },
+      readTerminal: () => unreachable<TerminalEnvelope>(),
+      recover: async () => undefined,
+      project: () => unreachable<ValidatedResultProjection>(),
+      writeOutputs: async (_file, outputs) => {
+        observedOutputs = { ...outputs };
+      },
+      cleanup: async () => undefined,
+      report: async () => {
+        reports += 1;
+      },
+    },
+  );
+  assert.equal(result.failure?.code, "input_invalid");
+  assert.equal(bootstraps, 0);
+  assert.equal(inputReads, 0);
+  assert.equal(launches, 0);
+  assert.equal(reports, 0);
+  assert.ok(observedOutputs);
+  assert.equal(Object.keys(observedOutputs).length, 9);
   assert.deepEqual(observedOutputs, emptyOutputs());
 });
 
@@ -87,6 +194,9 @@ test("invalid acquisition documents fail before source reads and allocation", as
         bootstrap: async () => ({
           executable: "/verified/um",
           cliDirectory: "/verified",
+          version: "0.72.1",
+          source: "bundled",
+          buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
           environment: {},
         }),
         readInputs: readActionInputs,
@@ -99,6 +209,7 @@ test("invalid acquisition documents fail before source reads and allocation", as
         recover: async () => undefined,
         project: () => unreachable<ValidatedResultProjection>(),
         writeOutputs: async () => undefined,
+        report: async () => undefined,
         cleanup: async () => undefined,
       },
     );
@@ -142,6 +253,9 @@ test("an unusable workspace or empty workflow fails before allocation and launch
           bootstrap: async () => ({
             executable: "/verified/um",
             cliDirectory: "/verified",
+            version: "0.72.1",
+            source: "bundled",
+            buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
             environment: {},
           }),
           readInputs: readActionInputs,
@@ -157,6 +271,7 @@ test("an unusable workspace or empty workflow fails before allocation and launch
           recover: async () => undefined,
           project: () => unreachable<ValidatedResultProjection>(),
           writeOutputs: async () => undefined,
+          report: async () => undefined,
           cleanup: async () => undefined,
         },
       );
@@ -213,6 +328,9 @@ async function committedRun(
   const bootstrap: BootstrapResult = {
     executable: "/verified/um",
     cliDirectory: "/verified",
+    version: "0.72.1",
+    source: "bundled",
+    buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
     environment: { PATH: "/verified:/caller" },
   };
   const terminal: TerminalEnvelope = {
@@ -255,10 +373,68 @@ async function committedRun(
         selected: { state: "unavailable" },
       }),
       writeOutputs: async () => undefined,
+      report: async () => undefined,
       cleanup: async () => undefined,
     },
   };
 }
+
+// REQ-RUNACTION-84, REQ-RUNACTION-42
+test("a completed bootstrap writes the um-version output and one selected-version line", async (t) => {
+  const identity = "0123456789abcdef0123456789abcdef01234567";
+  const scenarios: readonly {
+    name: string;
+    outcome: "succeeded" | "failed";
+    code: number;
+    failure?: FailureCode;
+  }[] = [
+    { name: "succeeded run", outcome: "succeeded", code: 0 },
+    {
+      name: "failed workflow",
+      outcome: "failed",
+      code: 1,
+      failure: "workflow_failed",
+    },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async () => {
+      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-version-"));
+      try {
+        const { dependencies } = await committedRun(
+          root,
+          scenario.outcome,
+          scenario.code,
+        );
+        const lines: string[] = [];
+        const result = await executeAction(
+          {
+            GITHUB_OUTPUT: path.join(root, "github-output"),
+            "INPUT_UM-VERSION": "0.73.4",
+          },
+          {
+            ...dependencies,
+            bootstrap: async (environment, selection) => ({
+              ...(await dependencies.bootstrap(environment, selection)),
+              version: "0.73.4",
+              source: "requested",
+              buildIdentity: identity,
+            }),
+            report: async (line) => {
+              lines.push(line);
+            },
+          },
+        );
+        assert.equal(result.failure?.code, scenario.failure);
+        assert.equal(result.outputs["um-version"], "0.73.4");
+        assert.deepEqual(lines, [
+          `Useful Machinery Run selected um 0.73.4 (requested) build ${identity}.`,
+        ]);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
+});
 
 // REQ-RUNACTION-42, REQ-RUNACTION-44, REQ-RUNACTION-46, REQ-RUNACTION-48, REQ-RUNACTION-53, REQ-RUNACTION-56, REQ-RUNACTION-58, REQ-RUNACTION-59
 // REQ-RUNACTION-76, REQ-RUNACTION-77
@@ -413,6 +589,9 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
         bootstrap: async () => ({
           executable: "/verified/um",
           cliDirectory: "/verified",
+          version: "0.72.1",
+          source: "bundled",
+          buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
           environment: {},
         }),
         readInputs: async () => ({
@@ -452,12 +631,16 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
           return { outcome: "failed" };
         },
         writeOutputs: async () => undefined,
+        report: async () => undefined,
         cleanup: async () => undefined,
       },
     );
     assert.equal(validations, 0);
     assert.equal(result.failure?.code, "terminal_result_invalid");
-    assert.deepEqual(result.outputs, emptyOutputs());
+    assert.deepEqual(result.outputs, {
+      ...emptyOutputs(),
+      "um-version": "0.72.1",
+    });
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -490,6 +673,9 @@ test("authenticated terminal-less recovery retains and validates its result", as
         bootstrap: async () => ({
           executable: "/verified/um",
           cliDirectory: "/verified",
+          version: "0.72.1",
+          source: "bundled",
+          buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
           environment: {},
         }),
         readInputs: async () => ({
@@ -529,6 +715,7 @@ test("authenticated terminal-less recovery retains and validates its result", as
           return { outcome: "failed" };
         },
         writeOutputs: async () => undefined,
+        report: async () => undefined,
         cleanup: async () => undefined,
       },
     );
@@ -562,6 +749,15 @@ test("an unclassified error names its phase and class but never its text", async
       name: "bootstrap error",
       dependencies: {
         bootstrap: async () => {
+          throw new Error(sentinel);
+        },
+      },
+      diagnostic: { stage: "bootstrap", errorType: "error" },
+    },
+    {
+      name: "selected-version line write error",
+      dependencies: {
+        report: async () => {
           throw new Error(sentinel);
         },
       },
@@ -706,6 +902,9 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
               bootstrap: async () => ({
                 executable: "/verified/cli",
                 cliDirectory: "/verified",
+                version: "0.72.1",
+                source: "bundled",
+                buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
                 environment: {},
               }),
               readInputs: async () => inputs,
@@ -772,6 +971,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
                 return { outcome: "succeeded" };
               },
               writeOutputs: async () => undefined,
+              report: async () => undefined,
               cleanup: async (allocation) => {
                 cleanups += 1;
                 if (phase === "cleanup") process.emit(signal);
@@ -821,6 +1021,9 @@ test("a CLI launch failure starts no run and exposes no result", async () => {
         bootstrap: async () => ({
           executable: "/verified/um",
           cliDirectory: "/verified",
+          version: "0.72.1",
+          source: "bundled",
+          buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
           environment: {},
         }),
         readInputs: async () => ({
@@ -845,11 +1048,15 @@ test("a CLI launch failure starts no run and exposes no result", async () => {
         writeOutputs: async (_file, outputs) => {
           observedOutputs = { ...outputs };
         },
+        report: async () => undefined,
         cleanup: cleanupExecution,
       },
     );
     assert.equal(result.failure?.code, "child_launch_failed");
-    assert.deepEqual(observedOutputs, emptyOutputs());
+    assert.deepEqual(observedOutputs, {
+      ...emptyOutputs(),
+      "um-version": "0.72.1",
+    });
     await assert.rejects(access(allocation.parent));
   } finally {
     await rm(root, { recursive: true, force: true });
