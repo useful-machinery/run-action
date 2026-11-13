@@ -4581,12 +4581,166 @@ async function readActionInputs(environment) {
 
 // src/result.ts
 var import_node_crypto4 = require("node:crypto");
-var import_node_fs3 = require("node:fs");
+var import_node_fs4 = require("node:fs");
 var import_promises7 = require("node:fs/promises");
 var import_node_events = require("node:events");
 var import_node_path6 = __toESM(require("node:path"), 1);
+var import_stream_json2 = __toESM(require_stream_json(), 1);
+
+// src/terminal.ts
+var import_node_fs3 = require("node:fs");
+var import_node_stream = require("node:stream");
 var import_stream_json = __toESM(require_stream_json(), 1);
 var { parser } = import_stream_json.default;
+function primitiveValue(token) {
+  if (token.name !== "numberValue") return token.value;
+  if (typeof token.value !== "string") {
+    throw new AdapterError("terminal_result_invalid");
+  }
+  if (!/^-?(?:0|[1-9][0-9]*)$/u.test(token.value)) {
+    throw new AdapterError("terminal_result_invalid");
+  }
+  const value = Number(token.value);
+  if (!Number.isSafeInteger(value)) {
+    throw new AdapterError("terminal_result_invalid");
+  }
+  return value;
+}
+var PRIMITIVE_TOKENS = /* @__PURE__ */ new Set([
+  "stringValue",
+  "numberValue",
+  "nullValue",
+  "trueValue",
+  "falseValue"
+]);
+async function readTerminalEnvelope(file) {
+  const stream = (0, import_node_stream.pipeline)((0, import_node_fs3.createReadStream)(file), parser(), () => {
+  });
+  const values = /* @__PURE__ */ new Map();
+  const rootKeys = /* @__PURE__ */ new Set();
+  let depth = 0;
+  let pendingRootKey;
+  let rootStarted = false;
+  let rootEnded = false;
+  try {
+    for await (const raw of stream) {
+      const token = raw;
+      if (token.name === "startObject" || token.name === "startArray") {
+        depth += 1;
+        if (!rootStarted) {
+          if (token.name !== "startObject" || depth !== 1) {
+            throw new AdapterError("terminal_result_invalid");
+          }
+          rootStarted = true;
+        }
+        pendingRootKey = void 0;
+        continue;
+      }
+      if (token.name === "endObject" || token.name === "endArray") {
+        if (depth === 1 && token.name === "endObject") rootEnded = true;
+        depth -= 1;
+        if (depth < 0) throw new AdapterError("terminal_result_invalid");
+        continue;
+      }
+      if (token.name === "keyValue" && depth === 1) {
+        if (typeof token.value !== "string" || rootKeys.has(token.value)) {
+          throw new AdapterError("terminal_result_invalid");
+        }
+        pendingRootKey = token.value;
+        rootKeys.add(token.value);
+        continue;
+      }
+      if (depth === 1 && pendingRootKey && PRIMITIVE_TOKENS.has(token.name)) {
+        values.set(pendingRootKey, primitiveValue(token));
+        pendingRootKey = void 0;
+      }
+    }
+  } catch (error) {
+    if (error instanceof AdapterError) throw error;
+    throw new AdapterError("terminal_result_invalid");
+  }
+  if (!rootStarted || !rootEnded || depth !== 0) {
+    throw new AdapterError("terminal_result_invalid");
+  }
+  const schemaVersion = values.get("schemaVersion");
+  const command = values.get("command");
+  const outcome = values.get("outcome");
+  const exitStatus = values.get("exitStatus");
+  if (schemaVersion !== 1 || command !== "um workflow run" || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
+    String(outcome)
+  ) || typeof exitStatus !== "number" || !Number.isSafeInteger(exitStatus)) {
+    throw new AdapterError("terminal_result_invalid");
+  }
+  const optionalString = (name) => {
+    const value = values.get(name);
+    return typeof value === "string" ? value : void 0;
+  };
+  const optionalInteger = (name) => {
+    const value = values.get(name);
+    return typeof value === "number" && Number.isSafeInteger(value) ? value : void 0;
+  };
+  const runDirectory = optionalString("runDirectory");
+  const attemptNumber = optionalInteger("attemptNumber");
+  const resultDirectory = optionalString("resultDirectory");
+  return {
+    schemaVersion,
+    command,
+    outcome,
+    exitStatus,
+    ...runDirectory === void 0 ? {} : { runDirectory },
+    ...attemptNumber === void 0 ? {} : { attemptNumber },
+    ...resultDirectory === void 0 ? {} : { resultDirectory },
+    rootKeys
+  };
+}
+function sameKeys(actual, expected) {
+  return actual.size === expected.length && expected.every((key) => actual.has(key));
+}
+function validateTerminalShape(envelope) {
+  if (["succeeded", "failed", "cancelled"].includes(envelope.outcome)) {
+    if (!sameKeys(envelope.rootKeys, [
+      "schemaVersion",
+      "command",
+      "outcome",
+      "exitStatus",
+      "runDirectory",
+      "attemptNumber",
+      "resultDirectory",
+      "result"
+    ]) || !envelope.runDirectory || !envelope.resultDirectory || envelope.attemptNumber === void 0 || envelope.attemptNumber < 1) {
+      throw new AdapterError("terminal_result_invalid");
+    }
+    return;
+  }
+  if (envelope.outcome === "interrupted") {
+    if (!sameKeys(envelope.rootKeys, [
+      "schemaVersion",
+      "command",
+      "outcome",
+      "exitStatus",
+      "runDirectory",
+      "attemptNumber",
+      "interruption"
+    ]) || !envelope.runDirectory || envelope.attemptNumber === void 0 || envelope.attemptNumber < 1 || envelope.exitStatus !== 1) {
+      throw new AdapterError("terminal_result_invalid");
+    }
+    return;
+  }
+  if (envelope.outcome === "rejected" && (!sameKeys(envelope.rootKeys, [
+    "schemaVersion",
+    "command",
+    "outcome",
+    "exitStatus",
+    "phase",
+    "workflow",
+    "diagnostics"
+  ]) || envelope.exitStatus !== 1)) {
+    throw new AdapterError("terminal_result_invalid");
+  }
+}
+
+// src/result.ts
+var { parser: parser2 } = import_stream_json2.default;
 var MAXIMUM_RESULT_BYTES = 202027692;
 var MAXIMUM_VALIDATOR_OUTPUT_BYTES = 1048576;
 var MAXIMUM_INLINE_EXPORT_BYTES = 65536;
@@ -4640,7 +4794,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
 async function fingerprintResult(file) {
   const handle = await (0, import_promises7.open)(
     file,
-    import_node_fs3.constants.O_RDONLY | import_node_fs3.constants.O_NOFOLLOW
+    import_node_fs4.constants.O_RDONLY | import_node_fs4.constants.O_NOFOLLOW
   ).catch(() => {
     throw new AdapterError("result_projection_failed");
   });
@@ -4674,7 +4828,7 @@ async function fingerprintResult(file) {
     sha256: digest.digest("hex")
   };
 }
-function primitiveValue(token) {
+function primitiveValue2(token) {
   if (token.name !== "numberValue") return token.value;
   if (typeof token.value !== "string") {
     throw new AdapterError("result_projection_failed");
@@ -4688,21 +4842,27 @@ function primitiveValue(token) {
   }
   return value;
 }
-var PRIMITIVE_TOKENS = /* @__PURE__ */ new Set([
-  "stringValue",
-  "numberValue",
-  "nullValue",
-  "trueValue",
-  "falseValue"
-]);
-function assignPrimitive(projection, selected, section, key, value) {
-  if (section === "selected") {
+var PLACE_MEMBERS = {
+  selected: ["state", "kind", "path", "sizeBytes"],
+  digest: ["algorithm", "value"],
+  carrier: ["path", "sizeBytes"],
+  carrierDigest: ["algorithm", "value"]
+};
+function childPlace(parent, key, isObject) {
+  if (!isObject) return void 0;
+  if (parent === "selected" && key === "digest") return "digest";
+  if (parent === "selected" && key === "carrier") return "carrier";
+  if (parent === "carrier" && key === "digest") return "carrierDigest";
+  return void 0;
+}
+function assignPrimitive(selected, place, key, value) {
+  if (place === "selected") {
     selected[key] = value;
-  } else if (section === "digest") {
+  } else if (place === "digest") {
     const digest = selected.digest ?? {};
     digest[key] = value;
     selected.digest = digest;
-  } else if (section === "carrier") {
+  } else if (place === "carrier") {
     const carrier = selected.carrier ?? {};
     carrier[key] = value;
     selected.carrier = carrier;
@@ -4713,26 +4873,23 @@ function assignPrimitive(projection, selected, section, key, value) {
     carrier.digest = digest;
     selected.carrier = carrier;
   }
-  void projection;
 }
 async function parseResultAndFingerprint(file, selectedExport) {
   const handle = await (0, import_promises7.open)(
     file,
-    import_node_fs3.constants.O_RDONLY | import_node_fs3.constants.O_NOFOLLOW
+    import_node_fs4.constants.O_RDONLY | import_node_fs4.constants.O_NOFOLLOW
   ).catch(() => {
     throw new AdapterError("result_projection_failed");
   });
   const digest = (0, import_node_crypto4.createHash)("sha256");
-  const jsonParser = parser();
+  const jsonParser = parser2();
   const projection = {};
   const selected = {};
   let selectedFound = false;
   let depth = 0;
   let rootKey;
   let exportKey;
-  let selectedDepth;
-  let section = "selected";
-  let sectionDepth = 0;
+  const places = [];
   let selectedKey;
   const rootValues = /* @__PURE__ */ new Map();
   let exportsDepth;
@@ -4744,7 +4901,7 @@ async function parseResultAndFingerprint(file, selectedExport) {
           rootKey = token.value;
         } else if (exportsDepth === depth && typeof token.value === "string") {
           exportKey = token.value;
-        } else if (selectedDepth !== void 0 && depth >= selectedDepth && typeof token.value === "string") {
+        } else if (places.length > 0 && typeof token.value === "string") {
           selectedKey = token.value;
         }
         continue;
@@ -4755,21 +4912,16 @@ async function parseResultAndFingerprint(file, selectedExport) {
         if (parentDepth === 1 && rootKey === "exports" && token.name === "startObject") {
           exportsDepth = depth;
         } else if (exportsDepth === parentDepth && exportKey === selectedExport && token.name === "startObject") {
-          selectedDepth = depth;
           selectedFound = true;
-          section = "selected";
-          sectionDepth = depth;
-        } else if (selectedDepth !== void 0 && parentDepth >= selectedDepth) {
-          if (section === "selected" && selectedKey === "digest") {
-            section = "digest";
-            sectionDepth = depth;
-          } else if (section === "selected" && selectedKey === "carrier") {
-            section = "carrier";
-            sectionDepth = depth;
-          } else if (section === "carrier" && selectedKey === "digest") {
-            section = "carrierDigest";
-            sectionDepth = depth;
-          }
+          places.push("selected");
+        } else if (places.length > 0) {
+          places.push(
+            childPlace(
+              places.at(-1),
+              selectedKey,
+              token.name === "startObject"
+            )
+          );
         }
         rootKey = void 0;
         exportKey = void 0;
@@ -4777,18 +4929,7 @@ async function parseResultAndFingerprint(file, selectedExport) {
         continue;
       }
       if (token.name === "endObject" || token.name === "endArray") {
-        if (selectedDepth !== void 0 && depth === sectionDepth) {
-          if (section === "carrierDigest") {
-            section = "carrier";
-            sectionDepth = selectedDepth + 1;
-          } else {
-            section = "selected";
-            sectionDepth = selectedDepth;
-          }
-        }
-        if (selectedDepth !== void 0 && depth === selectedDepth) {
-          selectedDepth = void 0;
-        }
+        places.pop();
         if (exportsDepth !== void 0 && depth === exportsDepth)
           exportsDepth = void 0;
         depth -= 1;
@@ -4796,16 +4937,18 @@ async function parseResultAndFingerprint(file, selectedExport) {
       }
       if (PRIMITIVE_TOKENS.has(token.name)) {
         if (depth === 1 && rootKey) {
-          rootValues.set(rootKey, primitiveValue(token));
+          rootValues.set(rootKey, primitiveValue2(token));
           rootKey = void 0;
-        } else if (selectedDepth !== void 0 && selectedKey) {
-          assignPrimitive(
-            projection,
-            selected,
-            section,
-            selectedKey,
-            primitiveValue(token)
-          );
+        } else if (places.length > 0 && selectedKey !== void 0) {
+          const place = places.at(-1);
+          if (place && PLACE_MEMBERS[place].includes(selectedKey)) {
+            assignPrimitive(
+              selected,
+              place,
+              selectedKey,
+              primitiveValue2(token)
+            );
+          }
           selectedKey = void 0;
         }
       }
@@ -4876,7 +5019,7 @@ async function readCarrier(artifactDirectory, metadata, retainInline) {
   }
   const handle = await (0, import_promises7.open)(
     carrierPath,
-    import_node_fs3.constants.O_RDONLY | import_node_fs3.constants.O_NOFOLLOW
+    import_node_fs4.constants.O_RDONLY | import_node_fs4.constants.O_NOFOLLOW
   ).catch(() => {
     throw new AdapterError("result_projection_failed");
   });
@@ -4985,158 +5128,6 @@ async function validateAndProject(executable, identity, selectedExport, environm
     outcome,
     selected: { state: "available", kind, path: carrier.path, value }
   };
-}
-
-// src/terminal.ts
-var import_node_fs4 = require("node:fs");
-var import_node_stream = require("node:stream");
-var import_stream_json2 = __toESM(require_stream_json(), 1);
-var { parser: parser2 } = import_stream_json2.default;
-function primitiveValue2(token) {
-  if (token.name !== "numberValue") return token.value;
-  if (typeof token.value !== "string") {
-    throw new AdapterError("terminal_result_invalid");
-  }
-  if (!/^-?(?:0|[1-9][0-9]*)$/u.test(token.value)) {
-    throw new AdapterError("terminal_result_invalid");
-  }
-  const value = Number(token.value);
-  if (!Number.isSafeInteger(value)) {
-    throw new AdapterError("terminal_result_invalid");
-  }
-  return value;
-}
-var PRIMITIVE_TOKENS2 = /* @__PURE__ */ new Set([
-  "stringValue",
-  "numberValue",
-  "nullValue",
-  "trueValue",
-  "falseValue"
-]);
-async function readTerminalEnvelope(file) {
-  const stream = (0, import_node_stream.pipeline)((0, import_node_fs4.createReadStream)(file), parser2(), () => {
-  });
-  const values = /* @__PURE__ */ new Map();
-  const rootKeys = /* @__PURE__ */ new Set();
-  let depth = 0;
-  let pendingRootKey;
-  let rootStarted = false;
-  let rootEnded = false;
-  try {
-    for await (const raw of stream) {
-      const token = raw;
-      if (token.name === "startObject" || token.name === "startArray") {
-        depth += 1;
-        if (!rootStarted) {
-          if (token.name !== "startObject" || depth !== 1) {
-            throw new AdapterError("terminal_result_invalid");
-          }
-          rootStarted = true;
-        }
-        pendingRootKey = void 0;
-        continue;
-      }
-      if (token.name === "endObject" || token.name === "endArray") {
-        if (depth === 1 && token.name === "endObject") rootEnded = true;
-        depth -= 1;
-        if (depth < 0) throw new AdapterError("terminal_result_invalid");
-        continue;
-      }
-      if (token.name === "keyValue" && depth === 1) {
-        if (typeof token.value !== "string" || rootKeys.has(token.value)) {
-          throw new AdapterError("terminal_result_invalid");
-        }
-        pendingRootKey = token.value;
-        rootKeys.add(token.value);
-        continue;
-      }
-      if (depth === 1 && pendingRootKey && PRIMITIVE_TOKENS2.has(token.name)) {
-        values.set(pendingRootKey, primitiveValue2(token));
-        pendingRootKey = void 0;
-      }
-    }
-  } catch (error) {
-    if (error instanceof AdapterError) throw error;
-    throw new AdapterError("terminal_result_invalid");
-  }
-  if (!rootStarted || !rootEnded || depth !== 0) {
-    throw new AdapterError("terminal_result_invalid");
-  }
-  const schemaVersion = values.get("schemaVersion");
-  const command = values.get("command");
-  const outcome = values.get("outcome");
-  const exitStatus = values.get("exitStatus");
-  if (schemaVersion !== 1 || command !== "um workflow run" || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
-    String(outcome)
-  ) || typeof exitStatus !== "number" || !Number.isSafeInteger(exitStatus)) {
-    throw new AdapterError("terminal_result_invalid");
-  }
-  const optionalString = (name) => {
-    const value = values.get(name);
-    return typeof value === "string" ? value : void 0;
-  };
-  const optionalInteger = (name) => {
-    const value = values.get(name);
-    return typeof value === "number" && Number.isSafeInteger(value) ? value : void 0;
-  };
-  const runDirectory = optionalString("runDirectory");
-  const attemptNumber = optionalInteger("attemptNumber");
-  const resultDirectory = optionalString("resultDirectory");
-  return {
-    schemaVersion,
-    command,
-    outcome,
-    exitStatus,
-    ...runDirectory === void 0 ? {} : { runDirectory },
-    ...attemptNumber === void 0 ? {} : { attemptNumber },
-    ...resultDirectory === void 0 ? {} : { resultDirectory },
-    rootKeys
-  };
-}
-function sameKeys(actual, expected) {
-  return actual.size === expected.length && expected.every((key) => actual.has(key));
-}
-function validateTerminalShape(envelope) {
-  if (["succeeded", "failed", "cancelled"].includes(envelope.outcome)) {
-    if (!sameKeys(envelope.rootKeys, [
-      "schemaVersion",
-      "command",
-      "outcome",
-      "exitStatus",
-      "runDirectory",
-      "attemptNumber",
-      "resultDirectory",
-      "result"
-    ]) || !envelope.runDirectory || !envelope.resultDirectory || envelope.attemptNumber === void 0 || envelope.attemptNumber < 1) {
-      throw new AdapterError("terminal_result_invalid");
-    }
-    return;
-  }
-  if (envelope.outcome === "interrupted") {
-    if (!sameKeys(envelope.rootKeys, [
-      "schemaVersion",
-      "command",
-      "outcome",
-      "exitStatus",
-      "runDirectory",
-      "attemptNumber",
-      "interruption"
-    ]) || !envelope.runDirectory || envelope.attemptNumber === void 0 || envelope.attemptNumber < 1 || envelope.exitStatus !== 1) {
-      throw new AdapterError("terminal_result_invalid");
-    }
-    return;
-  }
-  if (envelope.outcome === "rejected" && (!sameKeys(envelope.rootKeys, [
-    "schemaVersion",
-    "command",
-    "outcome",
-    "exitStatus",
-    "phase",
-    "workflow",
-    "diagnostics"
-  ]) || envelope.exitStatus !== 1)) {
-    throw new AdapterError("terminal_result_invalid");
-  }
 }
 
 // src/main.ts

@@ -17,6 +17,7 @@ import {
   bootstrapCli,
   DEFAULT_BOOTSTRAP_DEPENDENCIES,
 } from "../src/bootstrap.ts";
+import type { ActionOutputs } from "../src/github.ts";
 import {
   type ActionDependencies,
   DEFAULT_ACTION_DEPENDENCIES,
@@ -281,6 +282,108 @@ steps:
       );
       assert.equal((await stat(result.outputs["result-path"])).isFile(), true);
       assert.deepEqual(await readdir(reservation), ["run"]);
+    });
+  },
+);
+
+const presentationWorkflow = `schemaVersion: 1
+inputs:
+  gate:
+    kind: text
+steps:
+  produce:
+    kind: cmd
+    command:
+      argv: ["sh", "-c", "printf 'release summary' > summary.txt"]
+    outputs:
+      summary:
+        kind: text
+        from: path
+        path: summary.txt
+  skipped:
+    kind: cmd
+    condition:
+      equals:
+        - ref: inputs.gate
+        - value: run
+    command:
+      argv: ["sh", "-c", "printf note > note.txt"]
+    outputs:
+      note:
+        kind: text
+        from: path
+        path: note.txt
+exports:
+  summary:
+    ref: outputs.produce.summary
+    presentation:
+      title:
+        ref: outputs.skipped.note
+  note:
+    ref: outputs.skipped.note
+    presentation:
+      title:
+        value: Note
+`;
+
+// REQ-RUNACTION-53, REQ-RUNACTION-54, REQ-RUNACTION-55
+test(
+  "the staged pinned release projects exports that carry presentation",
+  { skip: releaseBundle === undefined },
+  async () => {
+    assert.ok(releaseBundle);
+    const bundle = releaseBundle;
+    const select = (
+      selectedExport: string,
+      check: (outputs: ActionOutputs) => Promise<void>,
+    ) =>
+      withReleaseRoot(async (releaseRoot) => {
+        await writeFile(
+          path.join(releaseRoot.workspace, "workflow.yaml"),
+          presentationWorkflow,
+        );
+        const result = await executeAction(
+          releaseEnvironment(releaseRoot, {
+            INPUT_WORKFLOW: "workflow.yaml",
+            INPUT_INPUTS: JSON.stringify({
+              gate: { kind: "text", value: "skip" },
+            }),
+            INPUT_EXPORT: selectedExport,
+          }),
+          releaseDependencies(bundle),
+        );
+
+        assert.equal(result.failure, undefined);
+        assert.equal(result.outputs.outcome, "succeeded");
+        const document = JSON.parse(
+          await readFile(result.outputs["result-path"], "utf8"),
+        );
+        assert.equal(
+          document.exports.summary.presentation.title.state,
+          "unavailable",
+        );
+        assert.equal(document.exports.note.state, "unavailable");
+        assert.equal(
+          document.exports.note.presentation.title.state,
+          "available",
+        );
+        await check(result.outputs);
+      });
+
+    await select("summary", async (outputs) => {
+      assert.equal(outputs["export-state"], "available");
+      assert.equal(outputs["export-kind"], "text");
+      assert.equal(outputs["export-value"], "release summary");
+      assert.equal(
+        await readFile(outputs["export-path"], "utf8"),
+        "release summary",
+      );
+    });
+    await select("note", async (outputs) => {
+      assert.equal(outputs["export-state"], "unavailable");
+      assert.equal(outputs["export-kind"], "");
+      assert.equal(outputs["export-path"], "");
+      assert.equal(outputs["export-value"], "");
     });
   },
 );

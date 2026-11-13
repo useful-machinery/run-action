@@ -8,6 +8,7 @@ import streamJson from "stream-json";
 import { AdapterError } from "./errors.ts";
 import type { ResultIdentity } from "./identity.ts";
 import { captureCommand } from "./subprocess.ts";
+import { PRIMITIVE_TOKENS, type JsonToken } from "./terminal.ts";
 
 const { parser } = streamJson;
 
@@ -36,7 +37,6 @@ interface CarrierMetadata {
 interface SelectedExportMetadata {
   readonly state?: unknown;
   readonly kind?: unknown;
-  readonly reason?: unknown;
   readonly path?: unknown;
   readonly sizeBytes?: unknown;
   readonly digest?: DigestMetadata;
@@ -197,11 +197,6 @@ async function fingerprintResult(file: string): Promise<Fingerprint> {
   };
 }
 
-interface JsonToken {
-  readonly name: string;
-  readonly value?: unknown;
-}
-
 function primitiveValue(token: JsonToken): unknown {
   if (token.name !== "numberValue") return token.value;
   if (typeof token.value !== "string") {
@@ -217,28 +212,43 @@ function primitiveValue(token: JsonToken): unknown {
   return value;
 }
 
-const PRIMITIVE_TOKENS = new Set([
-  "stringValue",
-  "numberValue",
-  "nullValue",
-  "trueValue",
-  "falseValue",
-]);
+// A place in the selected export whose members the projection reads.
+type Place = "selected" | "digest" | "carrier" | "carrierDigest";
+
+const PLACE_MEMBERS: Readonly<Record<Place, readonly string[]>> = {
+  selected: ["state", "kind", "path", "sizeBytes"],
+  digest: ["algorithm", "value"],
+  carrier: ["path", "sizeBytes"],
+  carrierDigest: ["algorithm", "value"],
+};
+
+// The place of a container opened under `key` inside `parent`; arrays and every
+// other container are unread (INV-EMBED-23).
+function childPlace(
+  parent: Place | undefined,
+  key: string | undefined,
+  isObject: boolean,
+): Place | undefined {
+  if (!isObject) return undefined;
+  if (parent === "selected" && key === "digest") return "digest";
+  if (parent === "selected" && key === "carrier") return "carrier";
+  if (parent === "carrier" && key === "digest") return "carrierDigest";
+  return undefined;
+}
 
 function assignPrimitive(
-  projection: ResultProjection,
   selected: SelectedExportMetadata,
-  section: "selected" | "digest" | "carrier" | "carrierDigest",
+  place: Place,
   key: string,
   value: unknown,
 ): void {
-  if (section === "selected") {
+  if (place === "selected") {
     (selected as Record<string, unknown>)[key] = value;
-  } else if (section === "digest") {
+  } else if (place === "digest") {
     const digest = selected.digest ?? {};
     (digest as Record<string, unknown>)[key] = value;
     (selected as { digest?: DigestMetadata }).digest = digest;
-  } else if (section === "carrier") {
+  } else if (place === "carrier") {
     const carrier = selected.carrier ?? {};
     (carrier as Record<string, unknown>)[key] = value;
     (selected as { carrier?: CarrierMetadata }).carrier = carrier;
@@ -249,7 +259,6 @@ function assignPrimitive(
     (carrier as { digest?: DigestMetadata }).digest = digest;
     (selected as { carrier?: CarrierMetadata }).carrier = carrier;
   }
-  void projection;
 }
 
 async function parseResultAndFingerprint(
@@ -270,9 +279,8 @@ async function parseResultAndFingerprint(
   let depth = 0;
   let rootKey: string | undefined;
   let exportKey: string | undefined;
-  let selectedDepth: number | undefined;
-  let section: "selected" | "digest" | "carrier" | "carrierDigest" = "selected";
-  let sectionDepth = 0;
+  // One entry per container open at or below the selected export.
+  const places: (Place | undefined)[] = [];
   let selectedKey: string | undefined;
   const rootValues = new Map<string, unknown>();
   let exportsDepth: number | undefined;
@@ -285,11 +293,7 @@ async function parseResultAndFingerprint(
           rootKey = token.value;
         } else if (exportsDepth === depth && typeof token.value === "string") {
           exportKey = token.value;
-        } else if (
-          selectedDepth !== undefined &&
-          depth >= selectedDepth &&
-          typeof token.value === "string"
-        ) {
+        } else if (places.length > 0 && typeof token.value === "string") {
           selectedKey = token.value;
         }
         continue;
@@ -308,24 +312,16 @@ async function parseResultAndFingerprint(
           exportKey === selectedExport &&
           token.name === "startObject"
         ) {
-          selectedDepth = depth;
           selectedFound = true;
-          section = "selected";
-          sectionDepth = depth;
-        } else if (
-          selectedDepth !== undefined &&
-          parentDepth >= selectedDepth
-        ) {
-          if (section === "selected" && selectedKey === "digest") {
-            section = "digest";
-            sectionDepth = depth;
-          } else if (section === "selected" && selectedKey === "carrier") {
-            section = "carrier";
-            sectionDepth = depth;
-          } else if (section === "carrier" && selectedKey === "digest") {
-            section = "carrierDigest";
-            sectionDepth = depth;
-          }
+          places.push("selected");
+        } else if (places.length > 0) {
+          places.push(
+            childPlace(
+              places.at(-1),
+              selectedKey,
+              token.name === "startObject",
+            ),
+          );
         }
         rootKey = undefined;
         exportKey = undefined;
@@ -333,18 +329,7 @@ async function parseResultAndFingerprint(
         continue;
       }
       if (token.name === "endObject" || token.name === "endArray") {
-        if (selectedDepth !== undefined && depth === sectionDepth) {
-          if (section === "carrierDigest") {
-            section = "carrier";
-            sectionDepth = selectedDepth + 1;
-          } else {
-            section = "selected";
-            sectionDepth = selectedDepth;
-          }
-        }
-        if (selectedDepth !== undefined && depth === selectedDepth) {
-          selectedDepth = undefined;
-        }
+        places.pop();
         if (exportsDepth !== undefined && depth === exportsDepth)
           exportsDepth = undefined;
         depth -= 1;
@@ -354,14 +339,16 @@ async function parseResultAndFingerprint(
         if (depth === 1 && rootKey) {
           rootValues.set(rootKey, primitiveValue(token));
           rootKey = undefined;
-        } else if (selectedDepth !== undefined && selectedKey) {
-          assignPrimitive(
-            projection,
-            selected,
-            section,
-            selectedKey,
-            primitiveValue(token),
-          );
+        } else if (places.length > 0 && selectedKey !== undefined) {
+          const place = places.at(-1);
+          if (place && PLACE_MEMBERS[place].includes(selectedKey)) {
+            assignPrimitive(
+              selected,
+              place,
+              selectedKey,
+              primitiveValue(token),
+            );
+          }
           selectedKey = undefined;
         }
       }

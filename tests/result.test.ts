@@ -45,6 +45,24 @@ function byteEntry(
   };
 }
 
+function changedGitEntry(bytes: Buffer) {
+  return {
+    state: "available",
+    kind: "git_branch",
+    artifactVersion: 1,
+    objectFormat: "sha1",
+    baseOid: "0".repeat(40),
+    headOid: "1".repeat(40),
+    treeOid: "2".repeat(40),
+    carrier: {
+      path: "exports/0001",
+      mediaType: "application/vnd.git.bundle",
+      sizeBytes: bytes.length,
+      digest: { algorithm: "sha256", value: digest(bytes) },
+    },
+  };
+}
+
 async function withArtifact(
   exports: Record<string, ExportEntry>,
   carriers: Readonly<Record<string, Buffer>>,
@@ -99,6 +117,7 @@ const validValidator =
   };
 
 // REQ-RUNACTION-53, REQ-RUNACTION-54, REQ-RUNACTION-55, REQ-RUNACTION-57
+// INV-EMBED-23
 test("projection covers unavailable, file, text, JSON, changed Git, and zero-delta Git", async (t) => {
   const cases: readonly {
     name: string;
@@ -174,21 +193,7 @@ test("projection covers unavailable, file, text, JSON, changed Git, and zero-del
     {
       name: "changed-git",
       bytes: Buffer.from("bundle bytes"),
-      entry: (bytes) => ({
-        state: "available",
-        kind: "git_branch",
-        artifactVersion: 1,
-        objectFormat: "sha1",
-        baseOid: "0".repeat(40),
-        headOid: "1".repeat(40),
-        treeOid: "2".repeat(40),
-        carrier: {
-          path: "exports/0001",
-          mediaType: "application/vnd.git.bundle",
-          sizeBytes: bytes.length,
-          digest: { algorithm: "sha256", value: digest(bytes) },
-        },
-      }),
+      entry: (bytes) => changedGitEntry(bytes),
       expected: (directory) => ({
         state: "available",
         kind: "git_branch",
@@ -207,6 +212,110 @@ test("projection covers unavailable, file, text, JSON, changed Git, and zero-del
         treeOid: "2".repeat(40),
       }),
       expected: () => ({ state: "available", kind: "git_branch" }),
+    },
+    {
+      name: "unavailable-with-available-title",
+      entry: () => ({
+        state: "unavailable",
+        reason: "source_skipped",
+        presentation: { title: { state: "available", value: "Note" } },
+      }),
+      expected: () => ({ state: "unavailable" }),
+    },
+    {
+      name: "text-with-unavailable-title",
+      bytes: Buffer.from("line one\nλ\n"),
+      entry: (bytes) => ({
+        ...byteEntry("text", bytes),
+        presentation: {
+          title: { state: "unavailable", reason: "source_not_run" },
+        },
+      }),
+      expected: (directory, bytes) => ({
+        state: "available",
+        kind: "text",
+        path: path.join(directory, "exports", "0001"),
+        value: bytes.toString("utf8"),
+      }),
+    },
+    {
+      name: "file-with-title-and-unavailable-description",
+      bytes: Buffer.from([0, 1, 2]),
+      entry: (bytes) => ({
+        ...byteEntry("file", bytes),
+        producer: {
+          attemptId: "attempt",
+          attemptNumber: 1,
+          node: "report",
+          output: "body",
+        },
+        presentation: {
+          title: { state: "available", value: "Weekly report" },
+          description: { state: "unavailable", reason: "source_failed" },
+        },
+      }),
+      expected: (directory) => ({
+        state: "available",
+        kind: "file",
+        path: path.join(directory, "exports", "0001"),
+      }),
+    },
+    {
+      name: "changed-git-with-unavailable-title",
+      bytes: Buffer.from("bundle bytes"),
+      entry: (bytes) => ({
+        ...changedGitEntry(bytes),
+        presentation: { title: { state: "unavailable", reason: "blank" } },
+      }),
+      expected: (directory) => ({
+        state: "available",
+        kind: "git_branch",
+        path: path.join(directory, "exports", "0001"),
+      }),
+    },
+    {
+      // No CLI writes this shape; it pins the key-path rule itself.
+      name: "text-with-unread-nested-members",
+      bytes: Buffer.from("line one\nλ\n"),
+      entry: (bytes) => ({
+        ...byteEntry("text", bytes),
+        origin: {
+          kind: "file",
+          path: "exports/9999",
+          sizeBytes: 1,
+          digest: { algorithm: "sha256", value: "0".repeat(64) },
+        },
+        history: [{ state: "unavailable" }],
+      }),
+      expected: (directory, bytes) => ({
+        state: "available",
+        kind: "text",
+        path: path.join(directory, "exports", "0001"),
+        value: bytes.toString("utf8"),
+      }),
+    },
+    {
+      name: "changed-git-with-unread-nested-carrier-members",
+      bytes: Buffer.from("bundle bytes"),
+      entry: (bytes) => {
+        const entry = changedGitEntry(bytes);
+        return {
+          ...entry,
+          carrier: {
+            ...entry.carrier,
+            origin: {
+              path: "exports/9999",
+              sizeBytes: 1,
+              digest: { algorithm: "sha256", value: "0".repeat(64) },
+            },
+          },
+        };
+      },
+      expected: (directory) => ({
+        state: "available",
+        kind: "git_branch",
+        path: path.join(directory, "exports", "0001"),
+      }),
     },
   ];
 

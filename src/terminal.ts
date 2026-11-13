@@ -18,7 +18,7 @@ export interface TerminalEnvelope {
   readonly rootKeys: ReadonlySet<string>;
 }
 
-interface JsonToken {
+export interface JsonToken {
   readonly name: string;
   readonly value?: unknown;
 }
@@ -40,7 +40,7 @@ function primitiveValue(token: JsonToken): unknown {
   return value;
 }
 
-const PRIMITIVE_TOKENS = new Set([
+export const PRIMITIVE_TOKENS = new Set([
   "stringValue",
   "numberValue",
   "nullValue",
