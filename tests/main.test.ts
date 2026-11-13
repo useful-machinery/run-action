@@ -25,7 +25,11 @@ import type {
   SelectedProjection,
   ValidatedResultProjection,
 } from "../src/result.ts";
-import type { TerminalEnvelope } from "../src/terminal.ts";
+import {
+  readTerminalEnvelope,
+  type TerminalEnvelope,
+} from "../src/terminal.ts";
+import { pinnedStatusDocument } from "./pinned-status.ts";
 
 function unreachable<T>(): Promise<T> {
   throw new Error("unexpected test dependency call");
@@ -727,6 +731,205 @@ test("authenticated terminal-less recovery retains and validates its result", as
     assert.equal(
       result.outputs["result-path"],
       path.join(artifactDirectory, "result.json"),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+// REQ-RUNACTION-47, REQ-RUNACTION-75
+// INV-EMBED-6
+test("a refused terminal identity is never recovered through status", async (t) => {
+  const scenarios: readonly {
+    name: string;
+    paths: (
+      root: string,
+      runDirectory: string,
+    ) => { runDirectory: string; resultDirectory: string };
+    runDirectoryOutput: (runDirectory: string) => string;
+  }[] = [
+    {
+      name: "foreign run directory",
+      paths: (root) => ({
+        runDirectory: path.join(root, "other"),
+        resultDirectory: path.join(
+          root,
+          "other",
+          "attempts",
+          "000001",
+          "result",
+        ),
+      }),
+      runDirectoryOutput: () => "",
+    },
+    {
+      name: "foreign result directory",
+      paths: (_root, runDirectory) => ({
+        runDirectory,
+        resultDirectory: path.join(runDirectory, "attempts", "000001", "other"),
+      }),
+      runDirectoryOutput: (runDirectory) => runDirectory,
+    },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async () => {
+      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-refused-"));
+      try {
+        const { runDirectory, artifactDirectory, dependencies } =
+          await committedRun(root, "failed", 1);
+        const terminalPaths = scenario.paths(root, runDirectory);
+        let recoveries = 0;
+        let projections = 0;
+        const result = await executeAction(
+          { GITHUB_OUTPUT: path.join(root, "github-output") },
+          {
+            ...dependencies,
+            readTerminal: async (file) => ({
+              ...(await dependencies.readTerminal(file)),
+              ...terminalPaths,
+            }),
+            recover: async () => {
+              recoveries += 1;
+              return {
+                runDirectory,
+                result: {
+                  runDirectory,
+                  artifactDirectory,
+                  resultPath: path.join(artifactDirectory, "result.json"),
+                  outcome: "failed",
+                  attemptNumber: 1,
+                },
+              };
+            },
+            project: async () => {
+              projections += 1;
+              return { outcome: "failed" };
+            },
+          },
+        );
+        assert.equal(result.failure?.code, "result_identity_invalid");
+        assert.equal(recoveries, 0);
+        assert.equal(projections, 0);
+        assert.deepEqual(result.outputs, {
+          ...emptyOutputs(),
+          "um-version": "0.72.1",
+          "run-directory": scenario.runDirectoryOutput(runDirectory),
+        });
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
+});
+
+// REQ-RUNACTION-41, REQ-RUNACTION-45, REQ-RUNACTION-46, REQ-RUNACTION-47
+// INV-EMBED-6, INV-EMBED-8
+test("a job cancelled during the run recovers its published result through status", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-cancelled-"));
+  const before = [
+    process.listenerCount("SIGINT"),
+    process.listenerCount("SIGTERM"),
+  ];
+  let allocated: ExecutionAllocation | undefined;
+  let statusReads = 0;
+  try {
+    const result = await executeAction(
+      { RUNNER_TEMP: root },
+      {
+        bootstrap: async () => ({
+          executable: "/verified/um",
+          cliDirectory: "/verified",
+          version: "0.72.1",
+          source: "bundled",
+          buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
+          environment: {},
+        }),
+        readInputs: async () => ({
+          workspace: root,
+          workflow: path.join(root, "workflow.yaml"),
+          sourceRoot: root,
+          executionRoot: root,
+          namedInputs: [],
+          maximumParallel: "1",
+        }),
+        allocate: async (temp, named) => {
+          allocated = await allocateExecution(temp, named);
+          return allocated;
+        },
+        execute: async (_executable, _inputs, allocation) => {
+          const resultDirectory = path.join(
+            allocation.runDirectory,
+            "attempts",
+            "000001",
+            "result",
+          );
+          await mkdir(resultDirectory, { recursive: true });
+          await writeFile(path.join(resultDirectory, "result.json"), "{}\n");
+          const terminal = Buffer.from(
+            `${JSON.stringify({
+              schemaVersion: 1,
+              command: "um workflow run",
+              outcome: "cancelled",
+              exitStatus: 130,
+              runDirectory: allocation.runDirectory,
+              attemptNumber: 1,
+              resultDirectory,
+              result: {},
+            })}\n`,
+          );
+          await writeFile(allocation.terminalPath, terminal);
+          process.emit("SIGINT");
+          return {
+            code: 130,
+            signal: null,
+            terminalPath: allocation.terminalPath,
+            terminalBytes: terminal.length,
+            terminalOverflow: false,
+          };
+        },
+        readTerminal: readTerminalEnvelope,
+        recover: (executable, allocation, environment) =>
+          recoverDurableRun(executable, allocation, environment, {
+            readStatus: async (_executable, runDirectory) => {
+              statusReads += 1;
+              assert.equal(runDirectory, allocation.runDirectory);
+              return {
+                code: 0,
+                signal: null,
+                stdout: Buffer.from(
+                  `${JSON.stringify(pinnedStatusDocument(runDirectory, root))}\n`,
+                ),
+                stdoutOverflow: false,
+                stderrOverflow: false,
+              };
+            },
+          }),
+        project: async () => ({ outcome: "cancelled" }),
+        writeOutputs: async () => undefined,
+        report: async () => undefined,
+        cleanup: cleanupExecution,
+      },
+    );
+    assert.ok(allocated);
+    const artifactDirectory = path.join(
+      allocated.runDirectory,
+      "attempts",
+      "000001",
+      "result",
+    );
+    assert.equal(statusReads, 1);
+    assert.equal(result.failure?.code, "workflow_failed");
+    assert.equal(result.outputs.outcome, "cancelled");
+    assert.equal(result.outputs["run-directory"], allocated.runDirectory);
+    assert.equal(result.outputs["artifact-set-path"], artifactDirectory);
+    assert.equal(
+      result.outputs["result-path"],
+      path.join(artifactDirectory, "result.json"),
+    );
+    await assert.rejects(access(allocated.terminalPath));
+    assert.deepEqual(
+      [process.listenerCount("SIGINT"), process.listenerCount("SIGTERM")],
+      before,
     );
   } finally {
     await rm(root, { recursive: true, force: true });

@@ -16,6 +16,7 @@ import {
   validateTerminalShape,
 } from "../src/terminal.ts";
 import { fakeCli, paddedJson } from "./fake-cli.ts";
+import { pinnedStatusDocument } from "./pinned-status.ts";
 
 async function withTemporary(
   callback: (directory: string) => Promise<void>,
@@ -122,6 +123,19 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
   });
 });
 
+// REQ-RUNACTION-47
+// INV-EMBED-8
+test("a missing terminal spool is refused as an invalid terminal", async () => {
+  await withTemporary(async (directory) => {
+    await assert.rejects(
+      readTerminalEnvelope(path.join(directory, "terminal.json")),
+      (error: unknown) =>
+        error instanceof AdapterError &&
+        error.code === "terminal_result_invalid",
+    );
+  });
+});
+
 // REQ-RUNACTION-47, REQ-RUNACTION-75
 // INV-EMBED-6
 test("bare durable markers do not authenticate terminal-less recovery", async () => {
@@ -171,9 +185,9 @@ test("bare durable markers do not authenticate terminal-less recovery", async ()
   });
 });
 
-// REQ-RUNACTION-47
+// REQ-RUNACTION-47, REQ-RUNACTION-85
 // INV-EMBED-6
-test("pinned status binds terminal-less recovery to the initial published result", async () => {
+test("pinned status binds terminal-less recovery to the initial published result", async (t) => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
       parent: directory,
@@ -189,84 +203,98 @@ test("pinned status binds terminal-less recovery to the initial published result
     );
     await mkdir(path.join(artifactDirectory, "exports"), { recursive: true });
     await writeFile(path.join(artifactDirectory, "result.json"), "{}\n");
-    const localRunId = "52a51f00-96f1-4d6a-aa28-43f0cce8d16f";
-    const status = {
-      schemaVersion: 1,
-      command: "um workflow status",
-      outcome: "status",
-      exitStatus: 0,
-      runDirectory: allocation.runDirectory,
-      run: { schemaVersion: 1, localRunId },
-      state: {
-        schemaVersion: 1,
-        localRunId,
-        currentAttemptNumber: 1,
-        attempts: [
-          {
-            attemptNumber: 1,
-            trigger: "initial",
-            state: "workflow_failed",
-            result: {
-              status: "published",
-              relativeDirectory: "attempts/000001/result",
-            },
+    const pinned = () =>
+      pinnedStatusDocument(
+        allocation.runDirectory,
+        path.join(directory, "execution-root"),
+      );
+    const recover = (status: unknown) =>
+      recoverDurableRun(
+        "/verified/um",
+        allocation,
+        { PATH: "/verified" },
+        {
+          readStatus: async (executable, runDirectory, environment) => {
+            assert.equal(executable, "/verified/um");
+            assert.equal(runDirectory, allocation.runDirectory);
+            assert.equal(environment.PATH, "/verified");
+            return {
+              code: 0,
+              signal: null,
+              stdout: Buffer.from(`${JSON.stringify(status)}\n`),
+              stdoutOverflow: false,
+              stderrOverflow: false,
+            };
           },
-        ],
-      },
-      recovery: { status: "settled" },
-      retry: { eligible: true },
-    };
-
-    const recovered = await recoverDurableRun(
-      "/verified/um",
-      allocation,
-      { PATH: "/verified" },
-      {
-        readStatus: async (executable, runDirectory, environment) => {
-          assert.equal(executable, "/verified/um");
-          assert.equal(runDirectory, allocation.runDirectory);
-          assert.equal(environment.PATH, "/verified");
-          return {
-            code: 0,
-            signal: null,
-            stdout: Buffer.from(`${JSON.stringify(status)}\n`),
-            stdoutOverflow: false,
-            stderrOverflow: false,
-          };
         },
-      },
-    );
-
-    assert.deepEqual(recovered, {
+      );
+    const recovered = (outcome: "failed" | "cancelled") => ({
       runDirectory: allocation.runDirectory,
       result: {
         runDirectory: allocation.runDirectory,
         artifactDirectory,
         resultPath: path.join(artifactDirectory, "result.json"),
-        outcome: "failed",
+        outcome,
         attemptNumber: 1,
       },
     });
 
-    status.state.attempts[0]!.result.relativeDirectory =
+    const failed = pinned();
+    failed.state.attempts[0]!.state = "workflow_failed";
+    for (const [name, status, outcome] of [
+      ["as captured", pinned(), "cancelled"],
+      ["workflow failed", failed, "failed"],
+      [
+        "root members the pinned CLI does not print",
+        { ...pinned(), record: null, wait: null },
+        "cancelled",
+      ],
+    ] as const) {
+      await t.test(name, async () => {
+        assert.deepEqual(await recover(status), recovered(outcome));
+      });
+    }
+
+    const foreignState = pinned();
+    foreignState.state.localRunId = "52a51f00-96f1-4d6a-aa28-43f0cce8d16f";
+    const retried = pinned();
+    retried.state.attempts.push({
+      ...retried.state.attempts[0]!,
+      attemptNumber: 2,
+    });
+    const foreignResult = pinned();
+    foreignResult.state.attempts[0]!.result.relativeDirectory =
       "attempts/000001/other";
-    await assert.rejects(
-      recoverDurableRun(
-        "/verified/um",
-        allocation,
-        {},
-        {
-          readStatus: async () => ({
-            code: 0,
-            signal: null,
-            stdout: Buffer.from(`${JSON.stringify(status)}\n`),
-            stdoutOverflow: false,
-            stderrOverflow: false,
-          }),
-        },
-      ),
-      AdapterError,
-    );
+    // REQ-RUNACTION-75, REQ-RUNACTION-85
+    const retryAttempt = pinned();
+    retryAttempt.state.attempts[0]!.trigger = "retry";
+    for (const [name, status] of [
+      ["run removed", { ...pinned(), run: undefined }],
+      ["another schema version", { ...pinned(), schemaVersion: 2 }],
+      [
+        "renamed status command",
+        { ...pinned(), command: "um workflow run status" },
+      ],
+      ["another outcome", { ...pinned(), outcome: "failed" }],
+      ["nonzero exit status", { ...pinned(), exitStatus: 1 }],
+      [
+        "another run directory",
+        { ...pinned(), runDirectory: path.join(directory, "other") },
+      ],
+      ["state for another run", foreignState],
+      ["second attempt", retried],
+      ["retry attempt", retryAttempt],
+      ["foreign result directory", foreignResult],
+    ] as const) {
+      await t.test(name, async () => {
+        await assert.rejects(
+          recover(status),
+          (error: unknown) =>
+            error instanceof AdapterError &&
+            error.code === "result_identity_invalid",
+        );
+      });
+    }
   });
 });
 

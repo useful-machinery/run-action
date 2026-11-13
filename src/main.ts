@@ -234,14 +234,16 @@ export async function executeAction(
     outputs["run-directory"] = runDirectory ?? "";
 
     let identity: ResultIdentity | undefined;
+    let identityRefused = false;
     if (terminal) {
       try {
         identity = await committedIdentity(allocation, terminal);
       } catch (error) {
+        identityRefused = true;
         fail(error);
       }
     }
-    if (!identity) {
+    if (!identity && !identityRefused) {
       phase = "recovery";
       const recovered = await dependencies
         .recover(bootstrap.executable, allocation, bootstrap.environment)

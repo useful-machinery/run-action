@@ -7,17 +7,6 @@ import { captureCommand, type CapturedCommand } from "./subprocess.ts";
 import type { TerminalEnvelope } from "./terminal.ts";
 
 const MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
-const STATUS_KEYS = [
-  "schemaVersion",
-  "command",
-  "outcome",
-  "exitStatus",
-  "runDirectory",
-  "run",
-  "state",
-  "recovery",
-  "retry",
-] as const;
 
 export interface ResultIdentity {
   readonly runDirectory: string;
@@ -59,18 +48,6 @@ function record(value: unknown): Record<string, unknown> | undefined {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
-}
-
-function exactKeys(
-  value: Record<string, unknown>,
-  expected: readonly string[],
-): boolean {
-  const actual = Object.keys(value).sort();
-  const sortedExpected = [...expected].sort();
-  return (
-    actual.length === sortedExpected.length &&
-    actual.every((key, index) => key === sortedExpected[index])
-  );
 }
 
 async function retainedResult(
@@ -151,7 +128,6 @@ export async function recoverDurableRun(
   const result = record(attempt?.result);
   if (
     !document ||
-    !exactKeys(document, STATUS_KEYS) ||
     document.schemaVersion !== 1 ||
     document.command !== "um workflow status" ||
     document.outcome !== "status" ||

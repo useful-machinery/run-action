@@ -1,4 +1,5 @@
 import { createReadStream } from "node:fs";
+import { pipeline } from "node:stream";
 import streamJson from "stream-json";
 
 import { AdapterError } from "./errors.ts";
@@ -50,7 +51,7 @@ const PRIMITIVE_TOKENS = new Set([
 export async function readTerminalEnvelope(
   file: string,
 ): Promise<TerminalEnvelope> {
-  const stream = createReadStream(file).pipe(parser());
+  const stream = pipeline(createReadStream(file), parser(), () => {});
   const values = new Map<string, unknown>();
   const rootKeys = new Set<string>();
   let depth = 0;

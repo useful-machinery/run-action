@@ -1167,7 +1167,7 @@ var require_streamx = __commonJS({
         fn().then((src) => {
           if (src === null) return out.end();
           if (out.destroying) return;
-          pipeline2(src, out, noop);
+          pipeline3(src, out, noop);
         }).catch((err) => out.destroy(err));
         return out;
       }
@@ -1454,13 +1454,13 @@ var require_streamx = __commonJS({
     }
     function pipelinePromise(...streams) {
       return new Promise((resolve, reject) => {
-        return pipeline2(...streams, (err) => {
+        return pipeline3(...streams, (err) => {
           if (err) return reject(err);
           resolve();
         });
       });
     }
-    function pipeline2(stream, ...streams) {
+    function pipeline3(stream, ...streams) {
       const all = Array.isArray(stream) ? [...stream, ...streams] : [stream, ...streams];
       const done = all.length && typeof all[all.length - 1] === "function" ? all.pop() : null;
       if (all.length < 2) throw StreamError.BAD_ARGUMENT("Pipeline requires at least 2 streams");
@@ -1558,7 +1558,7 @@ var require_streamx = __commonJS({
       return s._writev !== Writable.prototype._writev && s._writev !== Duplex.prototype._writev;
     }
     module2.exports = {
-      pipeline: pipeline2,
+      pipeline: pipeline3,
       pipelinePromise,
       isStream,
       isStreamx,
@@ -4102,17 +4102,6 @@ async function cleanupExecution(allocation) {
 var import_promises5 = require("node:fs/promises");
 var import_node_path4 = __toESM(require("node:path"), 1);
 var MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
-var STATUS_KEYS = [
-  "schemaVersion",
-  "command",
-  "outcome",
-  "exitStatus",
-  "runDirectory",
-  "run",
-  "state",
-  "recovery",
-  "retry"
-];
 var DEFAULT_RECOVERY_DEPENDENCIES = {
   readStatus: (executable, runDirectory, environment) => captureCommand(
     executable,
@@ -4124,11 +4113,6 @@ var DEFAULT_RECOVERY_DEPENDENCIES = {
 };
 function record(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
-}
-function exactKeys(value, expected) {
-  const actual = Object.keys(value).sort();
-  const sortedExpected = [...expected].sort();
-  return actual.length === sortedExpected.length && actual.every((key, index) => key === sortedExpected[index]);
 }
 async function retainedResult(allocation, outcome) {
   const artifactDirectory = import_node_path4.default.join(
@@ -4179,7 +4163,7 @@ async function recoverDurableRun(executable, allocation, environment, dependenci
   const attempts = state?.attempts;
   const attempt = Array.isArray(attempts) ? record(attempts[0]) : void 0;
   const result = record(attempt?.result);
-  if (!document || !exactKeys(document, STATUS_KEYS) || document.schemaVersion !== 1 || document.command !== "um workflow status" || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
+  if (!document || document.schemaVersion !== 1 || document.command !== "um workflow status" || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
     throw new AdapterError("result_identity_invalid");
   }
   if (result.status !== "published") {
@@ -4606,7 +4590,7 @@ var { parser } = import_stream_json.default;
 var MAXIMUM_RESULT_BYTES = 202027692;
 var MAXIMUM_VALIDATOR_OUTPUT_BYTES = 1048576;
 var MAXIMUM_INLINE_EXPORT_BYTES = 65536;
-function exactKeys2(value, expected) {
+function exactKeys(value, expected) {
   const expectedKeys = [...expected].sort();
   const actual = Object.keys(value).sort();
   return actual.length === expectedKeys.length && actual.every((key, index) => key === expectedKeys[index]);
@@ -4628,7 +4612,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
   } catch {
     throw new AdapterError("artifact_validation_failed");
   }
-  if (typeof document !== "object" || document === null || !exactKeys2(document, [
+  if (typeof document !== "object" || document === null || !exactKeys(document, [
     "schemaVersion",
     "command",
     "outcome",
@@ -4641,7 +4625,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
   }
   const record2 = document;
   const summary = record2.summary;
-  if (record2.schemaVersion !== 1 || record2.command !== "um artifact validate" || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys2(summary, [
+  if (record2.schemaVersion !== 1 || record2.command !== "um artifact validate" || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys(summary, [
     "declaredExports",
     "availableExports",
     "unavailableExports",
@@ -5005,6 +4989,7 @@ async function validateAndProject(executable, identity, selectedExport, environm
 
 // src/terminal.ts
 var import_node_fs4 = require("node:fs");
+var import_node_stream = require("node:stream");
 var import_stream_json2 = __toESM(require_stream_json(), 1);
 var { parser: parser2 } = import_stream_json2.default;
 function primitiveValue2(token) {
@@ -5029,7 +5014,8 @@ var PRIMITIVE_TOKENS2 = /* @__PURE__ */ new Set([
   "falseValue"
 ]);
 async function readTerminalEnvelope(file) {
-  const stream = (0, import_node_fs4.createReadStream)(file).pipe(parser2());
+  const stream = (0, import_node_stream.pipeline)((0, import_node_fs4.createReadStream)(file), parser2(), () => {
+  });
   const values = /* @__PURE__ */ new Map();
   const rootKeys = /* @__PURE__ */ new Set();
   let depth = 0;
@@ -5279,14 +5265,16 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
     const runDirectory = await recoverRunDirectory(allocation, terminal);
     outputs["run-directory"] = runDirectory ?? "";
     let identity;
+    let identityRefused = false;
     if (terminal) {
       try {
         identity = await committedIdentity(allocation, terminal);
       } catch (error) {
+        identityRefused = true;
         fail(error);
       }
     }
-    if (!identity) {
+    if (!identity && !identityRefused) {
       phase = "recovery";
       const recovered = await dependencies.recover(bootstrap.executable, allocation, bootstrap.environment).catch((error) => {
         fail(error);
