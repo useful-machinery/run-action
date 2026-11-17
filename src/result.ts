@@ -7,7 +7,7 @@ import streamJson from "stream-json";
 
 import { AdapterError } from "./errors.ts";
 import type { ResultIdentity } from "./identity.ts";
-import { captureCommand } from "./subprocess.ts";
+import { captureCommand, cliCommand } from "./subprocess.ts";
 import { PRIMITIVE_TOKENS, type JsonToken } from "./terminal.ts";
 
 const { parser } = streamJson;
@@ -128,7 +128,7 @@ export const validateArtifactWithCli: ArtifactValidator = async (
   const summary = record.summary;
   if (
     record.schemaVersion !== 1 ||
-    record.command !== "um artifact validate" ||
+    record.command !== cliCommand(executable, "artifact validate") ||
     record.outcome !== "valid" ||
     record.exitStatus !== 0 ||
     record.artifactSetVersion !== 1 ||

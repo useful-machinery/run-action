@@ -3,6 +3,7 @@ import { pipeline } from "node:stream";
 import streamJson from "stream-json";
 
 import { AdapterError } from "./errors.ts";
+import { cliCommand } from "./subprocess.ts";
 
 export type TerminalOutcome =
   "succeeded" | "failed" | "cancelled" | "interrupted" | "rejected";
@@ -48,8 +49,10 @@ export const PRIMITIVE_TOKENS = new Set([
   "falseValue",
 ]);
 
+// Reads the terminal document that `executable` wrote to `file`.
 export async function readTerminalEnvelope(
   file: string,
+  executable: string,
 ): Promise<TerminalEnvelope> {
   const stream = pipeline(createReadStream(file), parser(), () => {});
   const values = new Map<string, unknown>();
@@ -106,7 +109,7 @@ export async function readTerminalEnvelope(
   const exitStatus = values.get("exitStatus");
   if (
     schemaVersion !== 1 ||
-    command !== "um workflow run" ||
+    command !== cliCommand(executable, "workflow run") ||
     !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
       String(outcome),
     ) ||

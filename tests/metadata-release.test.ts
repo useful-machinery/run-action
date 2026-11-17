@@ -9,6 +9,7 @@ import { parse } from "yaml";
 import evidence from "../release-evidence.json" with { type: "json" };
 import { OUTPUT_NAMES } from "../src/github.ts";
 import { PINNED_RELEASE } from "../src/release.ts";
+import { PINNED_EXECUTABLE } from "./fake-release.ts";
 
 const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -21,7 +22,7 @@ const inputNames = [
   "inputs",
   "max-parallel",
   "export",
-  "um-version",
+  "useful-version",
 ];
 
 // REQ-RUNACTION-3, REQ-RUNACTION-14, REQ-RUNACTION-15, REQ-RUNACTION-42, REQ-RUNACTION-67
@@ -35,7 +36,7 @@ test("action.yml exposes only the V1 metadata surface and Node 24 bundle", async
   };
   assert.deepEqual(Object.keys(metadata.inputs), inputNames);
   assert.deepEqual(Object.keys(metadata.outputs), [...OUTPUT_NAMES]);
-  assert.equal(OUTPUT_NAMES[0], "um-version");
+  assert.equal(OUTPUT_NAMES[0], "useful-version");
   assert.deepEqual(metadata.runs, { using: "node24", main: "dist/index.cjs" });
   assert.equal(
     (metadata.inputs.workflow as { required: boolean }).required,
@@ -51,9 +52,12 @@ test("action.yml exposes only the V1 metadata surface and Node 24 bundle", async
     (metadata.inputs["max-parallel"] as { default: string }).default,
     "1",
   );
-  const umVersion = metadata.inputs["um-version"] as Record<string, unknown>;
-  assert.equal(umVersion.required, false);
-  assert.equal(Object.hasOwn(umVersion, "default"), false);
+  const usefulVersion = metadata.inputs["useful-version"] as Record<
+    string,
+    unknown
+  >;
+  assert.equal(usefulVersion.required, false);
+  assert.equal(Object.hasOwn(usefulVersion, "default"), false);
 });
 
 test("public checks define source and all supported native behavior jobs", async () => {
@@ -136,7 +140,7 @@ test("public checks define source and all supported native behavior jobs", async
     );
   });
   assert.ok(releaseRun);
-  assert.ok(releaseRun.env?.UM_RUN_ACTION_RELEASE_BUNDLE);
+  assert.ok(releaseRun.env?.USEFUL_RUN_ACTION_RELEASE_BUNDLE);
 });
 
 // REQ-RUNACTION-6, REQ-RUNACTION-81, REQ-ONBOARD-4
@@ -176,7 +180,7 @@ test("release evidence is a closed, internally consistent stable release", async
     "aarch64-apple-darwin",
   ]);
   for (const [target, archive] of Object.entries(evidence.archives)) {
-    const root = `um-${version}-${target}`;
+    const root = `${PINNED_EXECUTABLE}-${version}-${target}`;
     assert.equal(archive.name, `${root}.tar.gz`);
     assert.equal(archive.url, `${download}/${archive.name}`);
     assert.equal(archive.rootDirectory, root);
@@ -190,7 +194,7 @@ test("release evidence is a closed, internally consistent stable release", async
         { path: root, type: "directory", mode: 493 },
         { path: `${root}/LICENSE`, type: "file", mode: 420 },
         { path: `${root}/README.md`, type: "file", mode: 420 },
-        { path: `${root}/um`, type: "file", mode: 493 },
+        { path: `${root}/${PINNED_EXECUTABLE}`, type: "file", mode: 493 },
       ],
     );
     assert.equal(archive.inventory[0]?.size, 0);
@@ -201,7 +205,7 @@ test("release evidence is a closed, internally consistent stable release", async
     assert.ok(archive.size > 0);
   }
   const readme = await readFile(path.join(packageRoot, "README.md"), "utf8");
-  assert.ok(readme.includes(`\`um\` v${version}`));
+  assert.ok(readme.includes(`\`${PINNED_EXECUTABLE}\` v${version}`));
   const serialized = JSON.stringify(evidence).toLowerCase();
   for (const forbidden of [
     "latest",

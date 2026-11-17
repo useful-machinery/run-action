@@ -3,7 +3,11 @@ import path from "node:path";
 
 import { AdapterError } from "./errors.ts";
 import type { ExecutionAllocation } from "./execution.ts";
-import { captureCommand, type CapturedCommand } from "./subprocess.ts";
+import {
+  captureCommand,
+  cliCommand,
+  type CapturedCommand,
+} from "./subprocess.ts";
 import type { TerminalEnvelope } from "./terminal.ts";
 
 const MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
@@ -129,7 +133,7 @@ export async function recoverDurableRun(
   if (
     !document ||
     document.schemaVersion !== 1 ||
-    document.command !== "um workflow status" ||
+    document.command !== cliCommand(executable, "workflow status") ||
     document.outcome !== "status" ||
     document.exitStatus !== 0 ||
     document.runDirectory !== allocation.runDirectory ||

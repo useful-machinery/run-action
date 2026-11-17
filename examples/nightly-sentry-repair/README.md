@@ -1,13 +1,13 @@
 # Nightly Sentry repair composition
 
 This example composes the Run Action with caller-owned GitHub Actions setup. Copy the
-`.github/` and `.um/` files into the corresponding roots of the repository to repair.
-The workflow intentionally calls a repository-owned `scripts/publish-um-branch`
+`.github/` and `.useful/` files into the corresponding roots of the repository to repair.
+The workflow intentionally calls a repository-owned `scripts/publish-useful-branch`
 program that is not supplied by this Action.
 
 The executable workflow pins verified public mirror
 `b9de88cc55fb9301697eccb72e42030a49ec495d`, its named-input interface, the bundled CLI
-v0.72.1 (the workflow sets no `um-version`), and Pi 0.85.1. Source, all three native public
+v0.72.1 (the workflow sets no `useful-version`), and Pi 0.85.1. Source, all three native public
 jobs and the pinned-release jobs passed for that exact mirror. A provider-live trial of this
 composition is a separate qualification.
 
@@ -27,7 +27,7 @@ asks the Action to retain the `changes` export as `git_branch`.
 
 ## Named JSON request
 
-The [repair workflow](.um/workflows/repair-sentry-issue.yaml) declares JSON `request`
+The [repair workflow](.useful/workflows/repair-sentry-issue.yaml) declares JSON `request`
 and supplies it directly as an `application/json` agent attachment. The prompt reads
 that issue object as untrusted context. No request copy is created in the caller
 workspace; the Action owns its private inline-input file and cleanup.
@@ -42,7 +42,7 @@ inputs: >-
 Both jobs install Pi 0.85.1, which sits inside CLI v0.72.1's admitted Pi range
 `>=0.84.2 <0.88.0 || =0.99.1 || =1.2.0 || =1.3.0`. Keep the Action reference, acquisition
 form, workflow, and harness pin paired on future upgrades; a CLI selected through
-`um-version` may admit a different range. Publication checks do not authorize or prove
+`useful-version` may admit a different range. Publication checks do not authorize or prove
 provider-live dogfood.
 
 Action output paths remain local to the repair runner. The caller copies the complete,
@@ -53,7 +53,7 @@ its local paths survive a job.
 
 ## Publisher boundary
 
-Provide `scripts/publish-um-branch ARTIFACT_SET EXPORT_NAME` in the caller repository.
+Provide `scripts/publish-useful-branch ARTIFACT_SET EXPORT_NAME` in the caller repository.
 It must validate the complete Artifact Set, resolve the named `git_branch`, verify its
 baseline against the separately authorized destination, and create at most one branch or
 pull request. It must treat the Artifact Set and repaired tree as untrusted data: while
@@ -72,7 +72,7 @@ The caller records byte identities before transfer, verifies them after transfer
 compares them again after publication. A manual run with
 `induce-publisher-failure: true` gives only deliberately invalid authority to the
 publisher. For that run, the caller publisher must write this exact content-free JSON to
-`UM_PUBLISHER_ATTESTATION_PATH` only after it issues the provider request and observes
+`USEFUL_PUBLISHER_ATTESTATION_PATH` only after it issues the provider request and observes
 the expected authorization rejection:
 
 ```json

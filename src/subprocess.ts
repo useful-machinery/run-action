@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import path from "node:path";
 
 import { AdapterError, type FailureCode } from "./errors.ts";
 
@@ -8,6 +9,13 @@ export interface CapturedCommand {
   readonly stdout: Buffer;
   readonly stdoutOverflow: boolean;
   readonly stderrOverflow: boolean;
+}
+
+// The `command` member of a document the installed CLI prints for `words`: the
+// name of the executable the installation names, then the words
+// (REQ-RUNACTION-6).
+export function cliCommand(executable: string, words: string): string {
+  return `${path.basename(executable)} ${words}`;
 }
 
 export async function captureCommand(

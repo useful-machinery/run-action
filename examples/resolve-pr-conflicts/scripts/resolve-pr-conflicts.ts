@@ -205,7 +205,7 @@ export function prepareMerge(cwd: string, { head, base }: Snapshot): boolean {
   if (checkedGit(cwd, ["status", "--porcelain"]) !== "")
     throw new Error("Merge preparation requires a clean checkout");
   checkedGit(cwd, ["cat-file", "-e", `${base}^{commit}`]);
-  checkedGit(cwd, ["update-ref", "refs/um/base", base]);
+  checkedGit(cwd, ["update-ref", "refs/useful/base", base]);
   const probe = git(cwd, ["merge-tree", "--write-tree", head, base]);
   if (probe.status === 0) return false;
   if (probe.status !== 1) throw new Error("Cannot inspect merge conflicts");
@@ -214,7 +214,7 @@ export function prepareMerge(cwd: string, { head, base }: Snapshot): boolean {
     "user.name",
     "Useful Machinery conflict resolver",
   ]);
-  checkedGit(cwd, ["config", "user.email", "um-conflicts@example.invalid"]);
+  checkedGit(cwd, ["config", "user.email", "useful-conflicts@example.invalid"]);
   const merge = git(cwd, ["merge", "--no-ff", "--no-commit", base]);
   if (
     merge.status !== 1 ||
@@ -226,10 +226,10 @@ export function prepareMerge(cwd: string, { head, base }: Snapshot): boolean {
 }
 
 function prepare(): void {
-  const input = path.join(requireValue("UM_STEP_INPUTS"), "values/pr");
+  const input = path.join(requireValue("USEFUL_STEP_INPUTS"), "values/pr");
   const pr = JSON.parse(readFileSync(input, "utf8")) as Snapshot;
   const needed = prepareMerge(process.cwd(), pr);
-  writeFileSync(".git/um-merge-needed", String(needed));
+  writeFileSync(".git/useful-merge-needed", String(needed));
   if (!needed)
     console.log("No conflicts to resolve. Leaving the PR unchanged.");
 }
@@ -247,9 +247,11 @@ export function importResolution(
     "fetch",
     "--no-tags",
     bundle,
-    "refs/um/head:refs/um/candidate",
+    "refs/um/head:refs/useful/candidate",
   ]);
-  const candidate = oid(checkedGit(cwd, ["rev-parse", "refs/um/candidate"]));
+  const candidate = oid(
+    checkedGit(cwd, ["rev-parse", "refs/useful/candidate"]),
+  );
   assertMerge(
     checkedGit(cwd, ["show", "-s", "--format=%P", candidate]),
     head,

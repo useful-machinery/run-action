@@ -71,7 +71,7 @@ async function withArtifact(
     artifactDirectory: string;
   }) => Promise<void>,
 ): Promise<void> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-result-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-result-"));
   const artifactDirectory = path.join(
     root,
     "run",
@@ -572,6 +572,62 @@ test("a result.json beyond 202,027,692 bytes fails before artifact validation", 
   }
 });
 
+// REQ-RUNACTION-6
+test("the validation document's command names the executable that ran", async (t) => {
+  for (const [command, accepted] of [
+    ["fixture-cli artifact validate", true],
+    ["useful artifact validate", false],
+  ] as const) {
+    await t.test(command, async () => {
+      await withArtifact({}, {}, async ({ artifactDirectory }) => {
+        const scratch = await mkdtemp(
+          path.join(os.tmpdir(), "useful-validate-"),
+        );
+        try {
+          const executable = await fakeCli(
+            scratch,
+            "fixture-cli",
+            Buffer.from(
+              JSON.stringify({
+                schemaVersion: 1,
+                command,
+                outcome: "valid",
+                exitStatus: 0,
+                artifactSetVersion: 1,
+                artifactDirectory: await realpath(artifactDirectory),
+                summary: {
+                  declaredExports: 0,
+                  availableExports: 0,
+                  unavailableExports: 0,
+                  referencedCarriers: 0,
+                  carrierBytes: 0,
+                },
+              }),
+            ),
+          );
+          const validation = validateArtifactWithCli(
+            executable,
+            artifactDirectory,
+            {},
+          );
+          if (accepted) {
+            await validation;
+          } else {
+            await assert.rejects(
+              validation,
+              (error: unknown) =>
+                error instanceof AdapterError &&
+                error.code === "artifact_validation_failed",
+            );
+          }
+        } finally {
+          await rm(scratch, { recursive: true, force: true });
+        }
+      });
+    });
+  }
+});
+
 // REQ-RUNACTION-78
 test("artifact validation output is read up to its 1,048,576-byte bound", async (t) => {
   for (const [size, accepted] of [
@@ -580,15 +636,17 @@ test("artifact validation output is read up to its 1,048,576-byte bound", async 
   ] as const) {
     await t.test(String(size), async () => {
       await withArtifact({}, {}, async ({ artifactDirectory }) => {
-        const scratch = await mkdtemp(path.join(os.tmpdir(), "um-validate-"));
+        const scratch = await mkdtemp(
+          path.join(os.tmpdir(), "useful-validate-"),
+        );
         try {
           const executable = await fakeCli(
             scratch,
-            "um",
+            "useful",
             paddedJson(
               {
                 schemaVersion: 1,
-                command: "um artifact validate",
+                command: "useful artifact validate",
                 outcome: "valid",
                 exitStatus: 0,
                 artifactSetVersion: 1,

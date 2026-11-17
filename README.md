@@ -37,7 +37,7 @@ steps.
 The Action:
 
 1. downloads the exact Useful Machinery CLI release pinned by the selected Action revision,
-   or the published release its `um-version` input selects;
+   or the published release its `useful-version` input selects;
 2. verifies the release checksum and CLI build identity;
 3. runs exactly one fresh local Workflow V1 invocation;
 4. validates the complete Portable Artifact Set; and
@@ -83,21 +83,21 @@ steps:
     with:
       persist-credentials: false
   - name: Run checked-in Useful Machinery workflow
-    id: um
+    id: useful
     uses: useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d
     with:
-      workflow: .um/workflows/ci.yaml
+      workflow: .useful/workflows/ci.yaml
   - name: Consume the retained result in the same job
-    if: ${{ always() && steps.um.outputs.result-path != '' }}
+    if: ${{ always() && steps.useful.outputs.result-path != '' }}
     env:
-      ARTIFACT_SET_PATH: ${{ steps.um.outputs.artifact-set-path }}
-      RESULT_PATH: ${{ steps.um.outputs.result-path }}
-      WORKFLOW_OUTCOME: ${{ steps.um.outputs.outcome }}
+      ARTIFACT_SET_PATH: ${{ steps.useful.outputs.artifact-set-path }}
+      RESULT_PATH: ${{ steps.useful.outputs.result-path }}
+      WORKFLOW_OUTCOME: ${{ steps.useful.outputs.outcome }}
     run: |
       set -euo pipefail
       test -d "$ARTIFACT_SET_PATH"
       test -f "$RESULT_PATH"
-      um artifact validate --json "$ARTIFACT_SET_PATH" >/dev/null
+      useful artifact validate --json "$ARTIFACT_SET_PATH" >/dev/null
       printf 'workflow outcome: %s\n' "$WORKFLOW_OUTCOME"
 ```
 
@@ -107,9 +107,9 @@ The source tree also contains a working
 adds agent-produced JSON discovery, a bounded GitHub matrix, and publisher
 failure-isolation verification. Both executable examples use named `request` inputs and
 pin the same verified Action mirror: JSON for Sentry and Text for the conflict resolver.
-Neither sets `um-version`, so each installs the `um` v0.77.0 release this revision bundles,
+Neither sets `useful-version`, so each installs the `um` v0.77.0 release this revision bundles,
 and their harness pins sit inside that CLI's admitted ranges. To follow new CLI releases
-instead, add `um-version: latest` to the step's `with:` block, as
+instead, add `useful-version: latest` to the step's `with:` block, as
 [Choosing the CLI version](#choosing-the-cli-version) describes.
 
 Keep each example's reference, acquisition form, workflow, and harness requirements
@@ -119,7 +119,7 @@ Useful Machinery monorepo commit.
 
 ## Choosing the CLI version
 
-The optional `um-version` input chooses the `um` release the step installs:
+The optional `useful-version` input chooses the `useful` release the step installs:
 
 - omit it, or leave it empty, to install the release this Action revision pins (v0.77.0
   here); the CLI is reproducible for each Action revision and is the one the revision
@@ -131,19 +131,21 @@ The optional `um-version` input chooses the `um` release the step installs:
 
 ```yaml
 with:
-  workflow: .um/workflows/ci.yaml
-  um-version: latest
+  workflow: .useful/workflows/ci.yaml
+  useful-version: latest
 ```
 
 Any other value, such as `1.2`, `v1.2.3` or `Latest`, fails naming `input_invalid` before
 anything is downloaded. A version that is not published fails naming
 `bootstrap_release_unavailable`. A release the input selects has no pin in this revision:
 the Action checks it against that release's own `SHA256SUMS` over TLS to `github.com`,
-checks the archive's layout, and probes `um version --json` for the selected version and
+checks the archive's layout, and probes `useful version --json` for the selected version and
 a build identity. Any failure fails the step; the Action never falls back to the pinned
-release, another version, or a `um` already on `PATH`. The step's `um-version` output and
+release, another version, or a `useful` already on `PATH`. The step's `useful-version` output and
 one log line name the version installed, how it was chosen (`bundled`, `requested` or
-`latest`) and its build identity.
+`latest`) and its build identity. The step runs, and puts on `PATH` for later steps, the
+executable its installation names: `useful` for a release the input selects, and for the
+pinned release the executable that `release-evidence.json` records in its archive.
 
 ## Inputs
 
@@ -155,7 +157,7 @@ one log line name the version installed, how it was chosen (`bundled`, `requeste
 | `inputs` | absent | Closed JSON acquisition map for named Text, JSON, File, and attachment-collection values. |
 | `max-parallel` | `1` | Maximum number of workflow nodes to run concurrently, from 1 through 256. |
 | `export` | absent | Exact declared workflow export to bridge to selected-export outputs. |
-| `um-version` | absent | CLI release to install: omit for the pinned v0.77.0, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
+| `useful-version` | absent | CLI release to install: omit for the pinned v0.77.0, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
 
 Absent or empty `inputs`, and the document `{}`, all supply the empty named map. A
 nonempty value is one JSON object keyed by declared Workflow V1 input names. Each member
@@ -199,7 +201,7 @@ repository or workflow-directory boundary.
 
 | Output | Purpose |
 | --- | --- |
-| `um-version` | The `um` version verified and installed; empty when bootstrap did not complete. |
+| `useful-version` | The `useful` version verified and installed; empty when bootstrap did not complete. |
 | `outcome` | Committed workflow outcome: `succeeded`, `failed`, or `cancelled`. |
 | `run-directory` | Durable local run directory when a trustworthy run identity is available. |
 | `artifact-set-path` | Complete validated Portable Artifact Set path. |
@@ -225,7 +227,7 @@ the job makes available. Do not expose a credential to the Action step unless th
 workflow may exercise that authority.
 
 Before launching the workflow, the Action removes every variable whose name starts with
-`INPUT_` or `UM_RUN_ACTION_`, and GitHub's file-command handles `GITHUB_OUTPUT`,
+`INPUT_` or `USEFUL_RUN_ACTION_`, and GitHub's file-command handles `GITHUB_OUTPUT`,
 `GITHUB_ENV`, `GITHUB_PATH`, `GITHUB_STATE` and `GITHUB_STEP_SUMMARY`, from the child
 environment. It also prevents workflow log lines
 from being interpreted as GitHub workflow commands. Other caller-provided environment
@@ -241,7 +243,7 @@ references do not provide the immutable selection required by V1.
 Each Action revision carries its exact CLI release contract in
 [`release-evidence.json`](release-evidence.json). That pinned release is the default:
 runtime bootstrap consumes the closed record directly and verifies the downloaded release
-against it. The `um-version` input selects another published release instead, verified
+against it. The `useful-version` input selects another published release instead, verified
 against that release's own checksum list, and looks up `latest` only when asked to. The
 Action never falls back to an ambient CLI.
 

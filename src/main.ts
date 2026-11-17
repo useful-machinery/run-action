@@ -57,7 +57,10 @@ export interface ActionDependencies {
     environment: NodeJS.ProcessEnv,
     cancellation: AbortSignal,
   ) => Promise<WorkflowProcessResult>;
-  readonly readTerminal: (file: string) => Promise<TerminalEnvelope>;
+  readonly readTerminal: (
+    file: string,
+    executable: string,
+  ) => Promise<TerminalEnvelope>;
   readonly recover: (
     executable: string,
     allocation: ExecutionAllocation,
@@ -174,11 +177,13 @@ export async function executeAction(
   try {
     // Bootstrap deliberately precedes every INPUT_ read but the CLI version
     // selection, whose grammar check is pure and precedes every download.
-    const selection = parseVersionSelection(environment["INPUT_UM-VERSION"]);
+    const selection = parseVersionSelection(
+      environment["INPUT_USEFUL-VERSION"],
+    );
     bootstrap = await dependencies.bootstrap(environment, selection);
-    outputs["um-version"] = bootstrap.version;
+    outputs["useful-version"] = bootstrap.version;
     await dependencies.report(
-      `Useful Machinery Run selected um ${bootstrap.version} (${bootstrap.source}) build ${bootstrap.buildIdentity}.`,
+      `Useful Machinery Run selected useful ${bootstrap.version} (${bootstrap.source}) build ${bootstrap.buildIdentity}.`,
     );
     phase = "inputs";
     inputs = await dependencies.readInputs(environment);
@@ -213,6 +218,7 @@ export async function executeAction(
         try {
           const candidate = await dependencies.readTerminal(
             processResult.terminalPath,
+            bootstrap.executable,
           );
           validateTerminalShape(candidate);
           terminal = candidate;

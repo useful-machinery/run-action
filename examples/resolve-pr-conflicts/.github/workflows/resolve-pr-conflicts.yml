@@ -70,8 +70,8 @@ jobs:
         id: repair
         uses: useful-machinery/run-action@b9de88cc55fb9301697eccb72e42030a49ec495d
         with:
-          workflow: automation/.um/workflows/resolve-pr-conflicts.yaml
-          source-root: automation/.um
+          workflow: automation/.useful/workflows/resolve-pr-conflicts.yaml
+          source-root: automation/.useful
           execution-root: pr
           export: resolution
           inputs: >-

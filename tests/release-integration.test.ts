@@ -25,7 +25,7 @@ import {
 } from "../src/main.ts";
 import { hostRunner } from "../scripts/stage-release.ts";
 
-const releaseBundle = process.env.UM_RUN_ACTION_RELEASE_BUNDLE;
+const releaseBundle = process.env.USEFUL_RUN_ACTION_RELEASE_BUNDLE;
 
 const allKindWorkflow = `schemaVersion: 1
 inputs:
@@ -68,13 +68,13 @@ steps:
         - -c
         - |
           set -euo pipefail
-          test "$(cat "$UM_STEP_INPUTS/values/inlineText")" = release-check
-          test ! -s "$UM_STEP_INPUTS/values/emptyText"
-          test "$(cat "$UM_STEP_INPUTS/values/inlineJson")" = null
-          test "$(cat "$UM_STEP_INPUTS/values/fileJson")" = '{"ok":true}'
-          test ! -s "$UM_STEP_INPUTS/values/emptyFile"
-          test "$(find "$UM_STEP_INPUTS/collections/evidence" -type f | wc -l | tr -d ' ')" = 1
-          test "$(find "$UM_STEP_INPUTS/collections/emptyEvidence" -type f | wc -l | tr -d ' ')" = 0
+          test "$(cat "$USEFUL_STEP_INPUTS/values/inlineText")" = release-check
+          test ! -s "$USEFUL_STEP_INPUTS/values/emptyText"
+          test "$(cat "$USEFUL_STEP_INPUTS/values/inlineJson")" = null
+          test "$(cat "$USEFUL_STEP_INPUTS/values/fileJson")" = '{"ok":true}'
+          test ! -s "$USEFUL_STEP_INPUTS/values/emptyFile"
+          test "$(find "$USEFUL_STEP_INPUTS/collections/evidence" -type f | wc -l | tr -d ' ')" = 1
+          test "$(find "$USEFUL_STEP_INPUTS/collections/emptyEvidence" -type f | wc -l | tr -d ' ')" = 0
 `;
 
 interface ReleaseRoot {
@@ -87,7 +87,7 @@ interface ReleaseRoot {
 async function withReleaseRoot(
   body: (releaseRoot: ReleaseRoot) => Promise<void>,
 ): Promise<void> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-release-action-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-release-action-"));
   try {
     const workspace = path.join(root, "workspace");
     const runnerTemp = path.join(root, "runner-temp");
@@ -144,8 +144,8 @@ async function actionReservation(runnerTemp: string): Promise<string> {
   ).filter(
     (entry) =>
       entry.isDirectory() &&
-      entry.name.startsWith(".um-run-") &&
-      !entry.name.startsWith(".um-run-cli-"),
+      entry.name.startsWith(".useful-run-") &&
+      !entry.name.startsWith(".useful-run-cli-"),
   );
   const [reservation, ...others] = reservations;
   assert.ok(reservation);

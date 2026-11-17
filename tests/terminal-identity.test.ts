@@ -16,12 +16,13 @@ import {
   validateTerminalShape,
 } from "../src/terminal.ts";
 import { fakeCli, paddedJson } from "./fake-cli.ts";
+import { PINNED_EXECUTABLE } from "./fake-release.ts";
 import { pinnedStatusDocument } from "./pinned-status.ts";
 
 async function withTemporary(
   callback: (directory: string) => Promise<void>,
 ): Promise<void> {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "um-terminal-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "useful-terminal-"));
   try {
     await callback(directory);
   } finally {
@@ -51,7 +52,7 @@ test("published terminal envelope recovers only the reserved committed identity"
       allocation.terminalPath,
       `${JSON.stringify({
         schemaVersion: 1,
-        command: "um workflow run",
+        command: "useful workflow run",
         outcome: "succeeded",
         exitStatus: 0,
         runDirectory: allocation.runDirectory,
@@ -60,7 +61,10 @@ test("published terminal envelope recovers only the reserved committed identity"
         result: { nested: { ignored: true } },
       })}\n`,
     );
-    const envelope = await readTerminalEnvelope(allocation.terminalPath);
+    const envelope = await readTerminalEnvelope(
+      allocation.terminalPath,
+      "/verified/useful",
+    );
     validateTerminalShape(envelope);
     assert.equal(envelope.attemptNumber, 1);
     assert.deepEqual(await committedIdentity(allocation, envelope), {
@@ -85,7 +89,7 @@ test("terminal identity mismatch and unknown root fields fail closed", async () 
       file,
       JSON.stringify({
         schemaVersion: 1,
-        command: "um workflow run",
+        command: "useful workflow run",
         outcome: "failed",
         exitStatus: 1,
         runDirectory: path.join(directory, "other"),
@@ -95,8 +99,46 @@ test("terminal identity mismatch and unknown root fields fail closed", async () 
         extra: true,
       }),
     );
-    const envelope = await readTerminalEnvelope(file);
+    const envelope = await readTerminalEnvelope(file, "/verified/useful");
     assert.throws(() => validateTerminalShape(envelope), AdapterError);
+  });
+});
+
+// REQ-RUNACTION-6
+// INV-EMBED-6
+test("the terminal document's command names the executable that ran", async (t) => {
+  await withTemporary(async (directory) => {
+    const file = path.join(directory, "terminal.json");
+    for (const [command, accepted] of [
+      ["fixture-cli workflow run", true],
+      ["useful workflow run", false],
+    ] as const) {
+      await t.test(command, async () => {
+        await writeFile(
+          file,
+          JSON.stringify({
+            schemaVersion: 1,
+            command,
+            outcome: "rejected",
+            exitStatus: 1,
+            phase: "load",
+            workflow: null,
+            diagnostics: [],
+          }),
+        );
+        const reading = readTerminalEnvelope(file, "/verified/fixture-cli");
+        if (accepted) {
+          validateTerminalShape(await reading);
+        } else {
+          await assert.rejects(
+            reading,
+            (error: unknown) =>
+              error instanceof AdapterError &&
+              error.code === "terminal_result_invalid",
+          );
+        }
+      });
+    }
   });
 });
 
@@ -108,7 +150,7 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
       '{"schemaVersion":1',
       JSON.stringify({
         schemaVersion: 2,
-        command: "um workflow run",
+        command: "useful workflow run",
         outcome: "rejected",
         exitStatus: 1,
       }),
@@ -117,7 +159,10 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
       await t.test(String(index), async () => {
         const file = path.join(directory, `terminal-${index}.json`);
         await writeFile(file, contents);
-        await assert.rejects(readTerminalEnvelope(file), AdapterError);
+        await assert.rejects(
+          readTerminalEnvelope(file, "/verified/useful"),
+          AdapterError,
+        );
       });
     }
   });
@@ -128,7 +173,10 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
 test("a missing terminal spool is refused as an invalid terminal", async () => {
   await withTemporary(async (directory) => {
     await assert.rejects(
-      readTerminalEnvelope(path.join(directory, "terminal.json")),
+      readTerminalEnvelope(
+        path.join(directory, "terminal.json"),
+        "/verified/useful",
+      ),
       (error: unknown) =>
         error instanceof AdapterError &&
         error.code === "terminal_result_invalid",
@@ -161,7 +209,7 @@ test("bare durable markers do not authenticate terminal-less recovery", async ()
     let statusReads = 0;
     await assert.rejects(
       recoverDurableRun(
-        "/verified/um",
+        "/verified/useful",
         allocation,
         {},
         {
@@ -208,14 +256,15 @@ test("pinned status binds terminal-less recovery to the initial published result
         allocation.runDirectory,
         path.join(directory, "execution-root"),
       );
+    const pinnedPath = `/verified/${PINNED_EXECUTABLE}`;
     const recover = (status: unknown) =>
       recoverDurableRun(
-        "/verified/um",
+        pinnedPath,
         allocation,
         { PATH: "/verified" },
         {
           readStatus: async (executable, runDirectory, environment) => {
-            assert.equal(executable, "/verified/um");
+            assert.equal(executable, pinnedPath);
             assert.equal(runDirectory, allocation.runDirectory);
             assert.equal(environment.PATH, "/verified");
             return {
@@ -273,7 +322,12 @@ test("pinned status binds terminal-less recovery to the initial published result
       ["another schema version", { ...pinned(), schemaVersion: 2 }],
       [
         "renamed status command",
-        { ...pinned(), command: "um workflow run status" },
+        { ...pinned(), command: `${PINNED_EXECUTABLE} workflow run status` },
+      ],
+      // REQ-RUNACTION-6
+      [
+        "another executable's status command",
+        { ...pinned(), command: "useful workflow status" },
       ],
       ["another outcome", { ...pinned(), outcome: "failed" }],
       ["nonzero exit status", { ...pinned(), exitStatus: 1 }],
@@ -316,11 +370,11 @@ test("workflow status output is read up to its 33,554,432-byte bound", async (t)
         const localRunId = "52a51f00-96f1-4d6a-aa28-43f0cce8d16f";
         const executable = await fakeCli(
           directory,
-          "um",
+          "useful",
           paddedJson(
             {
               schemaVersion: 1,
-              command: "um workflow status",
+              command: "useful workflow status",
               outcome: "status",
               exitStatus: 0,
               runDirectory: allocation.runDirectory,

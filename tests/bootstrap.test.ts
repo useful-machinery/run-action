@@ -30,7 +30,12 @@ import {
 } from "../src/release.ts";
 import type { CapturedCommand } from "../src/subprocess.ts";
 import { fakeCli, paddedJson } from "./fake-cli.ts";
-import { archiveBytes, sha256, type TarMutation } from "./fake-release.ts";
+import {
+  archiveBytes,
+  PINNED_EXECUTABLE,
+  sha256,
+  type TarMutation,
+} from "./fake-release.ts";
 
 const targets: readonly {
   runnerOS: string;
@@ -53,6 +58,8 @@ interface Redirect {
 
 interface BootstrapFixture {
   readonly release: ReleaseEvidence;
+  // The executable the installation names, which reports itself as `command`.
+  readonly executable: string;
   readonly version: string;
   readonly buildIdentity?: string;
   readonly responses: ReadonlyMap<string, Buffer>;
@@ -67,9 +74,13 @@ interface Observations {
   manual?: string[];
 }
 
+// The pinned evidence, with its archives rebuilt around `executable` (by
+// default the executable the pinned evidence names) and `mutation` applied to
+// `selectedTarget`'s archive.
 async function fixture(
   selectedTarget?: TargetTriple,
   mutation?: TarMutation,
+  executable = PINNED_EXECUTABLE,
 ): Promise<BootstrapFixture> {
   const release = structuredClone(PINNED_RELEASE) as ReleaseEvidence;
   const mutable = release as unknown as {
@@ -95,9 +106,12 @@ async function fixture(
   const checksumLines: string[] = [];
   for (const { target } of targets) {
     const archive = mutable.archives[target];
+    archive.rootDirectory = `${executable}-${release.version}-${target}`;
+    archive.name = `${archive.rootDirectory}.tar.gz`;
     archive.url = `https://fixture.invalid/${archive.name}`;
     const built = await archiveBytes(
       archive.rootDirectory,
+      executable,
       target === selectedTarget ? mutation : undefined,
     );
     archive.size = built.bytes.length;
@@ -111,7 +125,7 @@ async function fixture(
   mutable.checksumAsset.size = checksums.length;
   mutable.checksumAsset.sha256 = sha256(checksums);
   responses.set(mutable.checksumAsset.url, checksums);
-  return { release, version: release.version, responses };
+  return { release, executable, version: release.version, responses };
 }
 
 function dependencies(
@@ -151,7 +165,7 @@ function dependencies(
       );
       const version: Record<string, unknown> = {
         schemaVersion: 1,
-        command: "um",
+        command: fixtureValue.executable,
         version: fixtureValue.version,
         executablePath: await realpath(executable),
         buildIdentity:
@@ -175,7 +189,7 @@ function dependencies(
 async function withRunnerTemp(
   callback: (runnerTemp: string) => Promise<void>,
 ): Promise<void> {
-  const runnerTemp = await mkdtemp(path.join(os.tmpdir(), "um-bootstrap-"));
+  const runnerTemp = await mkdtemp(path.join(os.tmpdir(), "useful-bootstrap-"));
   try {
     await callback(runnerTemp);
   } finally {
@@ -219,7 +233,10 @@ test("all supported platforms verify and install only their closed archive", asy
         assert.equal(result.version, fixtureValue.release.version);
         assert.equal(result.source, "bundled");
         assert.equal(result.buildIdentity, fixtureValue.release.buildIdentity);
-        assert.equal(result.executable, path.join(result.cliDirectory, "um"));
+        assert.equal(
+          result.executable,
+          path.join(result.cliDirectory, fixtureValue.executable),
+        );
         assert.equal(
           result.environment.PATH,
           `${result.cliDirectory}${path.delimiter}/ambient/decoy:/caller/bin`,
@@ -231,7 +248,9 @@ test("all supported platforms verify and install only their closed archive", asy
 
 // REQ-RUNACTION-5
 test("a supported runner temp may use a symlinked absolute path", async () => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "um-bootstrap-link-"));
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "useful-bootstrap-link-"),
+  );
   try {
     const physicalTemp = path.join(directory, "physical");
     const runnerTemp = path.join(directory, "runner-temp");
@@ -526,7 +545,9 @@ test("CLI version output is read up to its 65,536-byte bound", async (t) => {
   ] as const) {
     await t.test(String(size), async () => {
       await withRunnerTemp(async (runnerTemp) => {
-        const scratch = await mkdtemp(path.join(os.tmpdir(), "um-version-"));
+        const scratch = await mkdtemp(
+          path.join(os.tmpdir(), "useful-version-"),
+        );
         try {
           const fixtureValue = await fixture();
           const deps: BootstrapDependencies = {
@@ -539,11 +560,11 @@ test("CLI version output is read up to its 65,536-byte bound", async (t) => {
               DEFAULT_BOOTSTRAP_DEPENDENCIES.runVersion(
                 await fakeCli(
                   scratch,
-                  "um",
+                  fixtureValue.executable,
                   paddedJson(
                     {
                       schemaVersion: 1,
-                      command: "um",
+                      command: fixtureValue.executable,
                       version: fixtureValue.release.version,
                       executablePath: await realpath(executable),
                       buildIdentity: fixtureValue.release.buildIdentity,
@@ -601,6 +622,7 @@ async function selectedFixture(
     const archive = assets.archives[target];
     const built = await archiveBytes(
       archive.rootDirectory,
+      "useful",
       target === SELECTED_TARGET ? options.mutation : undefined,
     );
     responses.set(archive.url, built.bytes);
@@ -612,6 +634,7 @@ async function selectedFixture(
   );
   return {
     release: PINNED_RELEASE,
+    executable: "useful",
     version,
     buildIdentity: SELECTED_IDENTITY,
     responses,
@@ -700,12 +723,93 @@ test("a selected release installs from its constructed URLs", async (t) => {
         assert.equal(result.source, source);
         assert.equal(result.buildIdentity, SELECTED_IDENTITY);
         assert.equal(path.basename(result.cliDirectory), archive.rootDirectory);
-        assert.equal(result.executable, path.join(result.cliDirectory, "um"));
+        assert.equal(
+          result.executable,
+          path.join(result.cliDirectory, "useful"),
+        );
         assert.deepEqual(observed.executables, [result.executable]);
         assert.deepEqual(observed.appended, [result.cliDirectory]);
       });
     });
   }
+});
+
+// REQ-RUNACTION-6, REQ-RUNACTION-82
+// INV-EMBED-1, INV-EMBED-22
+test("the bootstrap runs the executable its installation names", async (t) => {
+  const environment = (runnerTemp: string) => ({
+    RUNNER_OS: "Linux",
+    RUNNER_ARCH: "X64",
+    RUNNER_TEMP: runnerTemp,
+    PATH: "/ambient/decoy",
+  });
+  const named = "fixture-cli";
+  await t.test("pinned", async () => {
+    await withRunnerTemp(async (runnerTemp) => {
+      const fixtureValue = await fixture(undefined, undefined, named);
+      const archive = fixtureValue.release.archives[SELECTED_TARGET];
+      const root = `${named}-${fixtureValue.version}-${SELECTED_TARGET}`;
+      assert.equal(archive.name, `${root}.tar.gz`);
+      const observed = newObservations();
+      const result = await bootstrapCli(
+        environment(runnerTemp),
+        dependencies(fixtureValue, observed),
+        fixtureValue.release,
+      );
+      assert.deepEqual(observed.fetched, [
+        fixtureValue.release.checksumAsset.url,
+        archive.url,
+      ]);
+      assert.equal(path.basename(result.cliDirectory), root);
+      assert.equal(result.executable, path.join(result.cliDirectory, named));
+      assert.deepEqual(observed.executables, [result.executable]);
+      assert.deepEqual(observed.appended, [result.cliDirectory]);
+    });
+  });
+  await t.test("pinned refuses a selected release's command", async () => {
+    await withRunnerTemp(async (runnerTemp) => {
+      const fixtureValue = await fixture(undefined, undefined, named);
+      const observed = newObservations();
+      await assert.rejects(
+        bootstrapCli(
+          environment(runnerTemp),
+          dependencies(fixtureValue, observed, (version) => {
+            version.command = "useful";
+          }),
+          fixtureValue.release,
+        ),
+        (error: unknown) =>
+          error instanceof AdapterError &&
+          error.code === "bootstrap_version_failed",
+      );
+      assert.equal(observed.executables.length, 1);
+      assert.equal(path.basename(observed.executables[0]!), named);
+      assert.deepEqual(observed.appended, []);
+      assert.deepEqual(await readdir(runnerTemp), []);
+    });
+  });
+  await t.test("selected", async () => {
+    await withRunnerTemp(async (runnerTemp) => {
+      const fixtureValue = await selectedFixture(SELECTED_VERSION);
+      const observed = newObservations();
+      const result = await bootstrapCli(
+        environment(runnerTemp),
+        dependencies(fixtureValue, observed),
+        undefined,
+        requested,
+      );
+      assert.equal(
+        path.posix.basename(observed.fetched[1] ?? ""),
+        `useful-${SELECTED_VERSION}-${SELECTED_TARGET}.tar.gz`,
+      );
+      assert.equal(
+        path.basename(result.cliDirectory),
+        `useful-${SELECTED_VERSION}-${SELECTED_TARGET}`,
+      );
+      assert.equal(result.executable, path.join(result.cliDirectory, "useful"));
+      assert.deepEqual(observed.executables, [result.executable]);
+    });
+  });
 });
 
 // REQ-RUNACTION-7, REQ-RUNACTION-11
@@ -807,7 +911,7 @@ test("a selected release's checksum list, archive and layout fail closed before 
       () =>
         selectedFixture(SELECTED_VERSION, {
           checksums: (lines) =>
-            listed([lines[0]!, lines[1]!, lines[2]!.replace("um-", "üm-")]),
+            listed([lines[0]!, lines[1]!, lines[2]!.replace("useful-", "üm-")]),
         }),
     ],
     [
@@ -822,7 +926,7 @@ test("a selected release's checksum list, archive and layout fail closed before 
       () =>
         selectedFixture(SELECTED_VERSION, {
           checksums: (lines) =>
-            listed([...lines, `${"0".repeat(64)}  um-extra.tar.gz`]),
+            listed([...lines, `${"0".repeat(64)}  useful-extra.tar.gz`]),
         }),
     ],
     [
@@ -949,7 +1053,7 @@ test("latest is not resolved on an unsupported platform or runner temp", async (
       {
         RUNNER_OS: "Linux",
         RUNNER_ARCH: "X64",
-        RUNNER_TEMP: path.join(os.tmpdir(), "um-missing-runner-temp-0"),
+        RUNNER_TEMP: path.join(os.tmpdir(), "useful-missing-runner-temp-0"),
       },
     ],
   ];

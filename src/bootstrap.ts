@@ -23,6 +23,7 @@ import {
   LATEST_RELEASE_URL,
   LATEST_TAG_PATTERN,
   PINNED_RELEASE,
+  SELECTED_EXECUTABLE,
   selectedReleaseAssets,
   selectTarget,
   type ReleaseEvidence,
@@ -112,8 +113,28 @@ interface Installation {
   // when there is a pin.
   readonly listed: ReadonlyMap<string, string | undefined>;
   readonly archive: ArchiveExpectation;
+  // The executable the installation names under the archive's root directory,
+  // which reports itself as `command` (REQ-RUNACTION-6).
+  readonly executable: string;
   // The pinned build identity, or undefined for a selected release.
   readonly buildIdentity: string | undefined;
+}
+
+// The pinned archive's executable: the base name of the one file with mode
+// 0755 that its inventory holds directly under its root directory.
+function pinnedExecutable(archive: ArchiveExpectation): string {
+  const prefix = `${archive.rootDirectory}/`;
+  const executables = archive.inventory.filter(
+    (entry) => entry.type === "file" && entry.mode === 0o755,
+  );
+  const name =
+    executables.length === 1 && executables[0]!.path.startsWith(prefix)
+      ? executables[0]!.path.slice(prefix.length)
+      : "";
+  if (name === "" || name.includes("/")) {
+    throw new AdapterError("bootstrap_integrity_failed");
+  }
+  return name;
 }
 
 function pinnedInstallation(
@@ -135,6 +156,7 @@ function pinnedInstallation(
       ]),
     ),
     archive,
+    executable: pinnedExecutable(archive),
     buildIdentity: release.buildIdentity,
   };
 }
@@ -165,9 +187,10 @@ function selectedInstallation(
         { path: root, type: "directory", mode: 0o755 },
         { path: `${root}/LICENSE`, type: "file", mode: 0o644 },
         { path: `${root}/README.md`, type: "file", mode: 0o644 },
-        { path: `${root}/um`, type: "file", mode: 0o755 },
+        { path: `${root}/${SELECTED_EXECUTABLE}`, type: "file", mode: 0o755 },
       ],
     },
+    executable: SELECTED_EXECUTABLE,
     buildIdentity: undefined,
   };
 }
@@ -477,7 +500,7 @@ async function verifyVersion(
   const record = version as Record<string, unknown>;
   if (
     record.schemaVersion !== 1 ||
-    record.command !== "um" ||
+    record.command !== installation.executable ||
     record.version !== installation.version ||
     record.executablePath !== resolvedExecutable ||
     typeof record.buildIdentity !== "string" ||
@@ -527,7 +550,7 @@ export async function bootstrapCli(
         : selectedInstallation(selection.version, "requested", target);
   const archive = installation.archive;
   const allocation = await mkdtemp(
-    path.join(canonicalRunnerTemp, ".um-run-cli-"),
+    path.join(canonicalRunnerTemp, ".useful-run-cli-"),
   ).catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
@@ -559,7 +582,7 @@ export async function bootstrapCli(
     await rm(archivePath, { force: true });
 
     const cliDirectory = path.join(allocation, archive.rootDirectory);
-    const executable = path.join(cliDirectory, "um");
+    const executable = path.join(cliDirectory, installation.executable);
     const executableStatus = await lstat(executable).catch(() => undefined);
     if (
       !executableStatus?.isFile() ||

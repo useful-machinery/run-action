@@ -5,7 +5,7 @@ runs your checks, and a separate job pushes one merge commit back to the PR.
 
 This executable example pins verified public mirror
 `b9de88cc55fb9301697eccb72e42030a49ec495d`, its named-input interface, the bundled CLI
-v0.72.1 (the workflow sets no `um-version`), and Codex 0.153.4. Source, all three native
+v0.72.1 (the workflow sets no `useful-version`), and Codex 0.153.4. Source, all three native
 public jobs and the pinned-release jobs passed for that exact mirror. A live GitHub/model
 trial remains outstanding.
 
@@ -13,9 +13,9 @@ GitHub.com only; open, same-repository PRs and commenters with write access.
 
 ## Set it up
 
-1. Copy this example's `.github/`, `.um/`, and `scripts/` directories into
+1. Copy this example's `.github/`, `.useful/`, and `scripts/` directories into
    your repository's **default branch**. All four files are supplied.
-2. In [the Useful Machinery workflow](.um/workflows/resolve-pr-conflicts.yaml), replace
+2. In [the Useful Machinery workflow](.useful/workflows/resolve-pr-conflicts.yaml), replace
    `npm ci && npm test` with your checks. Keep the final clean-worktree checks.
    Add any needed tools to the GitHub workflow's `resolve` job.
 3. Add two repository secrets:
@@ -27,7 +27,7 @@ GitHub.com only; open, same-repository PRs and commenters with write access.
    Resolve PR conflicts**, then review the resulting merge commit.
 
 The default checks assume an npm project with a lockfile and a `test` script.
-Change the [repair instructions](.um/prompts/resolve-pr-conflicts.md) if your
+Change the [repair instructions](.useful/prompts/resolve-pr-conflicts.md) if your
 repository needs additional guidance.
 
 ## How it fits together
@@ -64,7 +64,7 @@ either pin. Version tags can move, unlike immutable commit SHAs.
 
 ## Named Text request
 
-The [resolver workflow](.um/workflows/resolve-pr-conflicts.yaml) declares Text
+The [resolver workflow](.useful/workflows/resolve-pr-conflicts.yaml) declares Text
 `request`. The authorization job emits a serialized PR snapshot; `toJSON` quotes that
 string into the Action acquisition document without changing its bytes:
 
@@ -74,7 +74,7 @@ inputs: >-
 ```
 
 CLI v0.72.1 admits Codex `>=0.147.0 <0.164.0`, which includes the pinned 0.153.4 release;
-a CLI selected through `um-version` may admit a different range. Do not update only the
+a CLI selected through `useful-version` may admit a different range. Do not update only the
 reference, acquisition form, or Useful Machinery workflow on a future upgrade.
 
 ## Why the separate publisher?

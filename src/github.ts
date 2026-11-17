@@ -4,7 +4,7 @@ import { appendFile } from "node:fs/promises";
 import { AdapterError } from "./errors.ts";
 
 export const OUTPUT_NAMES = [
-  "um-version",
+  "useful-version",
   "outcome",
   "run-directory",
   "artifact-set-path",
@@ -52,7 +52,7 @@ export async function writeOutputs(
     const value = outputs[name];
     let delimiter: string;
     do {
-      delimiter = `um_${random(32).toString("hex")}`;
+      delimiter = `useful_${random(32).toString("hex")}`;
     } while (value.split(/\r?\n/u).includes(delimiter));
     payload += `${name}<<${delimiter}\n${value}\n${delimiter}\n`;
   }
@@ -75,7 +75,7 @@ export class WorkflowCommandGuard {
     stream: NodeJS.WritableStream,
     random: (size: number) => Buffer = randomBytes,
   ) {
-    this.#token = `um_${random(32).toString("hex")}`;
+    this.#token = `useful_${random(32).toString("hex")}`;
     this.#stream = stream;
   }
 

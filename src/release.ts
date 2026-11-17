@@ -33,7 +33,7 @@ const VERSION_SOURCE =
   "(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)";
 const VERSION_PATTERN = new RegExp(`^${VERSION_SOURCE}$`, "u");
 
-// The `um-version` grammar (REQ-RUNACTION-82): pure, untrimmed, and checked
+// The `useful-version` grammar (REQ-RUNACTION-82): pure, untrimmed, and checked
 // before anything is downloaded.
 export function parseVersionSelection(
   value: string | undefined,
@@ -63,6 +63,9 @@ export interface SelectedReleaseAssets {
   readonly archives: Readonly<Record<TargetTriple, SelectedArchive>>;
 }
 
+// The executable a selected release's archives hold (INV-EMBED-22).
+export const SELECTED_EXECUTABLE = "useful";
+
 // Constructed names and URLs of a selected release (INV-EMBED-22).
 export function selectedReleaseAssets(version: string): SelectedReleaseAssets {
   const base = `${RELEASE_REPOSITORY_URL}/releases/download/v${version}`;
@@ -71,13 +74,13 @@ export function selectedReleaseAssets(version: string): SelectedReleaseAssets {
     checksumsUrl: `${base}/SHA256SUMS`,
     archives: Object.fromEntries(
       targets.map((target) => {
-        const name = `um-${version}-${target}.tar.gz`;
+        const name = `${SELECTED_EXECUTABLE}-${version}-${target}.tar.gz`;
         return [
           target,
           {
             name,
             url: `${base}/${name}`,
-            rootDirectory: `um-${version}-${target}`,
+            rootDirectory: `${SELECTED_EXECUTABLE}-${version}-${target}`,
           },
         ];
       }),

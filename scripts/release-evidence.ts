@@ -104,25 +104,40 @@ function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
+// The executable an archive asset `<name>-<version>-<target>.tar.gz` is named
+// for, a lowercase `<name>`, or undefined when the asset is no such archive.
+function archiveExecutable(asset: string, version: string): string | undefined {
+  for (const target of TARGETS) {
+    const suffix = `-${version}-${target}.tar.gz`;
+    if (!asset.endsWith(suffix)) continue;
+    const name = asset.slice(0, -suffix.length);
+    return /^[a-z](?:[a-z0-9-]*[a-z0-9])?$/u.test(name) ? name : undefined;
+  }
+  return undefined;
+}
+
+// The release's assets, `SHA256SUMS` and one archive for each target, and the
+// one executable name the archives share.
 function releaseAssets(
   document: Record<string, unknown>,
   tag: string,
   version: string,
-): Map<string, ReleaseAsset> {
+): { executable: string; assets: Map<string, ReleaseAsset> } {
   const listed = document.assets;
   if (!Array.isArray(listed)) throw new Error(`release ${tag} has no assets`);
-  const expected = [
-    CHECKSUM_ASSET,
-    ...TARGETS.map((target) => `um-${version}-${target}.tar.gz`),
-  ];
+  const executables = new Set<string>();
   const assets = new Map<string, ReleaseAsset>();
   for (const value of listed) {
     if (!isRecord(value))
       throw new Error(`release ${tag} has a malformed asset`);
     const name = field(value, "name", isString, `release ${tag} asset`);
     const context = `release ${tag} asset ${name}`;
-    if (!expected.includes(name)) {
-      throw new Error(`release ${tag} has unexpected asset ${name}`);
+    if (name !== CHECKSUM_ASSET) {
+      const executable = archiveExecutable(name, version);
+      if (executable === undefined) {
+        throw new Error(`release ${tag} has unexpected asset ${name}`);
+      }
+      executables.add(executable);
     }
     if (assets.has(name)) {
       throw new Error(`release ${tag} lists asset ${name} twice`);
@@ -139,12 +154,21 @@ function releaseAssets(
       url,
     });
   }
-  for (const name of expected) {
+  if (executables.size > 1) {
+    throw new Error(
+      `release ${tag} archives do not share one executable name: ${[...executables].sort().join(", ")}`,
+    );
+  }
+  const [executable = "<name>"] = executables;
+  for (const name of [
+    CHECKSUM_ASSET,
+    ...TARGETS.map((target) => `${executable}-${version}-${target}.tar.gz`),
+  ]) {
     if (!assets.has(name)) {
       throw new Error(`release ${tag} is missing asset ${name}`);
     }
   }
-  return assets;
+  return { executable, assets };
 }
 
 async function downloadVerified(
@@ -223,6 +247,7 @@ async function archiveInventory(bytes: Buffer): Promise<InventoryEntry[]> {
 
 function canonicalLayout(
   root: string,
+  executable: string,
   inventory: readonly InventoryEntry[],
 ): boolean {
   const sizes = inventory.map((entry) => entry.size);
@@ -230,7 +255,12 @@ function canonicalLayout(
     { path: root, type: "directory", mode: 0o755, size: 0 },
     { path: `${root}/LICENSE`, type: "file", mode: 0o644, size: sizes[1] },
     { path: `${root}/README.md`, type: "file", mode: 0o644, size: sizes[2] },
-    { path: `${root}/um`, type: "file", mode: 0o755, size: sizes[3] },
+    {
+      path: `${root}/${executable}`,
+      type: "file",
+      mode: 0o755,
+      size: sizes[3],
+    },
   ];
   return (
     isDeepStrictEqual(inventory, shape) &&
@@ -242,6 +272,7 @@ async function archiveRecord(
   dependencies: ReleaseEvidenceDependencies,
   asset: ReleaseAsset,
   root: string,
+  executable: string,
   listed: ReadonlyMap<string, string>,
 ): Promise<ArchiveRecord> {
   const verified = await downloadVerified(dependencies, asset);
@@ -257,9 +288,9 @@ async function archiveRecord(
       });
     },
   );
-  if (!canonicalLayout(root, inventory)) {
+  if (!canonicalLayout(root, executable, inventory)) {
     throw new Error(
-      `${asset.name} layout is not ${root}/ (0755) holding exactly LICENSE (0644), README.md (0644) and um (0755)`,
+      `${asset.name} layout is not ${root}/ (0755) holding exactly LICENSE (0644), README.md (0644) and ${executable} (0755)`,
     );
   }
   return {
@@ -306,7 +337,7 @@ export async function generateReleaseEvidence(
   if (releaseUrl !== `${RELEASE_PAGE}/tag/${tag}`) {
     throw new Error(`release ${tag} has page URL ${releaseUrl}`);
   }
-  const assets = releaseAssets(releaseDocument, tag, version);
+  const { executable, assets } = releaseAssets(releaseDocument, tag, version);
 
   const commitDocument: unknown = await (
     await fetchOk(dependencies, `${API}/commits/${tag}`, apiHeaders())
@@ -345,11 +376,12 @@ export async function generateReleaseEvidence(
   const listed = checksumLines(checksum.bytes, TARGETS.length);
   const archives = {} as Record<Target, ArchiveRecord>;
   for (const target of TARGETS) {
-    const root = `um-${version}-${target}`;
+    const root = `${executable}-${version}-${target}`;
     archives[target] = await archiveRecord(
       dependencies,
       assets.get(`${root}.tar.gz`)!,
       root,
+      executable,
       listed,
     );
   }

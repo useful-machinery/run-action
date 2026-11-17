@@ -9,7 +9,7 @@ const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const temporary = await mkdtemp(path.join(os.tmpdir(), "um-run-bundle-"));
+const temporary = await mkdtemp(path.join(os.tmpdir(), "useful-run-bundle-"));
 try {
   const generated = await buildBundle(temporary);
   const [expectedBytes, actualBytes] = await Promise.all([

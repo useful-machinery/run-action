@@ -49,31 +49,37 @@ function asset(id: number, name: string, bytes: Buffer): Asset {
   };
 }
 
+type Target = (typeof TARGETS)[number];
+
 // A published release whose assets, checksum list, release document and tag
-// commit all agree; `mutation` breaks the archive layout of one target.
-async function fakeRelease(mutation?: {
-  target: (typeof TARGETS)[number];
-  tar: TarMutation;
-}): Promise<FakeRelease> {
+// commit all agree; `mutation` breaks the archive layout of one target. Each
+// target's archive is named for `name(target)` and holds the executable
+// `executable(target)`.
+async function fakeRelease(
+  mutation?: { target: Target; tar: TarMutation },
+  name: (target: Target) => string = () => "useful",
+  executable: (target: Target) => string = name,
+): Promise<FakeRelease> {
   const downloads = new Map<string, Buffer>();
   const assets: Asset[] = [];
   const archives: Record<string, unknown> = {};
   const lines: string[] = [];
   let id = 10;
   for (const target of TARGETS) {
-    const root = `um-${VERSION}-${target}`;
-    const name = `${root}.tar.gz`;
+    const root = `${name(target)}-${VERSION}-${target}`;
+    const archiveName = `${root}.tar.gz`;
     const built = await archiveBytes(
       root,
+      executable(target),
       mutation?.target === target ? mutation.tar : undefined,
     );
-    const archive = asset(++id, name, built.bytes);
+    const archive = asset(++id, archiveName, built.bytes);
     assets.push(archive);
     downloads.set(archive.browser_download_url, built.bytes);
-    lines.push(`${sha256(built.bytes)}  ${name}`);
+    lines.push(`${sha256(built.bytes)}  ${archiveName}`);
     archives[target] = {
       id: archive.id,
-      name,
+      name: archiveName,
       size: built.bytes.length,
       sha256: sha256(built.bytes),
       url: archive.browser_download_url,
@@ -222,6 +228,66 @@ test("the generator records a verified stable release in the committed key order
 });
 
 // REQ-RUNACTION-80
+// INV-EMBED-21
+test("the generator takes the executable's name from the release's archives", async (t) => {
+  for (const executable of ["useful", "fixture-cli"]) {
+    await t.test(executable, async () => {
+      const fake = await fakeRelease(undefined, () => executable);
+      const evidence = await generateReleaseEvidence(
+        TAG,
+        dependencies(fake, observe()),
+      );
+      assert.deepEqual(evidence, fake.expected);
+      for (const target of TARGETS) {
+        const root = `${executable}-${VERSION}-${target}`;
+        assert.equal(evidence.archives[target].name, `${root}.tar.gz`);
+        assert.equal(evidence.archives[target].rootDirectory, root);
+        assert.equal(
+          evidence.archives[target].inventory.at(-1)?.path,
+          `${root}/${executable}`,
+        );
+      }
+    });
+  }
+});
+
+// REQ-RUNACTION-80
+// INV-EMBED-21
+test("a release whose archives do not share one executable name is refused", async (t) => {
+  await t.test("archive names", async () => {
+    const fake = await fakeRelease(undefined, (target) =>
+      target === TARGETS[1] ? "fixture-cli" : "useful",
+    );
+    const observations = observe();
+    await assert.rejects(
+      generateReleaseEvidence(TAG, dependencies(fake, observations)),
+      { message: /share one executable name/u },
+    );
+    assert.deepEqual(
+      observations.requests.filter(({ url }) => !url.startsWith(API)),
+      [],
+    );
+  });
+  await t.test("archived executable", async () => {
+    const target = TARGETS[2];
+    const fake = await fakeRelease(
+      undefined,
+      () => "useful",
+      (archived) => (archived === target ? "fixture-cli" : "useful"),
+    );
+    await assert.rejects(
+      generateReleaseEvidence(TAG, dependencies(fake, observe())),
+      {
+        message: new RegExp(
+          `useful-${VERSION}-${target}\\.tar\\.gz .*layout`,
+          "u",
+        ),
+      },
+    );
+  });
+});
+
+// REQ-RUNACTION-80
 test("a GitHub token authorizes the API reads and never the downloads", async () => {
   const fake = await fakeRelease();
   const observations = observe();
@@ -278,9 +344,9 @@ test("an asset whose bytes differ from its recorded digest is refused", async ()
 test("an archive that differs from its SHA256SUMS line is refused", async () => {
   const fake = await fakeRelease();
   const sums = fake.downloads.get(`${DOWNLOADS}/SHA256SUMS`)!.toString();
-  const name = `um-${VERSION}-${TARGETS[2]}.tar.gz`;
+  const name = `useful-${VERSION}-${TARGETS[2]}.tar.gz`;
   const changed = sums.replace(
-    /^[0-9a-f]{64}(?=  um-9\.9\.9-aarch64-apple-darwin)/mu,
+    /^[0-9a-f]{64}(?=  useful-9\.9\.9-aarch64-apple-darwin)/mu,
     "0".repeat(64),
   );
   assert.notEqual(changed, sums);
@@ -314,7 +380,7 @@ test("a release with an extra or a missing asset is refused", async () => {
   );
 
   const missing = await fakeRelease();
-  const name = `um-${VERSION}-${TARGETS[1]}.tar.gz`;
+  const name = `useful-${VERSION}-${TARGETS[1]}.tar.gz`;
   missing.release.assets = missing.release.assets.filter(
     (entry) => entry.name !== name,
   );
@@ -332,7 +398,10 @@ for (const tar of ["inventory", "mode"] as const) {
     await assert.rejects(
       generateReleaseEvidence(TAG, dependencies(fake, observe())),
       {
-        message: new RegExp(`um-${VERSION}-${target}\\.tar\\.gz .*layout`, "u"),
+        message: new RegExp(
+          `useful-${VERSION}-${target}\\.tar\\.gz .*layout`,
+          "u",
+        ),
       },
     );
   });

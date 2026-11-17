@@ -92,7 +92,7 @@ function inputs(workspace: string): ActionInputs {
 async function withTemporary(
   callback: (directory: string) => Promise<void>,
 ): Promise<void> {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "um-execution-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "useful-execution-"));
   try {
     await callback(directory);
   } finally {
@@ -167,7 +167,7 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
     };
 
     const running = runWorkflow(
-      "/verified/cli/um",
+      "/verified/cli/useful",
       actionInputs,
       allocation,
       { PATH: "/verified/cli:/caller/bin", ORDINARY: "retained" },
@@ -194,9 +194,9 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
     );
     assert.equal(
       presentationBytes,
-      `::stop-commands::um_${"ef".repeat(32)}\n::set-output name=hostile::value\npresentation complete\n::um_${"ef".repeat(32)}::\n`,
+      `::stop-commands::useful_${"ef".repeat(32)}\n::set-output name=hostile::value\npresentation complete\n::useful_${"ef".repeat(32)}::\n`,
     );
-    assert.equal(observed?.executable, "/verified/cli/um");
+    assert.equal(observed?.executable, "/verified/cli/useful");
     const inlineJsonPath = allocation.inputFiles[0]!.path;
     const inlineTextPath = allocation.inputFiles[1]!.path;
     const expectedArguments = [

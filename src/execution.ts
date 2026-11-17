@@ -92,7 +92,7 @@ export async function allocateExecution(
   }
 
   const parent = await mkdtemp(
-    path.join(canonicalRunnerTemp, ".um-run-"),
+    path.join(canonicalRunnerTemp, ".useful-run-"),
   ).catch(() => {
     throw new AdapterError("allocation_failed");
   });

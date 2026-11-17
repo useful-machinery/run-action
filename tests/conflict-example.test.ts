@@ -325,7 +325,7 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
   assert.equal(JSON.stringify(publish).includes("OPENAI_API_KEY"), false);
   assert.equal(JSON.stringify(publish).includes("CODEX_HOME"), false);
   assert.equal(repair.with?.["execution-root"], "pr");
-  assert.equal(repair.with?.["source-root"], "automation/.um");
+  assert.equal(repair.with?.["source-root"], "automation/.useful");
   const publisherCheckout = publish.steps[0];
   assert.ok(publisherCheckout?.with);
   assert.equal(
@@ -339,9 +339,9 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
   for (const job of [authorize, resolve]) {
     assert.equal(JSON.stringify(job).includes("PR_PUBLISH_TOKEN"), false);
   }
-  const um = parse(
+  const useful = parse(
     readFileSync(
-      path.join(example, ".um/workflows/resolve-pr-conflicts.yaml"),
+      path.join(example, ".useful/workflows/resolve-pr-conflicts.yaml"),
       "utf8",
     ),
   ) as {
@@ -357,19 +357,19 @@ test("example gates agent secrets and isolates publication from the PR tree", ()
     };
     exports: Record<string, { ref: string }>;
   };
-  assert.deepEqual(um.inputs, { request: { kind: "text" } });
-  assert.equal(um.agentProfiles.resolver.harness.kind, "codex");
-  assert.equal(um.steps.prepare.inputs.pr?.ref, "inputs.request");
+  assert.deepEqual(useful.inputs, { request: { kind: "text" } });
+  assert.equal(useful.agentProfiles.resolver.harness.kind, "codex");
+  assert.equal(useful.steps.prepare.inputs.pr?.ref, "inputs.request");
   assert.equal(
-    um.steps.resolve.agent.message.text.at(-1)?.ref,
+    useful.steps.resolve.agent.message.text.at(-1)?.ref,
     "inputs.request",
   );
-  assert.deepEqual(um.steps.resolve.condition, {
+  assert.deepEqual(useful.steps.resolve.condition, {
     equals: [{ ref: "outputs.prepare.needed" }, { value: "true" }],
   });
-  assert.deepEqual(um.steps.check.condition, {
+  assert.deepEqual(useful.steps.check.condition, {
     disposition: { node: "resolve", is: "succeeded" },
   });
-  assert.equal(um.steps.check.outputs.resolution?.kind, "git_branch");
-  assert.equal(um.exports.resolution?.ref, "outputs.check.resolution");
+  assert.equal(useful.steps.check.outputs.resolution?.kind, "git_branch");
+  assert.equal(useful.exports.resolution?.ref, "outputs.check.resolution");
 });

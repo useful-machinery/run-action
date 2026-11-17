@@ -29,6 +29,7 @@ import {
   readTerminalEnvelope,
   type TerminalEnvelope,
 } from "../src/terminal.ts";
+import { PINNED_EXECUTABLE } from "./fake-release.ts";
 import { pinnedStatusDocument } from "./pinned-status.ts";
 
 function unreachable<T>(): Promise<T> {
@@ -74,14 +75,14 @@ test("bootstrap rejection precedes every workflow input read and launch", async 
   assert.equal(inputReads, 0);
   assert.equal(launches, 0);
   assert.equal(reports, 0);
-  assert.equal(observedOutputs?.["um-version"], "");
+  assert.equal(observedOutputs?.["useful-version"], "");
   assert.deepEqual(observedOutputs, emptyOutputs());
 });
 
 // REQ-RUNACTION-13, REQ-RUNACTION-82
 // INV-EMBED-2
-test("only the um-version input is read before bootstrap", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-selection-"));
+test("only the useful-version input is read before bootstrap", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-selection-"));
   try {
     const { dependencies } = await committedRun(root);
     const reads: string[] = [];
@@ -92,7 +93,7 @@ test("only the um-version input is read before bootstrap", async () => {
       {
         GITHUB_OUTPUT: path.join(root, "github-output"),
         INPUT_WORKFLOW: "workflow.yaml",
-        "INPUT_UM-VERSION": "latest",
+        "INPUT_USEFUL-VERSION": "latest",
         RUNNER_TEMP: root,
       },
       {
@@ -125,7 +126,7 @@ test("only the um-version input is read before bootstrap", async () => {
       },
     });
     assert.equal(result.failure, undefined);
-    assert.deepEqual(readsBeforeBootstrap, ["INPUT_UM-VERSION"]);
+    assert.deepEqual(readsBeforeBootstrap, ["INPUT_USEFUL-VERSION"]);
     assert.deepEqual(received, { kind: "latest" });
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -134,14 +135,14 @@ test("only the um-version input is read before bootstrap", async () => {
 
 // REQ-RUNACTION-82, REQ-RUNACTION-42, REQ-RUNACTION-84
 // INV-EMBED-2
-test("an invalid um-version fails before bootstrap and writes every output empty", async () => {
+test("an invalid useful-version fails before bootstrap and writes every output empty", async () => {
   let bootstraps = 0;
   let inputReads = 0;
   let launches = 0;
   let reports = 0;
   let observedOutputs: ActionOutputs | undefined;
   const result = await executeAction(
-    { GITHUB_OUTPUT: "/retained/output", "INPUT_UM-VERSION": "1.2" },
+    { GITHUB_OUTPUT: "/retained/output", "INPUT_USEFUL-VERSION": "1.2" },
     {
       bootstrap: async () => {
         bootstraps += 1;
@@ -181,7 +182,9 @@ test("an invalid um-version fails before bootstrap and writes every output empty
 // REQ-RUNACTION-26
 // INV-EMBED-2
 test("invalid acquisition documents fail before source reads and allocation", async () => {
-  const workspace = await mkdtemp(path.join(os.tmpdir(), "um-main-inputs-"));
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "useful-main-inputs-"),
+  );
   try {
     const source = path.join(workspace, "must-not-be-read");
     await writeFile(source, "private", { mode: 0o000 });
@@ -196,7 +199,7 @@ test("invalid acquisition documents fail before source reads and allocation", as
       },
       {
         bootstrap: async () => ({
-          executable: "/verified/um",
+          executable: "/verified/useful",
           cliDirectory: "/verified",
           version: "0.72.1",
           source: "bundled",
@@ -226,7 +229,9 @@ test("invalid acquisition documents fail before source reads and allocation", as
 
 // REQ-RUNACTION-17
 test("an unusable workspace or empty workflow fails before allocation and launch", async () => {
-  const workspace = await mkdtemp(path.join(os.tmpdir(), "um-main-workspace-"));
+  const workspace = await mkdtemp(
+    path.join(os.tmpdir(), "useful-main-workspace-"),
+  );
   try {
     const regularFile = path.join(workspace, "not-a-directory");
     await writeFile(regularFile, "");
@@ -255,7 +260,7 @@ test("an unusable workspace or empty workflow fails before allocation and launch
         },
         {
           bootstrap: async () => ({
-            executable: "/verified/um",
+            executable: "/verified/useful",
             cliDirectory: "/verified",
             version: "0.72.1",
             source: "bundled",
@@ -330,7 +335,7 @@ async function committedRun(
     selectedExport: "selected",
   };
   const bootstrap: BootstrapResult = {
-    executable: "/verified/um",
+    executable: "/verified/useful",
     cliDirectory: "/verified",
     version: "0.72.1",
     source: "bundled",
@@ -339,7 +344,7 @@ async function committedRun(
   };
   const terminal: TerminalEnvelope = {
     schemaVersion: 1,
-    command: "um workflow run",
+    command: "useful workflow run",
     outcome,
     exitStatus: code,
     runDirectory,
@@ -384,7 +389,7 @@ async function committedRun(
 }
 
 // REQ-RUNACTION-84, REQ-RUNACTION-42
-test("a completed bootstrap writes the um-version output and one selected-version line", async (t) => {
+test("a completed bootstrap writes the useful-version output and one selected-version line", async (t) => {
   const identity = "0123456789abcdef0123456789abcdef01234567";
   const scenarios: readonly {
     name: string;
@@ -402,7 +407,9 @@ test("a completed bootstrap writes the um-version output and one selected-versio
   ];
   for (const scenario of scenarios) {
     await t.test(scenario.name, async () => {
-      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-version-"));
+      const root = await mkdtemp(
+        path.join(os.tmpdir(), "useful-main-version-"),
+      );
       try {
         const { dependencies } = await committedRun(
           root,
@@ -413,7 +420,7 @@ test("a completed bootstrap writes the um-version output and one selected-versio
         const result = await executeAction(
           {
             GITHUB_OUTPUT: path.join(root, "github-output"),
-            "INPUT_UM-VERSION": "0.73.4",
+            "INPUT_USEFUL-VERSION": "0.73.4",
           },
           {
             ...dependencies,
@@ -429,9 +436,9 @@ test("a completed bootstrap writes the um-version output and one selected-versio
           },
         );
         assert.equal(result.failure?.code, scenario.failure);
-        assert.equal(result.outputs["um-version"], "0.73.4");
+        assert.equal(result.outputs["useful-version"], "0.73.4");
         assert.deepEqual(lines, [
-          `Useful Machinery Run selected um 0.73.4 (requested) build ${identity}.`,
+          `Useful Machinery Run selected useful 0.73.4 (requested) build ${identity}.`,
         ]);
       } finally {
         await rm(root, { recursive: true, force: true });
@@ -509,7 +516,7 @@ test("result and process matrix preserves trustworthy outputs and failure preced
 
   for (const scenario of scenarios) {
     await t.test(scenario.name, async () => {
-      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-"));
+      const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-"));
       try {
         const {
           runDirectory,
@@ -567,7 +574,7 @@ test("result and process matrix preserves trustworthy outputs and failure preced
 // REQ-RUNACTION-45, REQ-RUNACTION-47
 // INV-EMBED-6
 test("bare durable markers cannot expose terminal-less result outputs", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-recovery-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-recovery-"));
   try {
     const runDirectory = path.join(root, "run");
     const artifactDirectory = path.join(
@@ -591,7 +598,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
       { GITHUB_OUTPUT: path.join(root, "github-output") },
       {
         bootstrap: async () => ({
-          executable: "/verified/um",
+          executable: "/verified/useful",
           cliDirectory: "/verified",
           version: "0.72.1",
           source: "bundled",
@@ -629,7 +636,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
           }),
         project: async (executable, identity) => {
           validations += 1;
-          assert.equal(executable, "/verified/um");
+          assert.equal(executable, "/verified/useful");
           assert.equal(identity.outcome, undefined);
           assert.equal(identity.artifactDirectory, artifactDirectory);
           return { outcome: "failed" };
@@ -643,7 +650,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
     assert.equal(result.failure?.code, "terminal_result_invalid");
     assert.deepEqual(result.outputs, {
       ...emptyOutputs(),
-      "um-version": "0.72.1",
+      "useful-version": "0.72.1",
     });
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -653,7 +660,7 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
 // REQ-RUNACTION-47
 // INV-EMBED-5
 test("authenticated terminal-less recovery retains and validates its result", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-recovery-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-recovery-"));
   try {
     const runDirectory = path.join(root, "run");
     const artifactDirectory = path.join(
@@ -675,7 +682,7 @@ test("authenticated terminal-less recovery retains and validates its result", as
       { GITHUB_OUTPUT: path.join(root, "github-output") },
       {
         bootstrap: async () => ({
-          executable: "/verified/um",
+          executable: "/verified/useful",
           cliDirectory: "/verified",
           version: "0.72.1",
           source: "bundled",
@@ -713,7 +720,7 @@ test("authenticated terminal-less recovery retains and validates its result", as
         }),
         project: async (executable, identity) => {
           validations += 1;
-          assert.equal(executable, "/verified/um");
+          assert.equal(executable, "/verified/useful");
           assert.equal(identity.outcome, "failed");
           assert.equal(identity.artifactDirectory, artifactDirectory);
           return { outcome: "failed" };
@@ -773,7 +780,9 @@ test("a refused terminal identity is never recovered through status", async (t) 
   ];
   for (const scenario of scenarios) {
     await t.test(scenario.name, async () => {
-      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-refused-"));
+      const root = await mkdtemp(
+        path.join(os.tmpdir(), "useful-main-refused-"),
+      );
       try {
         const { runDirectory, artifactDirectory, dependencies } =
           await committedRun(root, "failed", 1);
@@ -784,8 +793,8 @@ test("a refused terminal identity is never recovered through status", async (t) 
           { GITHUB_OUTPUT: path.join(root, "github-output") },
           {
             ...dependencies,
-            readTerminal: async (file) => ({
-              ...(await dependencies.readTerminal(file)),
+            readTerminal: async (file, executable) => ({
+              ...(await dependencies.readTerminal(file, executable)),
               ...terminalPaths,
             }),
             recover: async () => {
@@ -812,7 +821,7 @@ test("a refused terminal identity is never recovered through status", async (t) 
         assert.equal(projections, 0);
         assert.deepEqual(result.outputs, {
           ...emptyOutputs(),
-          "um-version": "0.72.1",
+          "useful-version": "0.72.1",
           "run-directory": scenario.runDirectoryOutput(runDirectory),
         });
       } finally {
@@ -825,7 +834,7 @@ test("a refused terminal identity is never recovered through status", async (t) 
 // REQ-RUNACTION-41, REQ-RUNACTION-45, REQ-RUNACTION-46, REQ-RUNACTION-47
 // INV-EMBED-6, INV-EMBED-8
 test("a job cancelled during the run recovers its published result through status", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-cancelled-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-cancelled-"));
   const before = [
     process.listenerCount("SIGINT"),
     process.listenerCount("SIGTERM"),
@@ -837,7 +846,7 @@ test("a job cancelled during the run recovers its published result through statu
       { RUNNER_TEMP: root },
       {
         bootstrap: async () => ({
-          executable: "/verified/um",
+          executable: `/verified/${PINNED_EXECUTABLE}`,
           cliDirectory: "/verified",
           version: "0.72.1",
           source: "bundled",
@@ -868,7 +877,7 @@ test("a job cancelled during the run recovers its published result through statu
           const terminal = Buffer.from(
             `${JSON.stringify({
               schemaVersion: 1,
-              command: "um workflow run",
+              command: `${PINNED_EXECUTABLE} workflow run`,
               outcome: "cancelled",
               exitStatus: 130,
               runDirectory: allocation.runDirectory,
@@ -1014,7 +1023,9 @@ test("an unclassified error names its phase and class but never its text", async
   ];
   for (const scenario of cases) {
     await t.test(scenario.name, async () => {
-      const root = await mkdtemp(path.join(os.tmpdir(), "um-main-catch-all-"));
+      const root = await mkdtemp(
+        path.join(os.tmpdir(), "useful-main-catch-all-"),
+      );
       try {
         const { dependencies } = await committedRun(root);
         const { failure } = await executeAction(
@@ -1065,7 +1076,9 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
       `cancellation during ${phase} cleans private inputs (${signal})`,
       { timeout: 5000 },
       async () => {
-        const root = await mkdtemp(path.join(os.tmpdir(), "um-main-cancel-"));
+        const root = await mkdtemp(
+          path.join(os.tmpdir(), "useful-main-cancel-"),
+        );
         const before = [
           process.listenerCount("SIGINT"),
           process.listenerCount("SIGTERM"),
@@ -1144,7 +1157,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
                 assert.ok(allocated);
                 return {
                   schemaVersion: 1,
-                  command: "um workflow run",
+                  command: "useful workflow run",
                   outcome: "succeeded",
                   exitStatus: 0,
                   runDirectory: allocated.runDirectory,
@@ -1214,7 +1227,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 // REQ-RUNACTION-72
 test("a CLI launch failure starts no run and exposes no result", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "um-main-launch-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-launch-"));
   try {
     const allocation = await allocateExecution(root, []);
     let observedOutputs: ActionOutputs | undefined;
@@ -1222,7 +1235,7 @@ test("a CLI launch failure starts no run and exposes no result", async () => {
       { GITHUB_OUTPUT: path.join(root, "github-output") },
       {
         bootstrap: async () => ({
-          executable: "/verified/um",
+          executable: "/verified/useful",
           cliDirectory: "/verified",
           version: "0.72.1",
           source: "bundled",
@@ -1258,7 +1271,7 @@ test("a CLI launch failure starts no run and exposes no result", async () => {
     assert.equal(result.failure?.code, "child_launch_failed");
     assert.deepEqual(observedOutputs, {
       ...emptyOutputs(),
-      "um-version": "0.72.1",
+      "useful-version": "0.72.1",
     });
     await assert.rejects(access(allocation.parent));
   } finally {

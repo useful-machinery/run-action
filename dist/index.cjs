@@ -3090,7 +3090,7 @@ function asAdapterError(error, stage) {
 var import_node_crypto2 = require("node:crypto");
 var import_node_fs = require("node:fs");
 var import_promises2 = require("node:fs/promises");
-var import_node_path2 = __toESM(require("node:path"), 1);
+var import_node_path3 = __toESM(require("node:path"), 1);
 var import_promises3 = require("node:stream/promises");
 var import_node_zlib = require("node:zlib");
 var tar = __toESM(require_tar_stream(), 1);
@@ -3107,7 +3107,7 @@ var FILE_COMMAND_VARIABLES = /* @__PURE__ */ new Set([
 function sanitizedChildEnvironment(source, cliDirectory) {
   const child = {};
   for (const [name, value] of Object.entries(source)) {
-    if (name.startsWith("INPUT_") || name.startsWith("UM_RUN_ACTION_") || FILE_COMMAND_VARIABLES.has(name)) {
+    if (name.startsWith("INPUT_") || name.startsWith("USEFUL_RUN_ACTION_") || FILE_COMMAND_VARIABLES.has(name)) {
       continue;
     }
     child[name] = value;
@@ -3121,7 +3121,7 @@ function sanitizedChildEnvironment(source, cliDirectory) {
 var import_node_crypto = require("node:crypto");
 var import_promises = require("node:fs/promises");
 var OUTPUT_NAMES = [
-  "um-version",
+  "useful-version",
   "outcome",
   "run-directory",
   "artifact-set-path",
@@ -3156,7 +3156,7 @@ async function writeOutputs(githubOutputFile, outputs, random = import_node_cryp
     const value = outputs[name];
     let delimiter;
     do {
-      delimiter = `um_${random(32).toString("hex")}`;
+      delimiter = `useful_${random(32).toString("hex")}`;
     } while (value.split(/\r?\n/u).includes(delimiter));
     payload += `${name}<<${delimiter}
 ${value}
@@ -3176,7 +3176,7 @@ var WorkflowCommandGuard = class {
   #lineStart = true;
   #pending = Promise.resolve();
   constructor(stream, random = import_node_crypto.randomBytes) {
-    this.#token = `um_${random(32).toString("hex")}`;
+    this.#token = `useful_${random(32).toString("hex")}`;
     this.#stream = stream;
   }
   async #write(bytes) {
@@ -3384,6 +3384,7 @@ var LATEST_TAG_PATTERN = new RegExp(
   `^https://github\\.com/useful-machinery/um/releases/tag/v(${VERSION_SOURCE})$`,
   "u"
 );
+var SELECTED_EXECUTABLE = "useful";
 function selectedReleaseAssets(version) {
   const base = `${RELEASE_REPOSITORY_URL}/releases/download/v${version}`;
   const targets = Object.keys(PINNED_RELEASE.archives);
@@ -3391,13 +3392,13 @@ function selectedReleaseAssets(version) {
     checksumsUrl: `${base}/SHA256SUMS`,
     archives: Object.fromEntries(
       targets.map((target) => {
-        const name = `um-${version}-${target}.tar.gz`;
+        const name = `${SELECTED_EXECUTABLE}-${version}-${target}.tar.gz`;
         return [
           target,
           {
             name,
             url: `${base}/${name}`,
-            rootDirectory: `um-${version}-${target}`
+            rootDirectory: `${SELECTED_EXECUTABLE}-${version}-${target}`
           }
         ];
       })
@@ -3407,6 +3408,10 @@ function selectedReleaseAssets(version) {
 
 // src/subprocess.ts
 var import_node_child_process = require("node:child_process");
+var import_node_path2 = __toESM(require("node:path"), 1);
+function cliCommand(executable, words) {
+  return `${import_node_path2.default.basename(executable)} ${words}`;
+}
 async function captureCommand(executable, arguments_, environment, maximumBytes, failureCode) {
   const child = (0, import_node_child_process.spawn)(executable, [...arguments_], {
     env: environment,
@@ -3467,6 +3472,17 @@ var DEFAULT_BOOTSTRAP_DEPENDENCIES = {
   ),
   appendPath: appendVerifiedPath
 };
+function pinnedExecutable(archive) {
+  const prefix = `${archive.rootDirectory}/`;
+  const executables = archive.inventory.filter(
+    (entry) => entry.type === "file" && entry.mode === 493
+  );
+  const name = executables.length === 1 && executables[0].path.startsWith(prefix) ? executables[0].path.slice(prefix.length) : "";
+  if (name === "" || name.includes("/")) {
+    throw new AdapterError("bootstrap_integrity_failed");
+  }
+  return name;
+}
 function pinnedInstallation(release, target) {
   const archive = release.archives[target];
   return {
@@ -3483,6 +3499,7 @@ function pinnedInstallation(release, target) {
       ])
     ),
     archive,
+    executable: pinnedExecutable(archive),
     buildIdentity: release.buildIdentity
   };
 }
@@ -3507,9 +3524,10 @@ function selectedInstallation(version, source, target) {
         { path: root, type: "directory", mode: 493 },
         { path: `${root}/LICENSE`, type: "file", mode: 420 },
         { path: `${root}/README.md`, type: "file", mode: 420 },
-        { path: `${root}/um`, type: "file", mode: 493 }
+        { path: `${root}/${SELECTED_EXECUTABLE}`, type: "file", mode: 493 }
       ]
     },
+    executable: SELECTED_EXECUTABLE,
     buildIdentity: void 0
   };
 }
@@ -3603,7 +3621,7 @@ function safeTarPath(name, directory) {
   const components = candidate.split("/");
   if (candidate === "" || candidate.startsWith("/") || candidate.includes("\\") || candidate.includes("\0") || components.some(
     (component) => component === "" || component === "." || component === ".."
-  ) || import_node_path2.default.posix.normalize(candidate) !== candidate) {
+  ) || import_node_path3.default.posix.normalize(candidate) !== candidate) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
   return candidate;
@@ -3627,9 +3645,9 @@ async function extractArchive(archivePath, destination, archive) {
         throw new AdapterError("bootstrap_integrity_failed");
       }
       seen.add(relative);
-      const outputPath = import_node_path2.default.join(destination, ...relative.split("/"));
-      const confined = import_node_path2.default.relative(destination, outputPath);
-      if (confined.startsWith("..") || import_node_path2.default.isAbsolute(confined)) {
+      const outputPath = import_node_path3.default.join(destination, ...relative.split("/"));
+      const confined = import_node_path3.default.relative(destination, outputPath);
+      if (confined.startsWith("..") || import_node_path3.default.isAbsolute(confined)) {
         throw new AdapterError("bootstrap_integrity_failed");
       }
       if (isDirectory) {
@@ -3644,7 +3662,7 @@ async function extractArchive(archivePath, destination, archive) {
         await (0, import_promises2.mkdir)(outputPath, { mode: 448 });
         await (0, import_promises2.chmod)(outputPath, entry.mode);
       } else {
-        const parent = import_node_path2.default.dirname(outputPath);
+        const parent = import_node_path3.default.dirname(outputPath);
         const parentStatus = await (0, import_promises2.lstat)(parent).catch(() => void 0);
         if (!parentStatus?.isDirectory() || parentStatus.isSymbolicLink()) {
           throw new AdapterError("bootstrap_integrity_failed");
@@ -3691,7 +3709,7 @@ async function extractArchive(archivePath, destination, archive) {
     throw new AdapterError("bootstrap_integrity_failed");
   }
   for (const entry of archive.inventory) {
-    const outputPath = import_node_path2.default.join(destination, ...entry.path.split("/"));
+    const outputPath = import_node_path3.default.join(destination, ...entry.path.split("/"));
     const status = await (0, import_promises2.lstat)(outputPath).catch(() => void 0);
     if (!status || status.isSymbolicLink() || (entry.type === "file" ? !status.isFile() : !status.isDirectory()) || (status.mode & 4095) !== entry.mode || entry.type === "file" && entry.size !== void 0 && status.size !== entry.size) {
       throw new AdapterError("bootstrap_integrity_failed");
@@ -3728,7 +3746,7 @@ async function verifyVersion(executable, cliDirectory, installation, sourceEnvir
     throw new AdapterError("bootstrap_version_failed");
   }
   const record2 = version;
-  if (record2.schemaVersion !== 1 || record2.command !== "um" || record2.version !== installation.version || record2.executablePath !== resolvedExecutable || typeof record2.buildIdentity !== "string" || record2.buildIdentity === "unknown" || (installation.buildIdentity === void 0 ? !BUILD_IDENTITY_PATTERN.test(record2.buildIdentity) : record2.buildIdentity !== installation.buildIdentity)) {
+  if (record2.schemaVersion !== 1 || record2.command !== installation.executable || record2.version !== installation.version || record2.executablePath !== resolvedExecutable || typeof record2.buildIdentity !== "string" || record2.buildIdentity === "unknown" || (installation.buildIdentity === void 0 ? !BUILD_IDENTITY_PATTERN.test(record2.buildIdentity) : record2.buildIdentity !== installation.buildIdentity)) {
     throw new AdapterError("bootstrap_version_failed");
   }
   return { environment, buildIdentity: record2.buildIdentity };
@@ -3739,7 +3757,7 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
     throw new AdapterError("bootstrap_platform_unsupported");
   }
   const runnerTemp = environment.RUNNER_TEMP;
-  if (!runnerTemp || !import_node_path2.default.isAbsolute(runnerTemp)) {
+  if (!runnerTemp || !import_node_path3.default.isAbsolute(runnerTemp)) {
     throw new AdapterError("bootstrap_platform_unsupported");
   }
   const canonicalRunnerTemp = await (0, import_promises2.realpath)(runnerTemp).catch(() => void 0);
@@ -3754,12 +3772,12 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
   ) : selectedInstallation(selection.version, "requested", target);
   const archive = installation.archive;
   const allocation = await (0, import_promises2.mkdtemp)(
-    import_node_path2.default.join(canonicalRunnerTemp, ".um-run-cli-")
+    import_node_path3.default.join(canonicalRunnerTemp, ".useful-run-cli-")
   ).catch(() => {
     throw new AdapterError("bootstrap_download_failed");
   });
-  const checksumPath = import_node_path2.default.join(allocation, "SHA256SUMS");
-  const archivePath = import_node_path2.default.join(allocation, archive.name);
+  const checksumPath = import_node_path3.default.join(allocation, "SHA256SUMS");
+  const archivePath = import_node_path3.default.join(allocation, archive.name);
   try {
     await (0, import_promises2.chmod)(allocation, 448);
     await downloadVerified(
@@ -3784,8 +3802,8 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
     await extractArchive(archivePath, allocation, archive);
     await (0, import_promises2.rm)(checksumPath, { force: true });
     await (0, import_promises2.rm)(archivePath, { force: true });
-    const cliDirectory = import_node_path2.default.join(allocation, archive.rootDirectory);
-    const executable = import_node_path2.default.join(cliDirectory, "um");
+    const cliDirectory = import_node_path3.default.join(allocation, archive.rootDirectory);
+    const executable = import_node_path3.default.join(cliDirectory, installation.executable);
     const executableStatus = await (0, import_promises2.lstat)(executable).catch(() => void 0);
     if (!executableStatus?.isFile() || executableStatus.isSymbolicLink() || (executableStatus.mode & 4095) !== 493 || await (0, import_promises2.realpath)(executable) !== executable) {
       throw new AdapterError("bootstrap_integrity_failed");
@@ -3819,7 +3837,7 @@ var import_node_child_process2 = require("node:child_process");
 var import_node_crypto3 = require("node:crypto");
 var import_node_fs2 = require("node:fs");
 var import_promises4 = require("node:fs/promises");
-var import_node_path3 = __toESM(require("node:path"), 1);
+var import_node_path4 = __toESM(require("node:path"), 1);
 var MAXIMUM_TERMINAL_JSON_BYTES = 2021e5;
 var DEFAULT_EXECUTION_DEPENDENCIES = {
   spawn: (executable, arguments_, options) => (0, import_node_child_process2.spawn)(executable, [...arguments_], options),
@@ -3829,7 +3847,7 @@ var DEFAULT_EXECUTION_DEPENDENCIES = {
   maximumTerminalBytes: MAXIMUM_TERMINAL_JSON_BYTES
 };
 async function allocateExecution(runnerTemp, namedInputs) {
-  if (!runnerTemp || !import_node_path3.default.isAbsolute(runnerTemp)) {
+  if (!runnerTemp || !import_node_path4.default.isAbsolute(runnerTemp)) {
     throw new AdapterError("input_invalid");
   }
   const canonicalRunnerTemp = await (0, import_promises4.realpath)(runnerTemp).catch(() => void 0);
@@ -3838,12 +3856,12 @@ async function allocateExecution(runnerTemp, namedInputs) {
     throw new AdapterError("input_invalid");
   }
   const parent = await (0, import_promises4.mkdtemp)(
-    import_node_path3.default.join(canonicalRunnerTemp, ".um-run-")
+    import_node_path4.default.join(canonicalRunnerTemp, ".useful-run-")
   ).catch(() => {
     throw new AdapterError("allocation_failed");
   });
-  const runDirectory = import_node_path3.default.join(parent, "run");
-  const terminalPath = import_node_path3.default.join(parent, ".terminal.json");
+  const runDirectory = import_node_path4.default.join(parent, "run");
+  const terminalPath = import_node_path4.default.join(parent, ".terminal.json");
   const inputFiles = [];
   try {
     await (0, import_promises4.chmod)(parent, 448);
@@ -3862,7 +3880,7 @@ async function allocateExecution(runnerTemp, namedInputs) {
       if (input.kind !== "text" && input.kind !== "json" || input.source.kind !== "inline") {
         continue;
       }
-      const inputPath = import_node_path3.default.join(
+      const inputPath = import_node_path4.default.join(
         parent,
         `.input-${String(index).padStart(4, "0")}`
       );
@@ -4100,7 +4118,7 @@ async function cleanupExecution(allocation) {
 
 // src/identity.ts
 var import_promises5 = require("node:fs/promises");
-var import_node_path4 = __toESM(require("node:path"), 1);
+var import_node_path5 = __toESM(require("node:path"), 1);
 var MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
 var DEFAULT_RECOVERY_DEPENDENCIES = {
   readStatus: (executable, runDirectory, environment) => captureCommand(
@@ -4115,13 +4133,13 @@ function record(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
 }
 async function retainedResult(allocation, outcome) {
-  const artifactDirectory = import_node_path4.default.join(
+  const artifactDirectory = import_node_path5.default.join(
     allocation.runDirectory,
     "attempts",
     "000001",
     "result"
   );
-  const resultPath = import_node_path4.default.join(artifactDirectory, "result.json");
+  const resultPath = import_node_path5.default.join(artifactDirectory, "result.json");
   const artifactStatus = await (0, import_promises5.lstat)(artifactDirectory).catch(() => void 0);
   const resultStatus = await (0, import_promises5.lstat)(resultPath).catch(() => void 0);
   if (!artifactStatus?.isDirectory() || artifactStatus.isSymbolicLink() || !resultStatus?.isFile() || resultStatus.isSymbolicLink()) {
@@ -4163,7 +4181,7 @@ async function recoverDurableRun(executable, allocation, environment, dependenci
   const attempts = state?.attempts;
   const attempt = Array.isArray(attempts) ? record(attempts[0]) : void 0;
   const result = record(attempt?.result);
-  if (!document || document.schemaVersion !== 1 || document.command !== "um workflow status" || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
+  if (!document || document.schemaVersion !== 1 || document.command !== cliCommand(executable, "workflow status") || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
     throw new AdapterError("result_identity_invalid");
   }
   if (result.status !== "published") {
@@ -4190,7 +4208,7 @@ async function committedIdentity(allocation, envelope) {
     throw new AdapterError("result_identity_invalid");
   }
   const attemptDirectory = String(envelope.attemptNumber).padStart(6, "0");
-  const expectedArtifactDirectory = import_node_path4.default.join(
+  const expectedArtifactDirectory = import_node_path5.default.join(
     allocation.runDirectory,
     "attempts",
     attemptDirectory,
@@ -4202,7 +4220,7 @@ async function committedIdentity(allocation, envelope) {
   const artifactStatus = await (0, import_promises5.lstat)(expectedArtifactDirectory).catch(
     () => void 0
   );
-  const resultPath = import_node_path4.default.join(expectedArtifactDirectory, "result.json");
+  const resultPath = import_node_path5.default.join(expectedArtifactDirectory, "result.json");
   const resultStatus = await (0, import_promises5.lstat)(resultPath).catch(() => void 0);
   if (!artifactStatus?.isDirectory() || artifactStatus.isSymbolicLink() || !resultStatus?.isFile() || resultStatus.isSymbolicLink()) {
     throw new AdapterError("result_identity_invalid");
@@ -4218,7 +4236,7 @@ async function committedIdentity(allocation, envelope) {
 
 // src/inputs.ts
 var import_promises6 = require("node:fs/promises");
-var import_node_path5 = __toESM(require("node:path"), 1);
+var import_node_path6 = __toESM(require("node:path"), 1);
 var AcquisitionDocumentParser = class {
   #source;
   #position = 0;
@@ -4415,7 +4433,7 @@ function optionalInput(environment, name) {
 }
 function resolveWorkspacePath(workspace, value) {
   try {
-    return import_node_path5.default.resolve(workspace, value);
+    return import_node_path6.default.resolve(workspace, value);
   } catch {
     return invalid();
   }
@@ -4540,10 +4558,10 @@ function parseNamedInputs(document, workspace) {
 }
 async function readActionInputs(environment) {
   const workspaceValue = environment.GITHUB_WORKSPACE;
-  if (!workspaceValue || !import_node_path5.default.isAbsolute(workspaceValue)) {
+  if (!workspaceValue || !import_node_path6.default.isAbsolute(workspaceValue)) {
     throw new AdapterError("input_invalid");
   }
-  const workspace = import_node_path5.default.resolve(workspaceValue);
+  const workspace = import_node_path6.default.resolve(workspaceValue);
   const workspaceStatus = await (0, import_promises6.stat)(workspace).catch(() => void 0);
   if (!workspaceStatus?.isDirectory()) {
     throw new AdapterError("input_invalid");
@@ -4584,7 +4602,7 @@ var import_node_crypto4 = require("node:crypto");
 var import_node_fs4 = require("node:fs");
 var import_promises7 = require("node:fs/promises");
 var import_node_events = require("node:events");
-var import_node_path6 = __toESM(require("node:path"), 1);
+var import_node_path7 = __toESM(require("node:path"), 1);
 var import_stream_json2 = __toESM(require_stream_json(), 1);
 
 // src/terminal.ts
@@ -4613,7 +4631,7 @@ var PRIMITIVE_TOKENS = /* @__PURE__ */ new Set([
   "trueValue",
   "falseValue"
 ]);
-async function readTerminalEnvelope(file) {
+async function readTerminalEnvelope(file, executable) {
   const stream = (0, import_node_stream.pipeline)((0, import_node_fs3.createReadStream)(file), parser(), () => {
   });
   const values = /* @__PURE__ */ new Map();
@@ -4666,7 +4684,7 @@ async function readTerminalEnvelope(file) {
   const command = values.get("command");
   const outcome = values.get("outcome");
   const exitStatus = values.get("exitStatus");
-  if (schemaVersion !== 1 || command !== "um workflow run" || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
+  if (schemaVersion !== 1 || command !== cliCommand(executable, "workflow run") || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
     String(outcome)
   ) || typeof exitStatus !== "number" || !Number.isSafeInteger(exitStatus)) {
     throw new AdapterError("terminal_result_invalid");
@@ -4779,7 +4797,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
   }
   const record2 = document;
   const summary = record2.summary;
-  if (record2.schemaVersion !== 1 || record2.command !== "um artifact validate" || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys(summary, [
+  if (record2.schemaVersion !== 1 || record2.command !== cliCommand(executable, "artifact validate") || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys(summary, [
     "declaredExports",
     "availableExports",
     "unavailableExports",
@@ -5005,12 +5023,12 @@ async function readCarrier(artifactDirectory, metadata, retainInline) {
   if (typeof metadata.path !== "string" || typeof metadata.sizeBytes !== "number" || !Number.isSafeInteger(metadata.sizeBytes) || metadata.sizeBytes < 0 || metadata.digest?.algorithm !== "sha256" || typeof metadata.digest.value !== "string") {
     throw new AdapterError("result_projection_failed");
   }
-  const carrierPath = import_node_path6.default.resolve(artifactDirectory, metadata.path);
-  const relative = import_node_path6.default.relative(artifactDirectory, carrierPath);
-  if (relative.startsWith("..") || import_node_path6.default.isAbsolute(relative)) {
+  const carrierPath = import_node_path7.default.resolve(artifactDirectory, metadata.path);
+  const relative = import_node_path7.default.relative(artifactDirectory, carrierPath);
+  if (relative.startsWith("..") || import_node_path7.default.isAbsolute(relative)) {
     throw new AdapterError("result_projection_failed");
   }
-  const parentStatus = await (0, import_promises7.lstat)(import_node_path6.default.dirname(carrierPath)).catch(
+  const parentStatus = await (0, import_promises7.lstat)(import_node_path7.default.dirname(carrierPath)).catch(
     () => void 0
   );
   const carrierStatus = await (0, import_promises7.lstat)(carrierPath).catch(() => void 0);
@@ -5203,11 +5221,13 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
   process.on("SIGINT", onInterrupt);
   process.on("SIGTERM", onTerminate);
   try {
-    const selection = parseVersionSelection(environment["INPUT_UM-VERSION"]);
+    const selection = parseVersionSelection(
+      environment["INPUT_USEFUL-VERSION"]
+    );
     bootstrap = await dependencies.bootstrap(environment, selection);
-    outputs["um-version"] = bootstrap.version;
+    outputs["useful-version"] = bootstrap.version;
     await dependencies.report(
-      `Useful Machinery Run selected um ${bootstrap.version} (${bootstrap.source}) build ${bootstrap.buildIdentity}.`
+      `Useful Machinery Run selected useful ${bootstrap.version} (${bootstrap.source}) build ${bootstrap.buildIdentity}.`
     );
     phase = "inputs";
     inputs = await dependencies.readInputs(environment);
@@ -5240,7 +5260,8 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
       } else {
         try {
           const candidate = await dependencies.readTerminal(
-            processResult.terminalPath
+            processResult.terminalPath,
+            bootstrap.executable
           );
           validateTerminalShape(candidate);
           terminal = candidate;

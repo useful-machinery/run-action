@@ -19,7 +19,7 @@ import { parseVersionSelection } from "../src/release.ts";
 async function withWorkspace(
   callback: (workspace: string) => Promise<void>,
 ): Promise<void> {
-  const workspace = await mkdtemp(path.join(os.tmpdir(), "um-inputs-"));
+  const workspace = await mkdtemp(path.join(os.tmpdir(), "useful-inputs-"));
   try {
     await callback(workspace);
   } finally {
@@ -165,7 +165,7 @@ test("the acquisition grammar rejects malformed, duplicate, unknown, and wrong-k
 });
 
 // REQ-RUNACTION-82
-test("um-version selects the bundled, latest, or one exact release", () => {
+test("useful-version selects the bundled, latest, or one exact release", () => {
   for (const value of [undefined, ""]) {
     assert.deepEqual(parseVersionSelection(value), { kind: "bundled" });
   }
@@ -274,7 +274,7 @@ test("child environment removes Action handles and preserves caller authority", 
       GITHUB_PATH: "/commands/path",
       GITHUB_STATE: "/commands/state",
       GITHUB_STEP_SUMMARY: "/commands/summary",
-      UM_RUN_ACTION_PRIVATE: "private",
+      USEFUL_RUN_ACTION_PRIVATE: "private",
       ORDINARY_CALLER_VALUE: "retained",
       GITHUB_TOKEN: "caller-authorized",
     },
@@ -290,7 +290,7 @@ test("child environment removes Action handles and preserves caller authority", 
 // REQ-RUNACTION-43
 // INV-EMBED-4
 test("GitHub outputs use collision-resistant file commands without logging values", async () => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "um-outputs-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "useful-outputs-"));
   try {
     const outputFile = path.join(directory, "output");
     await writeFile(outputFile, "", { mode: 0o600 });
@@ -298,7 +298,7 @@ test("GitHub outputs use collision-resistant file commands without logging value
     outputs["export-value"] = "line one\n::warning::not a command\nline three";
     await writeOutputs(outputFile, outputs, () => Buffer.alloc(32, 0xab));
     const bytes = await readFile(outputFile, "utf8");
-    assert.match(bytes, /export-value<<um_ab+/u);
+    assert.match(bytes, /export-value<<useful_ab+/u);
     assert.match(bytes, /::warning::not a command/u);
     assert.equal(bytes.includes("undefined"), false);
   } finally {
@@ -318,7 +318,7 @@ test("untrusted presentation remains inside one stop-command interval", async ()
   await guard.stop();
   assert.equal(
     logBytes,
-    `::stop-commands::um_${"cd".repeat(32)}\n::set-output name=owned::bad\n::um_${"cd".repeat(32)}::\n`,
+    `::stop-commands::useful_${"cd".repeat(32)}\n::set-output name=owned::bad\n::useful_${"cd".repeat(32)}::\n`,
   );
 });
 
@@ -350,13 +350,15 @@ test("presentation waits for a buffered stop-command marker", async () => {
   await guard.stop();
   assert.equal(
     logBytes,
-    `::stop-commands::um_${"ab".repeat(32)}\n::set-output name=owned::hostile\n::um_${"ab".repeat(32)}::\n`,
+    `::stop-commands::useful_${"ab".repeat(32)}\n::set-output name=owned::hostile\n::useful_${"ab".repeat(32)}::\n`,
   );
 });
 
 // REQ-RUNACTION-74
 test("a missing or unwritable GITHUB_PATH or GITHUB_OUTPUT fails as github_file_command_failed", async () => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "um-file-commands-"));
+  const directory = await mkdtemp(
+    path.join(os.tmpdir(), "useful-file-commands-"),
+  );
   try {
     const fileCommandFailure = (error: unknown) =>
       error instanceof AdapterError &&

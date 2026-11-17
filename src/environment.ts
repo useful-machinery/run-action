@@ -16,7 +16,7 @@ export function sanitizedChildEnvironment(
   for (const [name, value] of Object.entries(source)) {
     if (
       name.startsWith("INPUT_") ||
-      name.startsWith("UM_RUN_ACTION_") ||
+      name.startsWith("USEFUL_RUN_ACTION_") ||
       FILE_COMMAND_VARIABLES.has(name)
     ) {
       continue;

@@ -146,8 +146,8 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
   );
   assert.equal(discovery.uses, verifiedReference);
   assert.deepEqual(discovery.with, {
-    workflow: ".um/workflows/discover-sentry-issues.yaml",
-    "source-root": ".um",
+    workflow: ".useful/workflows/discover-sentry-issues.yaml",
+    "source-root": ".useful",
     "execution-root": ".",
     export: "issueMatrix",
   });
@@ -259,7 +259,7 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
     "ARTIFACT_SET_PATH",
     "GH_TOKEN",
     "INDUCE_PUBLISHER_FAILURE",
-    "UM_PUBLISHER_ATTESTATION_PATH",
+    "USEFUL_PUBLISHER_ATTESTATION_PATH",
   ]);
   assert.match(
     publisher.env?.GH_TOKEN ?? "",
@@ -267,7 +267,7 @@ test("nightly composition keeps setup, bounded repair, and publication caller-ow
   );
   assert.match(
     publisher.run ?? "",
-    /\.\/publisher-source\/scripts\/publish-um-branch/u,
+    /\.\/publisher-source\/scripts\/publish-useful-branch/u,
   );
   assert.equal((publisher.run ?? "").includes("./scripts/"), false);
   assert.match(publisher.run ?? "", /"requestAttempted": True/u);
@@ -301,7 +301,7 @@ test("Sentry discovery and repair preserve the named JSON contract", async () =>
     await readFile(
       path.join(
         packageRoot,
-        "examples/nightly-sentry-repair/.um/workflows/discover-sentry-issues.yaml",
+        "examples/nightly-sentry-repair/.useful/workflows/discover-sentry-issues.yaml",
       ),
       "utf8",
     ),
@@ -345,7 +345,7 @@ test("Sentry discovery and repair preserve the named JSON contract", async () =>
     await readFile(
       path.join(
         packageRoot,
-        "examples/nightly-sentry-repair/.um/schemas/sentry-issue-matrix.schema.json",
+        "examples/nightly-sentry-repair/.useful/schemas/sentry-issue-matrix.schema.json",
       ),
       "utf8",
     ),
@@ -383,7 +383,7 @@ test("Sentry discovery and repair preserve the named JSON contract", async () =>
     await readFile(
       path.join(
         packageRoot,
-        "examples/nightly-sentry-repair/.um/workflows/repair-sentry-issue.yaml",
+        "examples/nightly-sentry-repair/.useful/workflows/repair-sentry-issue.yaml",
       ),
       "utf8",
     ),
