@@ -1,10 +1,11 @@
 # Useful Machinery Run Action
 
-The implementation pins the checksum-verified `um` v0.77.0 release. This README and both
-executable examples select public mirror revision
-`b9de88cc55fb9301697eccb72e42030a49ec495d`, which carries that release;
-[source, all three native behavior jobs and the pinned-release jobs passed](https://github.com/useful-machinery/run-action/actions/runs/42555199928)
-for that exact mirror revision.
+The implementation pins the checksum-verified `useful` v0.78.0 release and runs `useful`
+0.78.0 or later. This README and both executable examples still select public mirror
+revision `b9de88cc55fb9301697eccb72e42030a49ec495d`, the last revision for which
+[source, all three native behavior jobs and the pinned-release jobs passed](https://github.com/useful-machinery/run-action/actions/runs/42555199928);
+it carries the earlier `um` 0.72.1 release and its `um-version` input. They move to a
+revision that carries this pin once its jobs pass on the public mirror.
 
 Run a checked-in Useful Machinery workflow inside a GitHub Actions job—without sending the
 run to Useful Machinery.
@@ -107,10 +108,10 @@ The source tree also contains a working
 adds agent-produced JSON discovery, a bounded GitHub matrix, and publisher
 failure-isolation verification. Both executable examples use named `request` inputs and
 pin the same verified Action mirror: JSON for Sentry and Text for the conflict resolver.
-Neither sets `useful-version`, so each installs the `um` v0.77.0 release this revision bundles,
-and their harness pins sit inside that CLI's admitted ranges. To follow new CLI releases
-instead, add `useful-version: latest` to the step's `with:` block, as
-[Choosing the CLI version](#choosing-the-cli-version) describes.
+Neither sets a CLI version, so each installs the `um` 0.72.1 release that revision bundles,
+and their harness pins sit inside that CLI's admitted ranges. That revision cannot follow
+new CLI releases; [Moving from an earlier revision](#moving-from-an-earlier-revision)
+describes the change.
 
 Keep each example's reference, acquisition form, workflow, and harness requirements
 paired when upgrading. V1 provides no moving `v1`, `latest`, or semantic-version tag; do not
@@ -121,10 +122,10 @@ Useful Machinery monorepo commit.
 
 The optional `useful-version` input chooses the `useful` release the step installs:
 
-- omit it, or leave it empty, to install the release this Action revision pins (v0.77.0
+- omit it, or leave it empty, to install the release this Action revision pins (v0.78.0
   here); the CLI is reproducible for each Action revision and is the one the revision
   was tested with;
-- set an exact published version such as `0.72.1` to install that release; the CLI stays
+- set an exact published version such as `0.78.0` to install that release; the CLI stays
   the same across Action revisions; or
 - set `latest` to install the newest published release; upgrades arrive automatically,
   and a step may run a CLI this Action revision was not tested with.
@@ -147,17 +148,38 @@ one log line name the version installed, how it was chosen (`bundled`, `requeste
 executable its installation names: `useful` for a release the input selects, and for the
 pinned release the executable that `release-evidence.json` records in its archive.
 
+This revision runs `useful` 0.78.0 or later. An earlier release names its archives
+`um-<version>-<target>.tar.gz` and has an earlier command line, so selecting one fails
+naming `bootstrap_integrity_failed`.
+
+## Moving from an earlier revision
+
+Revisions published before the CLI was renamed from `um` to `useful` install `um` and run
+its earlier command line. On those revisions an exact version up to 0.77.0, or no version,
+keeps working, but `latest` now selects a `useful` release they cannot install or run. To
+move a step to this revision:
+
+1. Replace the `uses:` revision with this revision's full public mirror SHA.
+2. Rename the `um-version` input to `useful-version`, keeping its value; an exact version
+   must be 0.78.0 or later.
+3. Change later steps that run the CLI from `PATH`, such as `um artifact validate`, to
+   `useful`.
+4. Keep `workflow` inside `source-root`: this revision refuses a workflow file outside it,
+   naming `input_invalid`.
+5. A job cancelled during a run now reports `outcome` `failed`: `useful` records the
+   interruption as a failed step rather than a cancelled run.
+
 ## Inputs
 
 | Input | Default | Purpose |
 | --- | --- | --- |
-| `workflow` | required | Workflow file to run. Relative paths resolve from `GITHUB_WORKSPACE`. |
+| `workflow` | required | Workflow file to run, inside `source-root`. Relative paths resolve from `GITHUB_WORKSPACE`. |
 | `source-root` | `GITHUB_WORKSPACE` | Complete source boundary containing the workflow and its static files. |
 | `execution-root` | `GITHUB_WORKSPACE` | Existing caller-owned directory in which commands and agents run. |
 | `inputs` | absent | Closed JSON acquisition map for named Text, JSON, File, and attachment-collection values. |
 | `max-parallel` | `1` | Maximum number of workflow nodes to run concurrently, from 1 through 256. |
 | `export` | absent | Exact declared workflow export to bridge to selected-export outputs. |
-| `useful-version` | absent | CLI release to install: omit for the pinned v0.77.0, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
+| `useful-version` | absent | CLI release to install: omit for the pinned v0.78.0, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
 
 Absent or empty `inputs`, and the document `{}`, all supply the empty named map. A
 nonempty value is one JSON object keyed by declared Workflow V1 input names. Each member

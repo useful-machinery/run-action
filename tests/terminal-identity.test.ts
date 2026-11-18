@@ -52,7 +52,7 @@ test("published terminal envelope recovers only the reserved committed identity"
       allocation.terminalPath,
       `${JSON.stringify({
         schemaVersion: 1,
-        command: "useful workflow run",
+        command: "useful workflow run create",
         outcome: "succeeded",
         exitStatus: 0,
         runDirectory: allocation.runDirectory,
@@ -89,7 +89,7 @@ test("terminal identity mismatch and unknown root fields fail closed", async () 
       file,
       JSON.stringify({
         schemaVersion: 1,
-        command: "useful workflow run",
+        command: "useful workflow run create",
         outcome: "failed",
         exitStatus: 1,
         runDirectory: path.join(directory, "other"),
@@ -110,8 +110,9 @@ test("the terminal document's command names the executable that ran", async (t) 
   await withTemporary(async (directory) => {
     const file = path.join(directory, "terminal.json");
     for (const [command, accepted] of [
-      ["fixture-cli workflow run", true],
-      ["useful workflow run", false],
+      ["fixture-cli workflow run create", true],
+      ["useful workflow run create", false],
+      ["fixture-cli workflow run", false],
     ] as const) {
       await t.test(command, async () => {
         await writeFile(
@@ -150,7 +151,7 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
       '{"schemaVersion":1',
       JSON.stringify({
         schemaVersion: 2,
-        command: "useful workflow run",
+        command: "useful workflow run create",
         outcome: "rejected",
         exitStatus: 1,
       }),
@@ -288,15 +289,15 @@ test("pinned status binds terminal-less recovery to the initial published result
       },
     });
 
-    const failed = pinned();
-    failed.state.attempts[0]!.state = "workflow_failed";
+    const cancelled = pinned();
+    cancelled.state.attempts[0]!.state = "cancelled";
     for (const [name, status, outcome] of [
-      ["as captured", pinned(), "cancelled"],
-      ["workflow failed", failed, "failed"],
+      ["as captured", pinned(), "failed"],
+      ["cancelled", cancelled, "cancelled"],
       [
-        "root members the pinned CLI does not print",
-        { ...pinned(), record: null, wait: null },
-        "cancelled",
+        "root members an earlier CLI did not print",
+        { ...pinned(), record: undefined, wait: undefined },
+        "failed",
       ],
     ] as const) {
       await t.test(name, async () => {
@@ -322,12 +323,12 @@ test("pinned status binds terminal-less recovery to the initial published result
       ["another schema version", { ...pinned(), schemaVersion: 2 }],
       [
         "renamed status command",
-        { ...pinned(), command: `${PINNED_EXECUTABLE} workflow run status` },
+        { ...pinned(), command: `${PINNED_EXECUTABLE} workflow status` },
       ],
       // REQ-RUNACTION-6
       [
         "another executable's status command",
-        { ...pinned(), command: "useful workflow status" },
+        { ...pinned(), command: "um workflow run status" },
       ],
       ["another outcome", { ...pinned(), outcome: "failed" }],
       ["nonzero exit status", { ...pinned(), exitStatus: 1 }],
@@ -374,7 +375,7 @@ test("workflow status output is read up to its 33,554,432-byte bound", async (t)
           paddedJson(
             {
               schemaVersion: 1,
-              command: "useful workflow status",
+              command: "useful workflow run status",
               outcome: "status",
               exitStatus: 0,
               runDirectory: allocation.runDirectory,

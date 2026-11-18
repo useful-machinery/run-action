@@ -3239,121 +3239,121 @@ var WorkflowCommandGuard = class {
 var release_evidence_default = {
   schemaVersion: 1,
   repository: "useful-machinery/cli",
-  releaseUrl: "https://github.com/useful-machinery/cli/releases/tag/v0.77.0",
-  tag: "v0.77.0",
-  releaseId: 446376891,
-  releaseCommit: "d68514c3febcf335ebd68ce1f913ccbd0aaaaf49",
-  sourceRevision: "23aa874032538bcb4264e036a60b6b13d6502aa7",
+  releaseUrl: "https://github.com/useful-machinery/cli/releases/tag/v0.78.0",
+  tag: "v0.78.0",
+  releaseId: 448970210,
+  releaseCommit: "b80c5cb347bb00ce7dd20553857ebe8162c592e2",
+  sourceRevision: "21ec4b9d4a06a7dd0b5c0c9f9d7c2c3214e88b7f",
   requiredSourceAncestor: "7215869ca26439d305c097af1dca50ebb8066419",
-  version: "0.77.0",
-  buildIdentity: "d68514c3febcf335ebd68ce1f913ccbd0aaaaf49",
+  version: "0.78.0",
+  buildIdentity: "b80c5cb347bb00ce7dd20553857ebe8162c592e2",
   checksumAsset: {
-    id: 752398121,
+    id: 759978647,
     name: "SHA256SUMS",
-    size: 321,
-    sha256: "d9166365628a1397444801ffa428baa5007bf4510cd2b681cf253a94cc9b0590",
-    url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/SHA256SUMS"
+    size: 333,
+    sha256: "4f68742c05908e83e4076cbc61bf1db65b314823225cbb835442625464b5e093",
+    url: "https://github.com/useful-machinery/cli/releases/download/v0.78.0/SHA256SUMS"
   },
   archives: {
     "x86_64-unknown-linux-gnu": {
-      id: 752398117,
-      name: "um-0.77.0-x86_64-unknown-linux-gnu.tar.gz",
-      size: 22022450,
-      sha256: "43f91ffe57945e8101b1d23ad1d63def0a1558bbb2faf5383bf406009ec85b03",
-      url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/um-0.77.0-x86_64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "um-0.77.0-x86_64-unknown-linux-gnu",
+      id: 759978645,
+      name: "useful-0.78.0-x86_64-unknown-linux-gnu.tar.gz",
+      size: 22149365,
+      sha256: "85af733149863186db98b33ff09c761a390898e9c5881d9484a056aa5a7fd0ee",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.78.0/useful-0.78.0-x86_64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "useful-0.78.0-x86_64-unknown-linux-gnu",
       inventory: [
         {
-          path: "um-0.77.0-x86_64-unknown-linux-gnu",
+          path: "useful-0.78.0-x86_64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "um-0.77.0-x86_64-unknown-linux-gnu/LICENSE",
+          path: "useful-0.78.0-x86_64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "um-0.77.0-x86_64-unknown-linux-gnu/README.md",
+          path: "useful-0.78.0-x86_64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
-          size: 176760
+          size: 178477
         },
         {
-          path: "um-0.77.0-x86_64-unknown-linux-gnu/um",
+          path: "useful-0.78.0-x86_64-unknown-linux-gnu/useful",
           type: "file",
           mode: 493,
-          size: 76184488
+          size: 76772112
         }
       ]
     },
     "aarch64-unknown-linux-gnu": {
-      id: 752398116,
-      name: "um-0.77.0-aarch64-unknown-linux-gnu.tar.gz",
-      size: 22722487,
-      sha256: "ebf382817002fbf4217a76e123f63bba09607e301989abe2153cc3a4d6a1392b",
-      url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/um-0.77.0-aarch64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "um-0.77.0-aarch64-unknown-linux-gnu",
+      id: 759978636,
+      name: "useful-0.78.0-aarch64-unknown-linux-gnu.tar.gz",
+      size: 22967921,
+      sha256: "d570672c6257225fe8673af96f8934d7e7d67e098b46b8d4e8c522061254e3c1",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.78.0/useful-0.78.0-aarch64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "useful-0.78.0-aarch64-unknown-linux-gnu",
       inventory: [
         {
-          path: "um-0.77.0-aarch64-unknown-linux-gnu",
+          path: "useful-0.78.0-aarch64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "um-0.77.0-aarch64-unknown-linux-gnu/LICENSE",
+          path: "useful-0.78.0-aarch64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "um-0.77.0-aarch64-unknown-linux-gnu/README.md",
+          path: "useful-0.78.0-aarch64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
-          size: 176760
+          size: 178477
         },
         {
-          path: "um-0.77.0-aarch64-unknown-linux-gnu/um",
+          path: "useful-0.78.0-aarch64-unknown-linux-gnu/useful",
           type: "file",
           mode: 493,
-          size: 72066128
+          size: 73017256
         }
       ]
     },
     "aarch64-apple-darwin": {
-      id: 752398118,
-      name: "um-0.77.0-aarch64-apple-darwin.tar.gz",
-      size: 20402934,
-      sha256: "23342fb5bf76756ee808efa6880f8c9ea145807e2d4dd991f52cd99cd8ba1a0f",
-      url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/um-0.77.0-aarch64-apple-darwin.tar.gz",
-      rootDirectory: "um-0.77.0-aarch64-apple-darwin",
+      id: 759978637,
+      name: "useful-0.78.0-aarch64-apple-darwin.tar.gz",
+      size: 20619045,
+      sha256: "21d5874a261667e4a2288fd1f711d18ff75c794c03bed91a2365c6ea4b651ba8",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.78.0/useful-0.78.0-aarch64-apple-darwin.tar.gz",
+      rootDirectory: "useful-0.78.0-aarch64-apple-darwin",
       inventory: [
         {
-          path: "um-0.77.0-aarch64-apple-darwin",
+          path: "useful-0.78.0-aarch64-apple-darwin",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "um-0.77.0-aarch64-apple-darwin/LICENSE",
+          path: "useful-0.78.0-aarch64-apple-darwin/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "um-0.77.0-aarch64-apple-darwin/README.md",
+          path: "useful-0.78.0-aarch64-apple-darwin/README.md",
           type: "file",
           mode: 420,
-          size: 176760
+          size: 178477
         },
         {
-          path: "um-0.77.0-aarch64-apple-darwin/um",
+          path: "useful-0.78.0-aarch64-apple-darwin/useful",
           type: "file",
           mode: 493,
-          size: 65243552
+          size: 66027856
         }
       ]
     }
@@ -3836,407 +3836,12 @@ async function bootstrapCli(environment, dependencies = DEFAULT_BOOTSTRAP_DEPEND
 var import_node_child_process2 = require("node:child_process");
 var import_node_crypto3 = require("node:crypto");
 var import_node_fs2 = require("node:fs");
-var import_promises4 = require("node:fs/promises");
-var import_node_path4 = __toESM(require("node:path"), 1);
-var MAXIMUM_TERMINAL_JSON_BYTES = 2021e5;
-var DEFAULT_EXECUTION_DEPENDENCIES = {
-  spawn: (executable, arguments_, options) => (0, import_node_child_process2.spawn)(executable, [...arguments_], options),
-  signals: process,
-  presentationStream: process.stderr,
-  randomBytes: import_node_crypto3.randomBytes,
-  maximumTerminalBytes: MAXIMUM_TERMINAL_JSON_BYTES
-};
-async function allocateExecution(runnerTemp, namedInputs) {
-  if (!runnerTemp || !import_node_path4.default.isAbsolute(runnerTemp)) {
-    throw new AdapterError("input_invalid");
-  }
-  const canonicalRunnerTemp = await (0, import_promises4.realpath)(runnerTemp).catch(() => void 0);
-  const temporaryStatus = canonicalRunnerTemp ? await (0, import_promises4.stat)(canonicalRunnerTemp).catch(() => void 0) : void 0;
-  if (!canonicalRunnerTemp || !temporaryStatus?.isDirectory()) {
-    throw new AdapterError("input_invalid");
-  }
-  const parent = await (0, import_promises4.mkdtemp)(
-    import_node_path4.default.join(canonicalRunnerTemp, ".useful-run-")
-  ).catch(() => {
-    throw new AdapterError("allocation_failed");
-  });
-  const runDirectory = import_node_path4.default.join(parent, "run");
-  const terminalPath = import_node_path4.default.join(parent, ".terminal.json");
-  const inputFiles = [];
-  try {
-    await (0, import_promises4.chmod)(parent, 448);
-    const terminalHandle = await (0, import_promises4.open)(
-      terminalPath,
-      import_node_fs2.constants.O_CREAT | import_node_fs2.constants.O_EXCL | import_node_fs2.constants.O_WRONLY,
-      384
-    );
-    try {
-      await terminalHandle.sync();
-    } finally {
-      await terminalHandle.close();
-    }
-    await (0, import_promises4.chmod)(terminalPath, 384);
-    for (const [index, input] of namedInputs.entries()) {
-      if (input.kind !== "text" && input.kind !== "json" || input.source.kind !== "inline") {
-        continue;
-      }
-      const inputPath = import_node_path4.default.join(
-        parent,
-        `.input-${String(index).padStart(4, "0")}`
-      );
-      const handle = await (0, import_promises4.open)(
-        inputPath,
-        import_node_fs2.constants.O_CREAT | import_node_fs2.constants.O_EXCL | import_node_fs2.constants.O_WRONLY,
-        384
-      );
-      try {
-        await handle.writeFile(Buffer.from(input.source.value, "utf8"));
-        await handle.sync();
-      } finally {
-        await handle.close();
-      }
-      await (0, import_promises4.chmod)(inputPath, 384);
-      inputFiles.push({ name: input.name, kind: input.kind, path: inputPath });
-    }
-    return { parent, runDirectory, terminalPath, inputFiles };
-  } catch (error) {
-    await (0, import_promises4.rm)(parent, { recursive: true, force: true }).catch(() => void 0);
-    throw error instanceof AdapterError ? error : new AdapterError("allocation_failed");
-  }
-}
-function workflowArguments(inputs, allocation) {
-  const arguments_ = [
-    "workflow",
-    "run",
-    "--source-root",
-    inputs.sourceRoot,
-    "--execution-root",
-    inputs.executionRoot,
-    "--run-dir",
-    allocation.runDirectory,
-    "--max-parallel",
-    inputs.maximumParallel,
-    "--json"
-  ];
-  const privateFiles = new Map(
-    allocation.inputFiles.map((input) => [
-      `${input.kind}:${input.name}`,
-      input.path
-    ])
-  );
-  for (const input of inputs.namedInputs) {
-    if (input.kind === "text" || input.kind === "json") {
-      const inputPath = input.source.kind === "path" ? input.source.path : privateFiles.get(`${input.kind}:${input.name}`);
-      if (inputPath === void 0) throw new AdapterError("allocation_failed");
-      arguments_.push(`--input-${input.kind}-file`, input.name, inputPath);
-    } else if (input.kind === "file") {
-      arguments_.push("--input-file", input.name, input.mediaType, input.path);
-    } else if (input.items.length === 0) {
-      arguments_.push("--input-attachments-empty", input.name);
-    } else {
-      for (const item of input.items) {
-        arguments_.push(
-          "--input-attachment",
-          input.name,
-          item.mediaType,
-          item.path
-        );
-      }
-    }
-  }
-  arguments_.push(inputs.workflow);
-  return arguments_;
-}
-async function spoolStdout(stdout, handle, maximumBytes) {
-  let bytes = 0;
-  let retained = 0;
-  let overflow = false;
-  let writeFailed = false;
-  try {
-    for await (const value of stdout) {
-      const chunk = Buffer.from(value);
-      bytes += chunk.length;
-      const remaining = maximumBytes - retained;
-      if (remaining > 0) {
-        const selected = chunk.subarray(0, remaining);
-        retained += selected.length;
-        if (!writeFailed) {
-          await handle.write(selected).catch(() => {
-            writeFailed = true;
-          });
-        }
-      }
-      if (chunk.length > Math.max(remaining, 0)) overflow = true;
-    }
-    if (!writeFailed) {
-      await handle.sync().catch(() => {
-        writeFailed = true;
-      });
-    }
-  } finally {
-    await handle.close().catch(() => {
-      writeFailed = true;
-    });
-  }
-  if (writeFailed) throw new AdapterError("child_output_failed");
-  return { bytes, overflow };
-}
-async function runWorkflow(executable, inputs, allocation, environment, dependencies = DEFAULT_EXECUTION_DEPENDENCIES, cancellation) {
-  const arguments_ = workflowArguments(inputs, allocation);
-  if (await (0, import_promises4.lstat)(allocation.runDirectory).catch(() => void 0)) {
-    throw new AdapterError("allocation_failed");
-  }
-  const spoolHandle = await (0, import_promises4.open)(
-    allocation.terminalPath,
-    import_node_fs2.constants.O_WRONLY | import_node_fs2.constants.O_TRUNC | import_node_fs2.constants.O_NOFOLLOW
-  ).catch(() => {
-    throw new AdapterError("child_output_failed");
-  });
-  const spoolStatus = await spoolHandle.stat().catch(() => void 0);
-  if (!spoolStatus?.isFile() || (spoolStatus.mode & 4095) !== 384) {
-    await spoolHandle.close().catch(() => void 0);
-    throw new AdapterError("child_output_failed");
-  }
-  const guard = new WorkflowCommandGuard(
-    dependencies.presentationStream,
-    dependencies.randomBytes
-  );
-  try {
-    await guard.start();
-  } catch {
-    await spoolHandle.close().catch(() => void 0);
-    throw new AdapterError("child_output_failed");
-  }
-  let child;
-  try {
-    child = dependencies.spawn(executable, arguments_, {
-      cwd: inputs.workspace,
-      env: environment,
-      shell: false,
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-  } catch {
-    await spoolHandle.close().catch(() => void 0);
-    try {
-      await guard.stop();
-    } catch {
-      throw new AdapterError("child_output_failed");
-    }
-    throw new AdapterError("child_launch_failed");
-  }
-  let active = true;
-  let forwarded;
-  const forward = (signal) => () => {
-    if (!active || forwarded !== void 0) return;
-    forwarded = signal;
-    try {
-      child.kill(signal);
-    } catch {
-    }
-  };
-  const onInterrupt = forward("SIGINT");
-  const onTerminate = forward("SIGTERM");
-  dependencies.signals.on("SIGINT", onInterrupt);
-  dependencies.signals.on("SIGTERM", onTerminate);
-  const onCancellation = () => {
-    if (cancellation?.reason === "SIGINT") onInterrupt();
-    else onTerminate();
-  };
-  cancellation?.addEventListener("abort", onCancellation);
-  if (cancellation?.aborted) onCancellation();
-  const stderrPromise = (async () => {
-    for await (const value of child.stderr) {
-      await guard.write(Buffer.from(value));
-    }
-  })();
-  const stdoutPromise = spoolStdout(
-    child.stdout,
-    spoolHandle,
-    dependencies.maximumTerminalBytes
-  );
-  try {
-    let launchFailed = false;
-    const completion = await new Promise((resolve) => {
-      child.once("error", () => {
-        launchFailed = true;
-      });
-      child.once("close", (code, signal) => resolve({ code, signal }));
-    });
-    active = false;
-    const [spool] = await Promise.all([stdoutPromise, stderrPromise]).catch(
-      () => {
-        throw new AdapterError("child_output_failed");
-      }
-    );
-    if (launchFailed) throw new AdapterError("child_launch_failed");
-    return {
-      ...completion,
-      terminalPath: allocation.terminalPath,
-      terminalBytes: spool.bytes,
-      terminalOverflow: spool.overflow,
-      ...forwarded === void 0 ? {} : { signalForwarded: forwarded }
-    };
-  } catch (error) {
-    throw asAdapterError(error, "execution");
-  } finally {
-    active = false;
-    dependencies.signals.off("SIGINT", onInterrupt);
-    dependencies.signals.off("SIGTERM", onTerminate);
-    cancellation?.removeEventListener("abort", onCancellation);
-    try {
-      await guard.stop();
-    } catch {
-      throw new AdapterError("child_output_failed");
-    }
-  }
-}
-async function cleanupExecution(allocation) {
-  let failed = false;
-  for (const input of allocation.inputFiles) {
-    await (0, import_promises4.rm)(input.path, { force: true }).catch(() => {
-      failed = true;
-    });
-  }
-  await (0, import_promises4.rm)(allocation.terminalPath, { force: true }).catch(() => {
-    failed = true;
-  });
-  const runStatus = await (0, import_promises4.lstat)(allocation.runDirectory).catch(() => void 0);
-  if (!runStatus?.isDirectory() || runStatus.isSymbolicLink()) {
-    await (0, import_promises4.rm)(allocation.parent, { recursive: true, force: true }).catch(() => {
-      failed = true;
-    });
-    if (await (0, import_promises4.lstat)(allocation.parent).catch(() => void 0)) failed = true;
-  } else {
-    for (const input of allocation.inputFiles) {
-      if (await (0, import_promises4.lstat)(input.path).catch(() => void 0)) failed = true;
-    }
-    if (await (0, import_promises4.lstat)(allocation.terminalPath).catch(() => void 0))
-      failed = true;
-  }
-  if (failed) throw new AdapterError("cleanup_failed");
-}
-
-// src/identity.ts
 var import_promises5 = require("node:fs/promises");
 var import_node_path5 = __toESM(require("node:path"), 1);
-var MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
-var DEFAULT_RECOVERY_DEPENDENCIES = {
-  readStatus: (executable, runDirectory, environment) => captureCommand(
-    executable,
-    ["workflow", "status", runDirectory, "--json"],
-    environment,
-    MAXIMUM_STATUS_JSON_BYTES,
-    "result_identity_invalid"
-  )
-};
-function record(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
-}
-async function retainedResult(allocation, outcome) {
-  const artifactDirectory = import_node_path5.default.join(
-    allocation.runDirectory,
-    "attempts",
-    "000001",
-    "result"
-  );
-  const resultPath = import_node_path5.default.join(artifactDirectory, "result.json");
-  const artifactStatus = await (0, import_promises5.lstat)(artifactDirectory).catch(() => void 0);
-  const resultStatus = await (0, import_promises5.lstat)(resultPath).catch(() => void 0);
-  if (!artifactStatus?.isDirectory() || artifactStatus.isSymbolicLink() || !resultStatus?.isFile() || resultStatus.isSymbolicLink()) {
-    throw new AdapterError("result_identity_invalid");
-  }
-  return {
-    runDirectory: allocation.runDirectory,
-    artifactDirectory,
-    resultPath,
-    outcome,
-    attemptNumber: 1
-  };
-}
-async function recoverRunDirectory(allocation, envelope) {
-  if (envelope?.runDirectory !== allocation.runDirectory) return void 0;
-  const runStatus = await (0, import_promises5.lstat)(allocation.runDirectory).catch(() => void 0);
-  return runStatus?.isDirectory() && !runStatus.isSymbolicLink() ? allocation.runDirectory : void 0;
-}
-async function recoverDurableRun(executable, allocation, environment, dependencies = DEFAULT_RECOVERY_DEPENDENCIES) {
-  const runStatus = await (0, import_promises5.lstat)(allocation.runDirectory).catch(() => void 0);
-  if (!runStatus?.isDirectory() || runStatus.isSymbolicLink()) return void 0;
-  const status = await dependencies.readStatus(
-    executable,
-    allocation.runDirectory,
-    environment
-  );
-  if (status.code !== 0 || status.signal !== null || status.stdoutOverflow || status.stderrOverflow) {
-    throw new AdapterError("result_identity_invalid");
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(status.stdout.toString("utf8"));
-  } catch {
-    throw new AdapterError("result_identity_invalid");
-  }
-  const document = record(parsed);
-  const run = record(document?.run);
-  const state = record(document?.state);
-  const attempts = state?.attempts;
-  const attempt = Array.isArray(attempts) ? record(attempts[0]) : void 0;
-  const result = record(attempt?.result);
-  if (!document || document.schemaVersion !== 1 || document.command !== cliCommand(executable, "workflow status") || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
-    throw new AdapterError("result_identity_invalid");
-  }
-  if (result.status !== "published") {
-    if (result.status !== "not_published" && result.status !== "publication_failed") {
-      throw new AdapterError("result_identity_invalid");
-    }
-    return { runDirectory: allocation.runDirectory };
-  }
-  if (result.relativeDirectory !== "attempts/000001/result") {
-    throw new AdapterError("result_identity_invalid");
-  }
-  const outcome = attempt.state === "succeeded" ? "succeeded" : attempt.state === "workflow_failed" ? "failed" : attempt.state === "cancelled" ? "cancelled" : void 0;
-  if (!outcome) throw new AdapterError("result_identity_invalid");
-  return {
-    runDirectory: allocation.runDirectory,
-    result: await retainedResult(allocation, outcome)
-  };
-}
-async function committedIdentity(allocation, envelope) {
-  if (envelope.outcome !== "succeeded" && envelope.outcome !== "failed" && envelope.outcome !== "cancelled") {
-    return void 0;
-  }
-  if (envelope.runDirectory !== allocation.runDirectory || envelope.attemptNumber === void 0 || envelope.resultDirectory === void 0) {
-    throw new AdapterError("result_identity_invalid");
-  }
-  const attemptDirectory = String(envelope.attemptNumber).padStart(6, "0");
-  const expectedArtifactDirectory = import_node_path5.default.join(
-    allocation.runDirectory,
-    "attempts",
-    attemptDirectory,
-    "result"
-  );
-  if (envelope.resultDirectory !== expectedArtifactDirectory) {
-    throw new AdapterError("result_identity_invalid");
-  }
-  const artifactStatus = await (0, import_promises5.lstat)(expectedArtifactDirectory).catch(
-    () => void 0
-  );
-  const resultPath = import_node_path5.default.join(expectedArtifactDirectory, "result.json");
-  const resultStatus = await (0, import_promises5.lstat)(resultPath).catch(() => void 0);
-  if (!artifactStatus?.isDirectory() || artifactStatus.isSymbolicLink() || !resultStatus?.isFile() || resultStatus.isSymbolicLink()) {
-    throw new AdapterError("result_identity_invalid");
-  }
-  return {
-    runDirectory: allocation.runDirectory,
-    artifactDirectory: expectedArtifactDirectory,
-    resultPath,
-    outcome: envelope.outcome,
-    attemptNumber: envelope.attemptNumber
-  };
-}
 
 // src/inputs.ts
-var import_promises6 = require("node:fs/promises");
-var import_node_path6 = __toESM(require("node:path"), 1);
+var import_promises4 = require("node:fs/promises");
+var import_node_path4 = __toESM(require("node:path"), 1);
 var AcquisitionDocumentParser = class {
   #source;
   #position = 0;
@@ -4431,9 +4036,13 @@ function optionalInput(environment, name) {
   const value = environment[name];
   return value === void 0 || value === "" ? void 0 : value;
 }
+function workflowFile(sourceRoot, workflow) {
+  const relative = import_node_path4.default.relative(sourceRoot, workflow);
+  return relative === "" || import_node_path4.default.isAbsolute(relative) || relative.split(import_node_path4.default.sep)[0] === ".." ? void 0 : relative;
+}
 function resolveWorkspacePath(workspace, value) {
   try {
-    return import_node_path6.default.resolve(workspace, value);
+    return import_node_path4.default.resolve(workspace, value);
   } catch {
     return invalid();
   }
@@ -4558,11 +4167,11 @@ function parseNamedInputs(document, workspace) {
 }
 async function readActionInputs(environment) {
   const workspaceValue = environment.GITHUB_WORKSPACE;
-  if (!workspaceValue || !import_node_path6.default.isAbsolute(workspaceValue)) {
+  if (!workspaceValue || !import_node_path4.default.isAbsolute(workspaceValue)) {
     throw new AdapterError("input_invalid");
   }
-  const workspace = import_node_path6.default.resolve(workspaceValue);
-  const workspaceStatus = await (0, import_promises6.stat)(workspace).catch(() => void 0);
+  const workspace = import_node_path4.default.resolve(workspaceValue);
+  const workspaceStatus = await (0, import_promises4.stat)(workspace).catch(() => void 0);
   if (!workspaceStatus?.isDirectory()) {
     throw new AdapterError("input_invalid");
   }
@@ -4586,14 +4195,418 @@ async function readActionInputs(environment) {
   const sourceRootValue = optionalInput(environment, "INPUT_SOURCE-ROOT");
   const executionRootValue = optionalInput(environment, "INPUT_EXECUTION-ROOT");
   const selectedExport = optionalInput(environment, "INPUT_EXPORT");
+  const workflow = resolveWorkspacePath(workspace, workflowValue);
+  const sourceRoot = sourceRootValue === void 0 ? workspace : resolveWorkspacePath(workspace, sourceRootValue);
+  if (workflowFile(sourceRoot, workflow) === void 0) invalid();
   return {
     workspace,
-    workflow: resolveWorkspacePath(workspace, workflowValue),
-    sourceRoot: sourceRootValue === void 0 ? workspace : resolveWorkspacePath(workspace, sourceRootValue),
+    workflow,
+    sourceRoot,
     executionRoot: executionRootValue === void 0 ? workspace : resolveWorkspacePath(workspace, executionRootValue),
     namedInputs: parseNamedInputs(environment.INPUT_INPUTS, workspace),
     maximumParallel,
     ...selectedExport === void 0 ? {} : { selectedExport }
+  };
+}
+
+// src/execution.ts
+var MAXIMUM_TERMINAL_JSON_BYTES = 2021e5;
+var DEFAULT_EXECUTION_DEPENDENCIES = {
+  spawn: (executable, arguments_, options) => (0, import_node_child_process2.spawn)(executable, [...arguments_], options),
+  signals: process,
+  presentationStream: process.stderr,
+  randomBytes: import_node_crypto3.randomBytes,
+  maximumTerminalBytes: MAXIMUM_TERMINAL_JSON_BYTES
+};
+async function allocateExecution(runnerTemp, namedInputs) {
+  if (!runnerTemp || !import_node_path5.default.isAbsolute(runnerTemp)) {
+    throw new AdapterError("input_invalid");
+  }
+  const canonicalRunnerTemp = await (0, import_promises5.realpath)(runnerTemp).catch(() => void 0);
+  const temporaryStatus = canonicalRunnerTemp ? await (0, import_promises5.stat)(canonicalRunnerTemp).catch(() => void 0) : void 0;
+  if (!canonicalRunnerTemp || !temporaryStatus?.isDirectory()) {
+    throw new AdapterError("input_invalid");
+  }
+  const parent = await (0, import_promises5.mkdtemp)(
+    import_node_path5.default.join(canonicalRunnerTemp, ".useful-run-")
+  ).catch(() => {
+    throw new AdapterError("allocation_failed");
+  });
+  const runDirectory = import_node_path5.default.join(parent, "run");
+  const terminalPath = import_node_path5.default.join(parent, ".terminal.json");
+  const inputFiles = [];
+  try {
+    await (0, import_promises5.chmod)(parent, 448);
+    const terminalHandle = await (0, import_promises5.open)(
+      terminalPath,
+      import_node_fs2.constants.O_CREAT | import_node_fs2.constants.O_EXCL | import_node_fs2.constants.O_WRONLY,
+      384
+    );
+    try {
+      await terminalHandle.sync();
+    } finally {
+      await terminalHandle.close();
+    }
+    await (0, import_promises5.chmod)(terminalPath, 384);
+    for (const [index, input] of namedInputs.entries()) {
+      if (input.kind !== "text" && input.kind !== "json" || input.source.kind !== "inline") {
+        continue;
+      }
+      const inputPath = import_node_path5.default.join(
+        parent,
+        `.input-${String(index).padStart(4, "0")}`
+      );
+      const handle = await (0, import_promises5.open)(
+        inputPath,
+        import_node_fs2.constants.O_CREAT | import_node_fs2.constants.O_EXCL | import_node_fs2.constants.O_WRONLY,
+        384
+      );
+      try {
+        await handle.writeFile(Buffer.from(input.source.value, "utf8"));
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      await (0, import_promises5.chmod)(inputPath, 384);
+      inputFiles.push({ name: input.name, kind: input.kind, path: inputPath });
+    }
+    return { parent, runDirectory, terminalPath, inputFiles };
+  } catch (error) {
+    await (0, import_promises5.rm)(parent, { recursive: true, force: true }).catch(() => void 0);
+    throw error instanceof AdapterError ? error : new AdapterError("allocation_failed");
+  }
+}
+function workflowArguments(inputs, allocation) {
+  const workflow = workflowFile(inputs.sourceRoot, inputs.workflow);
+  if (workflow === void 0) throw new AdapterError("input_invalid");
+  const arguments_ = [
+    "workflow",
+    "run",
+    "create",
+    "--path",
+    inputs.sourceRoot,
+    "--workflow",
+    workflow,
+    "--execution-root",
+    inputs.executionRoot,
+    "--run-dir",
+    allocation.runDirectory,
+    "--max-parallel",
+    inputs.maximumParallel,
+    "--json"
+  ];
+  const privateFiles = new Map(
+    allocation.inputFiles.map((input) => [
+      `${input.kind}:${input.name}`,
+      input.path
+    ])
+  );
+  for (const input of inputs.namedInputs) {
+    if (input.kind === "text" || input.kind === "json") {
+      const inputPath = input.source.kind === "path" ? input.source.path : privateFiles.get(`${input.kind}:${input.name}`);
+      if (inputPath === void 0) throw new AdapterError("allocation_failed");
+      arguments_.push(`--input-${input.kind}-file`, input.name, inputPath);
+    } else if (input.kind === "file") {
+      arguments_.push("--input-file", input.name, input.mediaType, input.path);
+    } else if (input.items.length === 0) {
+      arguments_.push("--input-attachments-empty", input.name);
+    } else {
+      for (const item of input.items) {
+        arguments_.push(
+          "--input-attachment",
+          input.name,
+          item.mediaType,
+          item.path
+        );
+      }
+    }
+  }
+  return arguments_;
+}
+async function spoolStdout(stdout, handle, maximumBytes) {
+  let bytes = 0;
+  let retained = 0;
+  let overflow = false;
+  let writeFailed = false;
+  try {
+    for await (const value of stdout) {
+      const chunk = Buffer.from(value);
+      bytes += chunk.length;
+      const remaining = maximumBytes - retained;
+      if (remaining > 0) {
+        const selected = chunk.subarray(0, remaining);
+        retained += selected.length;
+        if (!writeFailed) {
+          await handle.write(selected).catch(() => {
+            writeFailed = true;
+          });
+        }
+      }
+      if (chunk.length > Math.max(remaining, 0)) overflow = true;
+    }
+    if (!writeFailed) {
+      await handle.sync().catch(() => {
+        writeFailed = true;
+      });
+    }
+  } finally {
+    await handle.close().catch(() => {
+      writeFailed = true;
+    });
+  }
+  if (writeFailed) throw new AdapterError("child_output_failed");
+  return { bytes, overflow };
+}
+async function runWorkflow(executable, inputs, allocation, environment, dependencies = DEFAULT_EXECUTION_DEPENDENCIES, cancellation) {
+  const arguments_ = workflowArguments(inputs, allocation);
+  if (await (0, import_promises5.lstat)(allocation.runDirectory).catch(() => void 0)) {
+    throw new AdapterError("allocation_failed");
+  }
+  const spoolHandle = await (0, import_promises5.open)(
+    allocation.terminalPath,
+    import_node_fs2.constants.O_WRONLY | import_node_fs2.constants.O_TRUNC | import_node_fs2.constants.O_NOFOLLOW
+  ).catch(() => {
+    throw new AdapterError("child_output_failed");
+  });
+  const spoolStatus = await spoolHandle.stat().catch(() => void 0);
+  if (!spoolStatus?.isFile() || (spoolStatus.mode & 4095) !== 384) {
+    await spoolHandle.close().catch(() => void 0);
+    throw new AdapterError("child_output_failed");
+  }
+  const guard = new WorkflowCommandGuard(
+    dependencies.presentationStream,
+    dependencies.randomBytes
+  );
+  try {
+    await guard.start();
+  } catch {
+    await spoolHandle.close().catch(() => void 0);
+    throw new AdapterError("child_output_failed");
+  }
+  let child;
+  try {
+    child = dependencies.spawn(executable, arguments_, {
+      cwd: inputs.workspace,
+      env: environment,
+      shell: false,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+  } catch {
+    await spoolHandle.close().catch(() => void 0);
+    try {
+      await guard.stop();
+    } catch {
+      throw new AdapterError("child_output_failed");
+    }
+    throw new AdapterError("child_launch_failed");
+  }
+  let active = true;
+  let forwarded;
+  const forward = (signal) => () => {
+    if (!active || forwarded !== void 0) return;
+    forwarded = signal;
+    try {
+      child.kill(signal);
+    } catch {
+    }
+  };
+  const onInterrupt = forward("SIGINT");
+  const onTerminate = forward("SIGTERM");
+  dependencies.signals.on("SIGINT", onInterrupt);
+  dependencies.signals.on("SIGTERM", onTerminate);
+  const onCancellation = () => {
+    if (cancellation?.reason === "SIGINT") onInterrupt();
+    else onTerminate();
+  };
+  cancellation?.addEventListener("abort", onCancellation);
+  if (cancellation?.aborted) onCancellation();
+  const stderrPromise = (async () => {
+    for await (const value of child.stderr) {
+      await guard.write(Buffer.from(value));
+    }
+  })();
+  const stdoutPromise = spoolStdout(
+    child.stdout,
+    spoolHandle,
+    dependencies.maximumTerminalBytes
+  );
+  try {
+    let launchFailed = false;
+    const completion = await new Promise((resolve) => {
+      child.once("error", () => {
+        launchFailed = true;
+      });
+      child.once("close", (code, signal) => resolve({ code, signal }));
+    });
+    active = false;
+    const [spool] = await Promise.all([stdoutPromise, stderrPromise]).catch(
+      () => {
+        throw new AdapterError("child_output_failed");
+      }
+    );
+    if (launchFailed) throw new AdapterError("child_launch_failed");
+    return {
+      ...completion,
+      terminalPath: allocation.terminalPath,
+      terminalBytes: spool.bytes,
+      terminalOverflow: spool.overflow,
+      ...forwarded === void 0 ? {} : { signalForwarded: forwarded }
+    };
+  } catch (error) {
+    throw asAdapterError(error, "execution");
+  } finally {
+    active = false;
+    dependencies.signals.off("SIGINT", onInterrupt);
+    dependencies.signals.off("SIGTERM", onTerminate);
+    cancellation?.removeEventListener("abort", onCancellation);
+    try {
+      await guard.stop();
+    } catch {
+      throw new AdapterError("child_output_failed");
+    }
+  }
+}
+async function cleanupExecution(allocation) {
+  let failed = false;
+  for (const input of allocation.inputFiles) {
+    await (0, import_promises5.rm)(input.path, { force: true }).catch(() => {
+      failed = true;
+    });
+  }
+  await (0, import_promises5.rm)(allocation.terminalPath, { force: true }).catch(() => {
+    failed = true;
+  });
+  const runStatus = await (0, import_promises5.lstat)(allocation.runDirectory).catch(() => void 0);
+  if (!runStatus?.isDirectory() || runStatus.isSymbolicLink()) {
+    await (0, import_promises5.rm)(allocation.parent, { recursive: true, force: true }).catch(() => {
+      failed = true;
+    });
+    if (await (0, import_promises5.lstat)(allocation.parent).catch(() => void 0)) failed = true;
+  } else {
+    for (const input of allocation.inputFiles) {
+      if (await (0, import_promises5.lstat)(input.path).catch(() => void 0)) failed = true;
+    }
+    if (await (0, import_promises5.lstat)(allocation.terminalPath).catch(() => void 0))
+      failed = true;
+  }
+  if (failed) throw new AdapterError("cleanup_failed");
+}
+
+// src/identity.ts
+var import_promises6 = require("node:fs/promises");
+var import_node_path6 = __toESM(require("node:path"), 1);
+var MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
+var DEFAULT_RECOVERY_DEPENDENCIES = {
+  readStatus: (executable, runDirectory, environment) => captureCommand(
+    executable,
+    ["workflow", "run", "status", runDirectory, "--json"],
+    environment,
+    MAXIMUM_STATUS_JSON_BYTES,
+    "result_identity_invalid"
+  )
+};
+function record(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
+}
+async function retainedResult(allocation, outcome) {
+  const artifactDirectory = import_node_path6.default.join(
+    allocation.runDirectory,
+    "attempts",
+    "000001",
+    "result"
+  );
+  const resultPath = import_node_path6.default.join(artifactDirectory, "result.json");
+  const artifactStatus = await (0, import_promises6.lstat)(artifactDirectory).catch(() => void 0);
+  const resultStatus = await (0, import_promises6.lstat)(resultPath).catch(() => void 0);
+  if (!artifactStatus?.isDirectory() || artifactStatus.isSymbolicLink() || !resultStatus?.isFile() || resultStatus.isSymbolicLink()) {
+    throw new AdapterError("result_identity_invalid");
+  }
+  return {
+    runDirectory: allocation.runDirectory,
+    artifactDirectory,
+    resultPath,
+    outcome,
+    attemptNumber: 1
+  };
+}
+async function recoverRunDirectory(allocation, envelope) {
+  if (envelope?.runDirectory !== allocation.runDirectory) return void 0;
+  const runStatus = await (0, import_promises6.lstat)(allocation.runDirectory).catch(() => void 0);
+  return runStatus?.isDirectory() && !runStatus.isSymbolicLink() ? allocation.runDirectory : void 0;
+}
+async function recoverDurableRun(executable, allocation, environment, dependencies = DEFAULT_RECOVERY_DEPENDENCIES) {
+  const runStatus = await (0, import_promises6.lstat)(allocation.runDirectory).catch(() => void 0);
+  if (!runStatus?.isDirectory() || runStatus.isSymbolicLink()) return void 0;
+  const status = await dependencies.readStatus(
+    executable,
+    allocation.runDirectory,
+    environment
+  );
+  if (status.code !== 0 || status.signal !== null || status.stdoutOverflow || status.stderrOverflow) {
+    throw new AdapterError("result_identity_invalid");
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(status.stdout.toString("utf8"));
+  } catch {
+    throw new AdapterError("result_identity_invalid");
+  }
+  const document = record(parsed);
+  const run = record(document?.run);
+  const state = record(document?.state);
+  const attempts = state?.attempts;
+  const attempt = Array.isArray(attempts) ? record(attempts[0]) : void 0;
+  const result = record(attempt?.result);
+  if (!document || document.schemaVersion !== 1 || document.command !== cliCommand(executable, "workflow run status") || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
+    throw new AdapterError("result_identity_invalid");
+  }
+  if (result.status !== "published") {
+    if (result.status !== "not_published" && result.status !== "publication_failed") {
+      throw new AdapterError("result_identity_invalid");
+    }
+    return { runDirectory: allocation.runDirectory };
+  }
+  if (result.relativeDirectory !== "attempts/000001/result") {
+    throw new AdapterError("result_identity_invalid");
+  }
+  const outcome = attempt.state === "succeeded" ? "succeeded" : attempt.state === "workflow_failed" ? "failed" : attempt.state === "cancelled" ? "cancelled" : void 0;
+  if (!outcome) throw new AdapterError("result_identity_invalid");
+  return {
+    runDirectory: allocation.runDirectory,
+    result: await retainedResult(allocation, outcome)
+  };
+}
+async function committedIdentity(allocation, envelope) {
+  if (envelope.outcome !== "succeeded" && envelope.outcome !== "failed" && envelope.outcome !== "cancelled") {
+    return void 0;
+  }
+  if (envelope.runDirectory !== allocation.runDirectory || envelope.attemptNumber === void 0 || envelope.resultDirectory === void 0) {
+    throw new AdapterError("result_identity_invalid");
+  }
+  const attemptDirectory = String(envelope.attemptNumber).padStart(6, "0");
+  const expectedArtifactDirectory = import_node_path6.default.join(
+    allocation.runDirectory,
+    "attempts",
+    attemptDirectory,
+    "result"
+  );
+  if (envelope.resultDirectory !== expectedArtifactDirectory) {
+    throw new AdapterError("result_identity_invalid");
+  }
+  const artifactStatus = await (0, import_promises6.lstat)(expectedArtifactDirectory).catch(
+    () => void 0
+  );
+  const resultPath = import_node_path6.default.join(expectedArtifactDirectory, "result.json");
+  const resultStatus = await (0, import_promises6.lstat)(resultPath).catch(() => void 0);
+  if (!artifactStatus?.isDirectory() || artifactStatus.isSymbolicLink() || !resultStatus?.isFile() || resultStatus.isSymbolicLink()) {
+    throw new AdapterError("result_identity_invalid");
+  }
+  return {
+    runDirectory: allocation.runDirectory,
+    artifactDirectory: expectedArtifactDirectory,
+    resultPath,
+    outcome: envelope.outcome,
+    attemptNumber: envelope.attemptNumber
   };
 }
 
@@ -4684,7 +4697,7 @@ async function readTerminalEnvelope(file, executable) {
   const command = values.get("command");
   const outcome = values.get("outcome");
   const exitStatus = values.get("exitStatus");
-  if (schemaVersion !== 1 || command !== cliCommand(executable, "workflow run") || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
+  if (schemaVersion !== 1 || command !== cliCommand(executable, "workflow run create") || !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
     String(outcome)
   ) || typeof exitStatus !== "number" || !Number.isSafeInteger(exitStatus)) {
     throw new AdapterError("terminal_result_invalid");

@@ -16,7 +16,7 @@ import path from "node:path";
 
 import { AdapterError, asAdapterError } from "./errors.ts";
 import { WorkflowCommandGuard } from "./github.ts";
-import type { ActionInputs, NamedInput } from "./inputs.ts";
+import { workflowFile, type ActionInputs, type NamedInput } from "./inputs.ts";
 
 export const MAXIMUM_TERMINAL_JSON_BYTES = 202_100_000;
 
@@ -151,11 +151,16 @@ export function workflowArguments(
   inputs: ActionInputs,
   allocation: ExecutionAllocation,
 ): readonly string[] {
+  const workflow = workflowFile(inputs.sourceRoot, inputs.workflow);
+  if (workflow === undefined) throw new AdapterError("input_invalid");
   const arguments_ = [
     "workflow",
     "run",
-    "--source-root",
+    "create",
+    "--path",
     inputs.sourceRoot,
+    "--workflow",
+    workflow,
     "--execution-root",
     inputs.executionRoot,
     "--run-dir",
@@ -193,7 +198,6 @@ export function workflowArguments(
       }
     }
   }
-  arguments_.push(inputs.workflow);
   return arguments_;
 }
 

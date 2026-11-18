@@ -344,7 +344,7 @@ async function committedRun(
   };
   const terminal: TerminalEnvelope = {
     schemaVersion: 1,
-    command: "useful workflow run",
+    command: "useful workflow run create",
     outcome,
     exitStatus: code,
     runDirectory,
@@ -833,7 +833,7 @@ test("a refused terminal identity is never recovered through status", async (t) 
 
 // REQ-RUNACTION-41, REQ-RUNACTION-45, REQ-RUNACTION-46, REQ-RUNACTION-47
 // INV-EMBED-6, INV-EMBED-8
-test("a job cancelled during the run recovers its published result through status", async () => {
+test("a job cancelled during the run recovers its interrupted run's result through status", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-cancelled-"));
   const before = [
     process.listenerCount("SIGINT"),
@@ -848,9 +848,9 @@ test("a job cancelled during the run recovers its published result through statu
         bootstrap: async () => ({
           executable: `/verified/${PINNED_EXECUTABLE}`,
           cliDirectory: "/verified",
-          version: "0.72.1",
+          version: "0.78.0",
           source: "bundled",
-          buildIdentity: "04d0bfb85e44850e3f3ae3086af6b30d2b950449",
+          buildIdentity: "b80c5cb347bb00ce7dd20553857ebe8162c592e2",
           environment: {},
         }),
         readInputs: async () => ({
@@ -877,8 +877,8 @@ test("a job cancelled during the run recovers its published result through statu
           const terminal = Buffer.from(
             `${JSON.stringify({
               schemaVersion: 1,
-              command: `${PINNED_EXECUTABLE} workflow run`,
-              outcome: "cancelled",
+              command: `${PINNED_EXECUTABLE} workflow run create`,
+              outcome: "failed",
               exitStatus: 130,
               runDirectory: allocation.runDirectory,
               attemptNumber: 1,
@@ -913,7 +913,7 @@ test("a job cancelled during the run recovers its published result through statu
               };
             },
           }),
-        project: async () => ({ outcome: "cancelled" }),
+        project: async () => ({ outcome: "failed" }),
         writeOutputs: async () => undefined,
         report: async () => undefined,
         cleanup: cleanupExecution,
@@ -928,7 +928,7 @@ test("a job cancelled during the run recovers its published result through statu
     );
     assert.equal(statusReads, 1);
     assert.equal(result.failure?.code, "workflow_failed");
-    assert.equal(result.outputs.outcome, "cancelled");
+    assert.equal(result.outputs.outcome, "failed");
     assert.equal(result.outputs["run-directory"], allocated.runDirectory);
     assert.equal(result.outputs["artifact-set-path"], artifactDirectory);
     assert.equal(
@@ -1157,7 +1157,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
                 assert.ok(allocated);
                 return {
                   schemaVersion: 1,
-                  command: "useful workflow run",
+                  command: "useful workflow run create",
                   outcome: "succeeded",
                   exitStatus: 0,
                   runDirectory: allocated.runDirectory,

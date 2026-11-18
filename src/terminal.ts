@@ -109,7 +109,7 @@ export async function readTerminalEnvelope(
   const exitStatus = values.get("exitStatus");
   if (
     schemaVersion !== 1 ||
-    command !== cliCommand(executable, "workflow run") ||
+    command !== cliCommand(executable, "workflow run create") ||
     !["succeeded", "failed", "cancelled", "interrupted", "rejected"].includes(
       String(outcome),
     ) ||

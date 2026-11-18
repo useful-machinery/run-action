@@ -307,6 +307,20 @@ function optionalInput(
   return value === undefined || value === "" ? undefined : value;
 }
 
+// The workflow file the CLI's `--workflow` names: relative to the source root and
+// inside it, since the CLI refuses an absolute or `..`-bearing path (REQ-RUNACTION-86).
+export function workflowFile(
+  sourceRoot: string,
+  workflow: string,
+): string | undefined {
+  const relative = path.relative(sourceRoot, workflow);
+  return relative === "" ||
+    path.isAbsolute(relative) ||
+    relative.split(path.sep)[0] === ".."
+    ? undefined
+    : relative;
+}
+
 function resolveWorkspacePath(workspace: string, value: string): string {
   try {
     return path.resolve(workspace, value);
@@ -497,13 +511,17 @@ export async function readActionInputs(
   const executionRootValue = optionalInput(environment, "INPUT_EXECUTION-ROOT");
   const selectedExport = optionalInput(environment, "INPUT_EXPORT");
 
+  const workflow = resolveWorkspacePath(workspace, workflowValue);
+  const sourceRoot =
+    sourceRootValue === undefined
+      ? workspace
+      : resolveWorkspacePath(workspace, sourceRootValue);
+  if (workflowFile(sourceRoot, workflow) === undefined) invalid();
+
   return {
     workspace,
-    workflow: resolveWorkspacePath(workspace, workflowValue),
-    sourceRoot:
-      sourceRootValue === undefined
-        ? workspace
-        : resolveWorkspacePath(workspace, sourceRootValue),
+    workflow,
+    sourceRoot,
     executionRoot:
       executionRootValue === undefined
         ? workspace

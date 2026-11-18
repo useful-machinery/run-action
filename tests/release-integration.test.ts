@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, watch } from "node:fs";
 import {
+  chmod,
   mkdtemp,
   mkdir,
   readFile,
@@ -99,6 +100,15 @@ async function withReleaseRoot(
       outputFile: path.join(root, "github-output"),
     });
   } finally {
+    // A tree run keeps a read-only copy of its tree in the run directory.
+    for (const entry of await readdir(root, {
+      recursive: true,
+      withFileTypes: true,
+    })) {
+      if (entry.isDirectory()) {
+        await chmod(path.join(entry.parentPath, entry.name), 0o700);
+      }
+    }
     await rm(root, { recursive: true, force: true });
   }
 }
@@ -225,7 +235,7 @@ function fileCreated(file: string, signal: AbortSignal): Promise<void> {
 
 // REQ-RUNACTION-41, REQ-RUNACTION-46, REQ-RUNACTION-47
 test(
-  "the staged pinned release recovers a cancelled run's outputs through its status",
+  "the staged pinned release recovers an interrupted run's outputs through its status",
   { skip: releaseBundle === undefined, timeout: 120_000 },
   async () => {
     assert.ok(releaseBundle);
@@ -271,7 +281,7 @@ steps:
       const result = await running;
 
       assert.equal(result.failure?.code, "workflow_failed");
-      assert.equal(result.outputs.outcome, "cancelled");
+      assert.equal(result.outputs.outcome, "failed");
       const reservation = await actionReservation(releaseRoot.runnerTemp);
       const runDirectory = result.outputs["run-directory"];
       assert.equal(runDirectory, path.join(reservation, "run"));

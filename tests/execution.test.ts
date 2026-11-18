@@ -202,8 +202,11 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
     const expectedArguments = [
       "workflow",
       "run",
-      "--source-root",
+      "create",
+      "--path",
       workspace,
+      "--workflow",
+      "workflow.yaml",
       "--execution-root",
       workspace,
       "--run-dir",
@@ -237,7 +240,6 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
       "--input-text-file",
       "pathText",
       path.join(workspace, "notes.txt"),
-      path.join(workspace, "workflow.yaml"),
     ];
     assert.deepEqual(observed?.arguments_, expectedArguments);
     assert.deepEqual(

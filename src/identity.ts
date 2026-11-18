@@ -41,7 +41,7 @@ const DEFAULT_RECOVERY_DEPENDENCIES: RecoveryDependencies = {
   readStatus: (executable, runDirectory, environment) =>
     captureCommand(
       executable,
-      ["workflow", "status", runDirectory, "--json"],
+      ["workflow", "run", "status", runDirectory, "--json"],
       environment,
       MAXIMUM_STATUS_JSON_BYTES,
       "result_identity_invalid",
@@ -133,7 +133,7 @@ export async function recoverDurableRun(
   if (
     !document ||
     document.schemaVersion !== 1 ||
-    document.command !== cliCommand(executable, "workflow status") ||
+    document.command !== cliCommand(executable, "workflow run status") ||
     document.outcome !== "status" ||
     document.exitStatus !== 0 ||
     document.runDirectory !== allocation.runDirectory ||

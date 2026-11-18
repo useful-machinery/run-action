@@ -261,6 +261,43 @@ test("max-parallel accepts only exact digit strings in the CLI range", async () 
   });
 });
 
+// REQ-RUNACTION-86
+test("the workflow file must lie inside the source root", async () => {
+  await withWorkspace(async (workspace) => {
+    for (const [workflow, sourceRoot] of [
+      ["workflow.yaml", undefined],
+      [".useful/workflows/ci.yaml", undefined],
+      ["tree/./flows/ci.yaml", "tree"],
+      ["..workflow.yaml", undefined],
+    ] as const) {
+      const inputs = await readActionInputs({
+        GITHUB_WORKSPACE: workspace,
+        INPUT_WORKFLOW: workflow,
+        ...(sourceRoot === undefined
+          ? {}
+          : { "INPUT_SOURCE-ROOT": sourceRoot }),
+      });
+      assert.equal(inputs.workflow, path.resolve(workspace, workflow));
+    }
+    for (const [workflow, sourceRoot] of [
+      ["workflow.yaml", "tree"],
+      ["tree/../workflow.yaml", "tree"],
+      [".", undefined],
+      ["/elsewhere/workflow.yaml", undefined],
+    ] as const) {
+      await assert.rejects(
+        readActionInputs({
+          GITHUB_WORKSPACE: workspace,
+          INPUT_WORKFLOW: workflow,
+          "INPUT_SOURCE-ROOT": sourceRoot ?? "",
+        }),
+        (error: unknown) =>
+          error instanceof AdapterError && error.code === "input_invalid",
+      );
+    }
+  });
+});
+
 // REQ-RUNACTION-37, REQ-RUNACTION-38, REQ-RUNACTION-39
 // INV-EMBED-3
 test("child environment removes Action handles and preserves caller authority", () => {
