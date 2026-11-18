@@ -44,11 +44,11 @@ export function parseVersionSelection(
   throw new AdapterError("input_invalid");
 }
 
-export const RELEASE_REPOSITORY_URL = "https://github.com/useful-machinery/um";
+export const RELEASE_REPOSITORY_URL = "https://github.com/useful-machinery/cli";
 export const LATEST_RELEASE_URL = `${RELEASE_REPOSITORY_URL}/releases/latest`;
 // The release page's redirect target; the tag's version obeys the same grammar.
 export const LATEST_TAG_PATTERN = new RegExp(
-  `^https://github\\.com/useful-machinery/um/releases/tag/v(${VERSION_SOURCE})$`,
+  `^https://github\\.com/useful-machinery/cli/releases/tag/v(${VERSION_SOURCE})$`,
   "u",
 );
 

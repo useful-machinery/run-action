@@ -11,7 +11,7 @@ import * as tar from "tar-stream";
 
 import type { ReleaseEvidence } from "../src/release.ts";
 
-export const REPOSITORY = "useful-machinery/um";
+export const REPOSITORY = "useful-machinery/cli";
 export const REQUIRED_SOURCE_ANCESTOR =
   "7215869ca26439d305c097af1dca50ebb8066419";
 export const TARGETS = [
@@ -304,7 +304,7 @@ async function archiveRecord(
   };
 }
 
-// Reads one published `useful-machinery/um` release by tag and returns its
+// Reads one published `useful-machinery/cli` release by tag and returns its
 // evidence, or rejects naming the first property the release fails.
 export async function generateReleaseEvidence(
   tag: string,

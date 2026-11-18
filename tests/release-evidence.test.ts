@@ -12,8 +12,8 @@ import { archiveBytes, sha256, type TarMutation } from "./fake-release.ts";
 
 const TAG = "v9.9.9";
 const VERSION = "9.9.9";
-const API = "https://api.github.com/repos/useful-machinery/um";
-const DOWNLOADS = `https://github.com/useful-machinery/um/releases/download/${TAG}`;
+const API = "https://api.github.com/repos/useful-machinery/cli";
+const DOWNLOADS = `https://github.com/useful-machinery/cli/releases/download/${TAG}`;
 const RELEASE_COMMIT = "0123456789abcdef0123456789abcdef01234567";
 const SOURCE_REVISION = "fedcba9876543210fedcba9876543210fedcba98";
 
@@ -94,7 +94,7 @@ async function fakeRelease(
   return {
     release: {
       id: 1,
-      html_url: `https://github.com/useful-machinery/um/releases/tag/${TAG}`,
+      html_url: `https://github.com/useful-machinery/cli/releases/tag/${TAG}`,
       tag_name: TAG,
       draft: false,
       prerelease: false,
@@ -109,8 +109,8 @@ async function fakeRelease(
     downloads,
     expected: {
       schemaVersion: 1,
-      repository: "useful-machinery/um",
-      releaseUrl: `https://github.com/useful-machinery/um/releases/tag/${TAG}`,
+      repository: "useful-machinery/cli",
+      releaseUrl: `https://github.com/useful-machinery/cli/releases/tag/${TAG}`,
       tag: TAG,
       releaseId: 1,
       releaseCommit: RELEASE_COMMIT,

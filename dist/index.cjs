@@ -3238,8 +3238,8 @@ var WorkflowCommandGuard = class {
 // release-evidence.json
 var release_evidence_default = {
   schemaVersion: 1,
-  repository: "useful-machinery/um",
-  releaseUrl: "https://github.com/useful-machinery/um/releases/tag/v0.77.0",
+  repository: "useful-machinery/cli",
+  releaseUrl: "https://github.com/useful-machinery/cli/releases/tag/v0.77.0",
   tag: "v0.77.0",
   releaseId: 446376891,
   releaseCommit: "d68514c3febcf335ebd68ce1f913ccbd0aaaaf49",
@@ -3252,7 +3252,7 @@ var release_evidence_default = {
     name: "SHA256SUMS",
     size: 321,
     sha256: "d9166365628a1397444801ffa428baa5007bf4510cd2b681cf253a94cc9b0590",
-    url: "https://github.com/useful-machinery/um/releases/download/v0.77.0/SHA256SUMS"
+    url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/SHA256SUMS"
   },
   archives: {
     "x86_64-unknown-linux-gnu": {
@@ -3260,7 +3260,7 @@ var release_evidence_default = {
       name: "um-0.77.0-x86_64-unknown-linux-gnu.tar.gz",
       size: 22022450,
       sha256: "43f91ffe57945e8101b1d23ad1d63def0a1558bbb2faf5383bf406009ec85b03",
-      url: "https://github.com/useful-machinery/um/releases/download/v0.77.0/um-0.77.0-x86_64-unknown-linux-gnu.tar.gz",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/um-0.77.0-x86_64-unknown-linux-gnu.tar.gz",
       rootDirectory: "um-0.77.0-x86_64-unknown-linux-gnu",
       inventory: [
         {
@@ -3294,7 +3294,7 @@ var release_evidence_default = {
       name: "um-0.77.0-aarch64-unknown-linux-gnu.tar.gz",
       size: 22722487,
       sha256: "ebf382817002fbf4217a76e123f63bba09607e301989abe2153cc3a4d6a1392b",
-      url: "https://github.com/useful-machinery/um/releases/download/v0.77.0/um-0.77.0-aarch64-unknown-linux-gnu.tar.gz",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/um-0.77.0-aarch64-unknown-linux-gnu.tar.gz",
       rootDirectory: "um-0.77.0-aarch64-unknown-linux-gnu",
       inventory: [
         {
@@ -3328,7 +3328,7 @@ var release_evidence_default = {
       name: "um-0.77.0-aarch64-apple-darwin.tar.gz",
       size: 20402934,
       sha256: "23342fb5bf76756ee808efa6880f8c9ea145807e2d4dd991f52cd99cd8ba1a0f",
-      url: "https://github.com/useful-machinery/um/releases/download/v0.77.0/um-0.77.0-aarch64-apple-darwin.tar.gz",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.77.0/um-0.77.0-aarch64-apple-darwin.tar.gz",
       rootDirectory: "um-0.77.0-aarch64-apple-darwin",
       inventory: [
         {
@@ -3378,10 +3378,10 @@ function parseVersionSelection(value) {
   if (VERSION_PATTERN.test(value)) return { kind: "requested", version: value };
   throw new AdapterError("input_invalid");
 }
-var RELEASE_REPOSITORY_URL = "https://github.com/useful-machinery/um";
+var RELEASE_REPOSITORY_URL = "https://github.com/useful-machinery/cli";
 var LATEST_RELEASE_URL = `${RELEASE_REPOSITORY_URL}/releases/latest`;
 var LATEST_TAG_PATTERN = new RegExp(
-  `^https://github\\.com/useful-machinery/um/releases/tag/v(${VERSION_SOURCE})$`,
+  `^https://github\\.com/useful-machinery/cli/releases/tag/v(${VERSION_SOURCE})$`,
   "u"
 );
 var SELECTED_EXECUTABLE = "useful";

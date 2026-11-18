@@ -148,13 +148,13 @@ test("public checks define source and all supported native behavior jobs", async
 test("release evidence is a closed, internally consistent stable release", async () => {
   assert.deepEqual(PINNED_RELEASE, evidence);
   assert.equal(evidence.schemaVersion, 1);
-  assert.equal(evidence.repository, "useful-machinery/um");
+  assert.equal(evidence.repository, "useful-machinery/cli");
   assert.match(evidence.version, /^\d+\.\d+\.\d+$/u);
   const { tag, version } = evidence;
   assert.equal(tag, `v${version}`);
   assert.equal(
     evidence.releaseUrl,
-    `https://github.com/useful-machinery/um/releases/tag/${tag}`,
+    `https://github.com/useful-machinery/cli/releases/tag/${tag}`,
   );
   assert.ok(Number.isInteger(evidence.releaseId) && evidence.releaseId > 0);
   for (const revision of [
@@ -169,7 +169,7 @@ test("release evidence is a closed, internally consistent stable release", async
     evidence.requiredSourceAncestor,
     "7215869ca26439d305c097af1dca50ebb8066419",
   );
-  const download = `https://github.com/useful-machinery/um/releases/download/${tag}`;
+  const download = `https://github.com/useful-machinery/cli/releases/download/${tag}`;
   assert.equal(evidence.checksumAsset.name, "SHA256SUMS");
   assert.equal(evidence.checksumAsset.url, `${download}/SHA256SUMS`);
   assert.match(evidence.checksumAsset.sha256, /^[0-9a-f]{64}$/u);
