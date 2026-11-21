@@ -28,9 +28,11 @@ import {
 } from "./release.ts";
 import {
   validateAndProject,
+  validateArtifactWithCli,
   type SelectedProjection,
   type ValidatedResultProjection,
 } from "./result.ts";
+import { askCliTree, type CliTreeProbe } from "./subprocess.ts";
 import {
   readTerminalEnvelope,
   validateTerminalShape,
@@ -65,12 +67,14 @@ export interface ActionDependencies {
     executable: string,
     allocation: ExecutionAllocation,
     environment: NodeJS.ProcessEnv,
+    tree: CliTreeProbe,
   ) => Promise<RecoveredRun | undefined>;
   readonly project: (
     executable: string,
     identity: ResultIdentity,
     selectedExport: string | undefined,
     environment: NodeJS.ProcessEnv,
+    tree: CliTreeProbe,
   ) => Promise<ValidatedResultProjection>;
   readonly writeOutputs: (
     outputFile: string | undefined,
@@ -101,8 +105,11 @@ export const DEFAULT_ACTION_DEPENDENCIES: ActionDependencies = {
     ),
   readTerminal: readTerminalEnvelope,
   recover: recoverDurableRun,
-  project: (executable, identity, selectedExport, environment) =>
-    validateAndProject(executable, identity, selectedExport, environment),
+  project: (executable, identity, selectedExport, environment, tree) =>
+    validateAndProject(executable, identity, selectedExport, environment, {
+      validateArtifact: (...validation) =>
+        validateArtifactWithCli(...validation, tree),
+    }),
   writeOutputs,
   cleanup: cleanupExecution,
 };
@@ -235,6 +242,8 @@ export async function executeAction(
       }
     }
 
+    // One question to the installed CLI serves both commands it decides.
+    const tree = askCliTree(bootstrap.executable, bootstrap.environment);
     phase = "identity";
     const runDirectory = await recoverRunDirectory(allocation, terminal);
     outputs["run-directory"] = runDirectory ?? "";
@@ -252,7 +261,7 @@ export async function executeAction(
     if (!identity && !identityRefused) {
       phase = "recovery";
       const recovered = await dependencies
-        .recover(bootstrap.executable, allocation, bootstrap.environment)
+        .recover(bootstrap.executable, allocation, bootstrap.environment, tree)
         .catch((error: unknown) => {
           fail(error);
           return undefined;
@@ -273,6 +282,7 @@ export async function executeAction(
           identity,
           inputs.selectedExport,
           bootstrap.environment,
+          tree,
         );
         outputs.outcome = validated.outcome;
         if (validated.selected) {

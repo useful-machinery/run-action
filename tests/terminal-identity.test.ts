@@ -15,7 +15,7 @@ import {
   readTerminalEnvelope,
   validateTerminalShape,
 } from "../src/terminal.ts";
-import { fakeCli, paddedJson } from "./fake-cli.ts";
+import { fakeCli, fakeCliCalls, paddedJson, TREE_PROBE } from "./fake-cli.ts";
 import { PINNED_EXECUTABLE } from "./fake-release.ts";
 import { pinnedStatusDocument } from "./pinned-status.ts";
 
@@ -213,6 +213,7 @@ test("bare durable markers do not authenticate terminal-less recovery", async ()
         "/verified/useful",
         allocation,
         {},
+        async () => "earlier",
         {
           readStatus: async () => {
             statusReads += 1;
@@ -263,10 +264,17 @@ test("pinned status binds terminal-less recovery to the initial published result
         pinnedPath,
         allocation,
         { PATH: "/verified" },
+        async () => "earlier",
         {
-          readStatus: async (executable, runDirectory, environment) => {
+          readStatus: async (executable, arguments_, environment) => {
             assert.equal(executable, pinnedPath);
-            assert.equal(runDirectory, allocation.runDirectory);
+            assert.deepEqual(arguments_, [
+              "workflow",
+              "run",
+              "status",
+              allocation.runDirectory,
+              "--json",
+            ]);
             assert.equal(environment.PATH, "/verified");
             return {
               code: 0,
@@ -398,6 +406,7 @@ test("workflow status output is read up to its 33,554,432-byte bound", async (t)
             },
             size,
           ),
+          2,
         );
         const recovery = recoverDurableRun(executable, allocation, {});
         if (accepted) {
@@ -412,6 +421,111 @@ test("workflow status output is read up to its 33,554,432-byte bound", async (t)
               error.code === "result_identity_invalid",
           );
         }
+      });
+    });
+  }
+});
+
+// REQ-RUNACTION-78, REQ-RUNACTION-85
+// INV-EMBED-6
+test("recovery reads the status by the spelling the installed CLI has", async (t) => {
+  const show = (runDirectory: string) => [
+    "workflow",
+    "run",
+    "show",
+    runDirectory,
+    "--json",
+  ];
+  const status = (runDirectory: string) => [
+    "workflow",
+    "run",
+    "status",
+    runDirectory,
+    "--json",
+  ];
+  for (const [name, probeExit, command, outcome, ran, accepted] of [
+    ["current tree, show", 0, "workflow run show", "shown", show, true],
+    ["current tree, status", 0, "workflow run status", "status", show, false],
+    ["earlier tree, status", 2, "workflow run status", "status", status, true],
+    ["earlier tree, show", 2, "workflow run show", "shown", status, false],
+  ] as const) {
+    await t.test(name, async () => {
+      await withTemporary(async (directory) => {
+        const allocation: ExecutionAllocation = {
+          parent: directory,
+          runDirectory: path.join(directory, "run"),
+          terminalPath: path.join(directory, "terminal.json"),
+          inputFiles: [],
+        };
+        const artifactDirectory = path.join(
+          allocation.runDirectory,
+          "attempts",
+          "000001",
+          "result",
+        );
+        await mkdir(artifactDirectory, { recursive: true });
+        await writeFile(path.join(artifactDirectory, "result.json"), "{}\n");
+        const executable = await fakeCli(
+          directory,
+          "useful",
+          Buffer.from(
+            JSON.stringify({
+              ...pinnedStatusDocument(
+                allocation.runDirectory,
+                path.join(directory, "execution-root"),
+              ),
+              command: `useful ${command}`,
+              outcome,
+            }),
+          ),
+          probeExit,
+        );
+        const recovery = recoverDurableRun(executable, allocation, {});
+        if (accepted) {
+          assert.equal(
+            (await recovery)?.result?.artifactDirectory,
+            artifactDirectory,
+          );
+        } else {
+          await assert.rejects(
+            recovery,
+            (error: unknown) =>
+              error instanceof AdapterError &&
+              error.code === "result_identity_invalid",
+          );
+        }
+        assert.deepEqual(await fakeCliCalls(executable), [
+          TREE_PROBE,
+          ran(allocation.runDirectory),
+        ]);
+      });
+    });
+  }
+
+  // A probe that ends other than with exit 0 or 2 decides nothing.
+  for (const probeExit of [1, 3]) {
+    await t.test(`probe exit ${probeExit}`, async () => {
+      await withTemporary(async (directory) => {
+        const allocation: ExecutionAllocation = {
+          parent: directory,
+          runDirectory: path.join(directory, "run"),
+          terminalPath: path.join(directory, "terminal.json"),
+          inputFiles: [],
+        };
+        await mkdir(allocation.runDirectory);
+        const executable = await fakeCli(
+          directory,
+          "useful",
+          Buffer.from("{}\n"),
+          probeExit,
+        );
+        await assert.rejects(
+          recoverDurableRun(executable, allocation, {}),
+          (error: unknown) =>
+            error instanceof AdapterError &&
+            error.code === "result_identity_invalid",
+        );
+        assert.deepEqual(await fakeCliCalls(executable), [TREE_PROBE]);
       });
     });
   }

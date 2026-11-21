@@ -3412,6 +3412,25 @@ var import_node_path2 = __toESM(require("node:path"), 1);
 function cliCommand(executable, words) {
   return `${import_node_path2.default.basename(executable)} ${words}`;
 }
+var TREE_PROBE = ["workflow", "run", "artifact", "validate", "--help"];
+function askCliTree(executable, environment) {
+  let answer;
+  return async (failureCode) => {
+    answer ??= captureCommand(
+      executable,
+      TREE_PROBE,
+      environment,
+      0,
+      failureCode
+    ).then(
+      ({ code, signal }) => signal !== null ? void 0 : code === 0 ? "current" : code === 2 ? "earlier" : void 0,
+      () => void 0
+    );
+    const tree = await answer;
+    if (tree === void 0) throw new AdapterError(failureCode);
+    return tree;
+  };
+}
 async function captureCommand(executable, arguments_, environment, maximumBytes, failureCode) {
   const child = (0, import_node_child_process.spawn)(executable, [...arguments_], {
     env: environment,
@@ -4497,13 +4516,17 @@ var import_promises6 = require("node:fs/promises");
 var import_node_path6 = __toESM(require("node:path"), 1);
 var MAXIMUM_STATUS_JSON_BYTES = 32 * 1024 * 1024;
 var DEFAULT_RECOVERY_DEPENDENCIES = {
-  readStatus: (executable, runDirectory, environment) => captureCommand(
+  readStatus: (executable, arguments_, environment) => captureCommand(
     executable,
-    ["workflow", "run", "status", runDirectory, "--json"],
+    arguments_,
     environment,
     MAXIMUM_STATUS_JSON_BYTES,
     "result_identity_invalid"
   )
+};
+var STATUS_COMMANDS = {
+  current: { words: "workflow run show", outcome: "shown" },
+  earlier: { words: "workflow run status", outcome: "status" }
 };
 function record(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
@@ -4534,12 +4557,13 @@ async function recoverRunDirectory(allocation, envelope) {
   const runStatus = await (0, import_promises6.lstat)(allocation.runDirectory).catch(() => void 0);
   return runStatus?.isDirectory() && !runStatus.isSymbolicLink() ? allocation.runDirectory : void 0;
 }
-async function recoverDurableRun(executable, allocation, environment, dependencies = DEFAULT_RECOVERY_DEPENDENCIES) {
+async function recoverDurableRun(executable, allocation, environment, tree = askCliTree(executable, environment), dependencies = DEFAULT_RECOVERY_DEPENDENCIES) {
   const runStatus = await (0, import_promises6.lstat)(allocation.runDirectory).catch(() => void 0);
   if (!runStatus?.isDirectory() || runStatus.isSymbolicLink()) return void 0;
+  const expected = STATUS_COMMANDS[await tree("result_identity_invalid")];
   const status = await dependencies.readStatus(
     executable,
-    allocation.runDirectory,
+    [...expected.words.split(" "), allocation.runDirectory, "--json"],
     environment
   );
   if (status.code !== 0 || status.signal !== null || status.stdoutOverflow || status.stderrOverflow) {
@@ -4557,7 +4581,7 @@ async function recoverDurableRun(executable, allocation, environment, dependenci
   const attempts = state?.attempts;
   const attempt = Array.isArray(attempts) ? record(attempts[0]) : void 0;
   const result = record(attempt?.result);
-  if (!document || document.schemaVersion !== 1 || document.command !== cliCommand(executable, "workflow run status") || document.outcome !== "status" || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
+  if (!document || document.schemaVersion !== 1 || document.command !== cliCommand(executable, expected.words) || document.outcome !== expected.outcome || document.exitStatus !== 0 || document.runDirectory !== allocation.runDirectory || !run || run.schemaVersion !== 1 || typeof run.localRunId !== "string" || !state || state.schemaVersion !== 1 || state.localRunId !== run.localRunId || state.currentAttemptNumber !== 1 || !Array.isArray(attempts) || attempts.length !== 1 || !attempt || attempt.attemptNumber !== 1 || attempt.trigger !== "initial" || !result) {
     throw new AdapterError("result_identity_invalid");
   }
   if (result.status !== "published") {
@@ -4780,10 +4804,15 @@ function exactKeys(value, expected) {
   const actual = Object.keys(value).sort();
   return actual.length === expectedKeys.length && actual.every((key, index) => key === expectedKeys[index]);
 }
-var validateArtifactWithCli = async (executable, artifactDirectory, environment) => {
+var VALIDATE_COMMANDS = {
+  current: "workflow run artifact validate",
+  earlier: "artifact validate"
+};
+async function validateArtifactWithCli(executable, artifactDirectory, environment, tree = askCliTree(executable, environment)) {
+  const words = VALIDATE_COMMANDS[await tree("artifact_validation_failed")];
   const result = await captureCommand(
     executable,
-    ["artifact", "validate", "--json", artifactDirectory],
+    [...words.split(" "), "--json", artifactDirectory],
     environment,
     MAXIMUM_VALIDATOR_OUTPUT_BYTES,
     "artifact_validation_failed"
@@ -4810,7 +4839,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
   }
   const record2 = document;
   const summary = record2.summary;
-  if (record2.schemaVersion !== 1 || record2.command !== cliCommand(executable, "artifact validate") || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys(summary, [
+  if (record2.schemaVersion !== 1 || record2.command !== cliCommand(executable, words) || record2.outcome !== "valid" || record2.exitStatus !== 0 || record2.artifactSetVersion !== 1 || record2.artifactDirectory !== await (0, import_promises7.realpath)(artifactDirectory) || typeof summary !== "object" || summary === null || !exactKeys(summary, [
     "declaredExports",
     "availableExports",
     "unavailableExports",
@@ -4821,7 +4850,7 @@ var validateArtifactWithCli = async (executable, artifactDirectory, environment)
   )) {
     throw new AdapterError("artifact_validation_failed");
   }
-};
+}
 async function fingerprintResult(file) {
   const handle = await (0, import_promises7.open)(
     file,
@@ -5182,7 +5211,9 @@ var DEFAULT_ACTION_DEPENDENCIES = {
   ),
   readTerminal: readTerminalEnvelope,
   recover: recoverDurableRun,
-  project: (executable, identity, selectedExport, environment) => validateAndProject(executable, identity, selectedExport, environment),
+  project: (executable, identity, selectedExport, environment, tree) => validateAndProject(executable, identity, selectedExport, environment, {
+    validateArtifact: (...validation) => validateArtifactWithCli(...validation, tree)
+  }),
   writeOutputs,
   cleanup: cleanupExecution
 };
@@ -5286,6 +5317,7 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
         }
       }
     }
+    const tree = askCliTree(bootstrap.executable, bootstrap.environment);
     phase = "identity";
     const runDirectory = await recoverRunDirectory(allocation, terminal);
     outputs["run-directory"] = runDirectory ?? "";
@@ -5301,7 +5333,7 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
     }
     if (!identity && !identityRefused) {
       phase = "recovery";
-      const recovered = await dependencies.recover(bootstrap.executable, allocation, bootstrap.environment).catch((error) => {
+      const recovered = await dependencies.recover(bootstrap.executable, allocation, bootstrap.environment, tree).catch((error) => {
         fail(error);
         return void 0;
       });
@@ -5320,7 +5352,8 @@ async function executeAction(environment, dependencies = DEFAULT_ACTION_DEPENDEN
           bootstrap.executable,
           identity,
           inputs.selectedExport,
-          bootstrap.environment
+          bootstrap.environment,
+          tree
         );
         outputs.outcome = validated.outcome;
         if (validated.selected) {

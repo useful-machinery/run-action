@@ -20,10 +20,29 @@ import {
   validateArtifactWithCli,
   type ArtifactValidator,
 } from "../src/result.ts";
-import { fakeCli, paddedJson } from "./fake-cli.ts";
+import { fakeCli, fakeCliCalls, paddedJson, TREE_PROBE } from "./fake-cli.ts";
 import { sha256 as digest } from "./fake-release.ts";
 
 type ExportEntry = Record<string, unknown>;
+
+// What `artifact validate --json` prints for a valid set with no exports.
+function validationDocument(command: string, artifactDirectory: string) {
+  return {
+    schemaVersion: 1,
+    command,
+    outcome: "valid",
+    exitStatus: 0,
+    artifactSetVersion: 1,
+    artifactDirectory,
+    summary: {
+      declaredExports: 0,
+      availableExports: 0,
+      unavailableExports: 0,
+      referencedCarriers: 0,
+      carrierBytes: 0,
+    },
+  };
+}
 
 function byteEntry(
   kind: "file" | "text" | "json",
@@ -575,8 +594,8 @@ test("a result.json beyond 202,027,692 bytes fails before artifact validation", 
 // REQ-RUNACTION-6
 test("the validation document's command names the executable that ran", async (t) => {
   for (const [command, accepted] of [
-    ["fixture-cli artifact validate", true],
-    ["useful artifact validate", false],
+    ["fixture-cli workflow run artifact validate", true],
+    ["useful workflow run artifact validate", false],
   ] as const) {
     await t.test(command, async () => {
       await withArtifact({}, {}, async ({ artifactDirectory }) => {
@@ -588,21 +607,9 @@ test("the validation document's command names the executable that ran", async (t
             scratch,
             "fixture-cli",
             Buffer.from(
-              JSON.stringify({
-                schemaVersion: 1,
-                command,
-                outcome: "valid",
-                exitStatus: 0,
-                artifactSetVersion: 1,
-                artifactDirectory: await realpath(artifactDirectory),
-                summary: {
-                  declaredExports: 0,
-                  availableExports: 0,
-                  unavailableExports: 0,
-                  referencedCarriers: 0,
-                  carrierBytes: 0,
-                },
-              }),
+              JSON.stringify(
+                validationDocument(command, await realpath(artifactDirectory)),
+              ),
             ),
           );
           const validation = validateArtifactWithCli(
@@ -644,21 +651,10 @@ test("artifact validation output is read up to its 1,048,576-byte bound", async 
             scratch,
             "useful",
             paddedJson(
-              {
-                schemaVersion: 1,
-                command: "useful artifact validate",
-                outcome: "valid",
-                exitStatus: 0,
-                artifactSetVersion: 1,
-                artifactDirectory: await realpath(artifactDirectory),
-                summary: {
-                  declaredExports: 0,
-                  availableExports: 0,
-                  unavailableExports: 0,
-                  referencedCarriers: 0,
-                  carrierBytes: 0,
-                },
-              },
+              validationDocument(
+                "useful workflow run artifact validate",
+                await realpath(artifactDirectory),
+              ),
               size,
             ),
           );
@@ -677,6 +673,98 @@ test("artifact validation output is read up to its 1,048,576-byte bound", async 
                 error.code === "artifact_validation_failed",
             );
           }
+        } finally {
+          await rm(scratch, { recursive: true, force: true });
+        }
+      });
+    });
+  }
+});
+
+// REQ-RUNACTION-48, REQ-RUNACTION-78
+// INV-EMBED-7
+test("artifact validation runs the spelling the installed CLI has", async (t) => {
+  const current = ["workflow", "run", "artifact", "validate"];
+  const earlier = ["artifact", "validate"];
+  for (const [name, probeExit, command, ran, accepted] of [
+    ["current tree, new spelling", 0, current, current, true],
+    ["current tree, earlier spelling", 0, earlier, current, false],
+    ["earlier tree, earlier spelling", 2, earlier, earlier, true],
+    ["earlier tree, new spelling", 2, current, earlier, false],
+  ] as const) {
+    await t.test(name, async () => {
+      await withArtifact({}, {}, async ({ artifactDirectory }) => {
+        const scratch = await mkdtemp(
+          path.join(os.tmpdir(), "useful-validate-"),
+        );
+        try {
+          const executable = await fakeCli(
+            scratch,
+            "useful",
+            Buffer.from(
+              JSON.stringify(
+                validationDocument(
+                  `useful ${command.join(" ")}`,
+                  await realpath(artifactDirectory),
+                ),
+              ),
+            ),
+            probeExit,
+          );
+          const validation = validateArtifactWithCli(
+            executable,
+            artifactDirectory,
+            {},
+          );
+          if (accepted) {
+            await validation;
+          } else {
+            await assert.rejects(
+              validation,
+              (error: unknown) =>
+                error instanceof AdapterError &&
+                error.code === "artifact_validation_failed",
+            );
+          }
+          assert.deepEqual(await fakeCliCalls(executable), [
+            TREE_PROBE,
+            [...ran, "--json", artifactDirectory],
+          ]);
+        } finally {
+          await rm(scratch, { recursive: true, force: true });
+        }
+      });
+    });
+  }
+
+  // A probe that ends other than with exit 0 or 2 decides nothing.
+  for (const probeExit of [1, 3]) {
+    await t.test(`probe exit ${probeExit}`, async () => {
+      await withArtifact({}, {}, async ({ artifactDirectory }) => {
+        const scratch = await mkdtemp(
+          path.join(os.tmpdir(), "useful-validate-"),
+        );
+        try {
+          const executable = await fakeCli(
+            scratch,
+            "useful",
+            Buffer.from(
+              JSON.stringify(
+                validationDocument(
+                  "useful workflow run artifact validate",
+                  await realpath(artifactDirectory),
+                ),
+              ),
+            ),
+            probeExit,
+          );
+          await assert.rejects(
+            validateArtifactWithCli(executable, artifactDirectory, {}),
+            (error: unknown) =>
+              error instanceof AdapterError &&
+              error.code === "artifact_validation_failed",
+          );
+          assert.deepEqual(await fakeCliCalls(executable), [TREE_PROBE]);
         } finally {
           await rm(scratch, { recursive: true, force: true });
         }

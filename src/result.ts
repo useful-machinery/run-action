@@ -7,7 +7,13 @@ import streamJson from "stream-json";
 
 import { AdapterError } from "./errors.ts";
 import type { ResultIdentity } from "./identity.ts";
-import { captureCommand, cliCommand } from "./subprocess.ts";
+import {
+  askCliTree,
+  captureCommand,
+  cliCommand,
+  type CliTree,
+  type CliTreeProbe,
+} from "./subprocess.ts";
 import { PRIMITIVE_TOKENS, type JsonToken } from "./terminal.ts";
 
 const { parser } = streamJson;
@@ -83,14 +89,23 @@ function exactKeys(value: object, expected: readonly string[]): boolean {
   );
 }
 
-export const validateArtifactWithCli: ArtifactValidator = async (
-  executable,
-  artifactDirectory,
-  environment,
-) => {
+// Artifact validation on each tree: the same document under another command
+// (REQ-RUNACTION-48).
+const VALIDATE_COMMANDS: Readonly<Record<CliTree, string>> = {
+  current: "workflow run artifact validate",
+  earlier: "artifact validate",
+};
+
+export async function validateArtifactWithCli(
+  executable: string,
+  artifactDirectory: string,
+  environment: NodeJS.ProcessEnv,
+  tree: CliTreeProbe = askCliTree(executable, environment),
+): Promise<void> {
+  const words = VALIDATE_COMMANDS[await tree("artifact_validation_failed")];
   const result = await captureCommand(
     executable,
-    ["artifact", "validate", "--json", artifactDirectory],
+    [...words.split(" "), "--json", artifactDirectory],
     environment,
     MAXIMUM_VALIDATOR_OUTPUT_BYTES,
     "artifact_validation_failed",
@@ -128,7 +143,7 @@ export const validateArtifactWithCli: ArtifactValidator = async (
   const summary = record.summary;
   if (
     record.schemaVersion !== 1 ||
-    record.command !== cliCommand(executable, "artifact validate") ||
+    record.command !== cliCommand(executable, words) ||
     record.outcome !== "valid" ||
     record.exitStatus !== 0 ||
     record.artifactSetVersion !== 1 ||
@@ -149,7 +164,7 @@ export const validateArtifactWithCli: ArtifactValidator = async (
   ) {
     throw new AdapterError("artifact_validation_failed");
   }
-};
+}
 
 async function fingerprintResult(file: string): Promise<Fingerprint> {
   const handle = await open(

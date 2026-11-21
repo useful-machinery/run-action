@@ -4,9 +4,12 @@ import path from "node:path";
 import { AdapterError } from "./errors.ts";
 import type { ExecutionAllocation } from "./execution.ts";
 import {
+  askCliTree,
   captureCommand,
   cliCommand,
   type CapturedCommand,
+  type CliTree,
+  type CliTreeProbe,
 } from "./subprocess.ts";
 import type { TerminalEnvelope } from "./terminal.ts";
 
@@ -32,20 +35,29 @@ export interface RecoveredRun {
 export interface RecoveryDependencies {
   readonly readStatus: (
     executable: string,
-    runDirectory: string,
+    arguments_: readonly string[],
     environment: NodeJS.ProcessEnv,
   ) => Promise<CapturedCommand>;
 }
 
 const DEFAULT_RECOVERY_DEPENDENCIES: RecoveryDependencies = {
-  readStatus: (executable, runDirectory, environment) =>
+  readStatus: (executable, arguments_, environment) =>
     captureCommand(
       executable,
-      ["workflow", "run", "status", runDirectory, "--json"],
+      arguments_,
       environment,
       MAXIMUM_STATUS_JSON_BYTES,
       "result_identity_invalid",
     ),
+};
+
+// The run's status on each tree: the same document under another command and
+// outcome (REQ-RUNACTION-78, REQ-RUNACTION-85).
+const STATUS_COMMANDS: Readonly<
+  Record<CliTree, { readonly words: string; readonly outcome: string }>
+> = {
+  current: { words: "workflow run show", outcome: "shown" },
+  earlier: { words: "workflow run status", outcome: "status" },
 };
 
 function record(value: unknown): Record<string, unknown> | undefined {
@@ -99,14 +111,16 @@ export async function recoverDurableRun(
   executable: string,
   allocation: ExecutionAllocation,
   environment: NodeJS.ProcessEnv,
+  tree: CliTreeProbe = askCliTree(executable, environment),
   dependencies: RecoveryDependencies = DEFAULT_RECOVERY_DEPENDENCIES,
 ): Promise<RecoveredRun | undefined> {
   const runStatus = await lstat(allocation.runDirectory).catch(() => undefined);
   if (!runStatus?.isDirectory() || runStatus.isSymbolicLink()) return undefined;
 
+  const expected = STATUS_COMMANDS[await tree("result_identity_invalid")];
   const status = await dependencies.readStatus(
     executable,
-    allocation.runDirectory,
+    [...expected.words.split(" "), allocation.runDirectory, "--json"],
     environment,
   );
   if (
@@ -133,8 +147,8 @@ export async function recoverDurableRun(
   if (
     !document ||
     document.schemaVersion !== 1 ||
-    document.command !== cliCommand(executable, "workflow run status") ||
-    document.outcome !== "status" ||
+    document.command !== cliCommand(executable, expected.words) ||
+    document.outcome !== expected.outcome ||
     document.exitStatus !== 0 ||
     document.runDirectory !== allocation.runDirectory ||
     !run ||

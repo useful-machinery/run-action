@@ -102,6 +102,12 @@ steps:
       printf 'workflow outcome: %s\n' "$WORKFLOW_OUTCOME"
 ```
 
+The last step runs `useful artifact validate`, the spelling of the release this revision
+pins. From the first release that moves it under `workflow run`, the command is
+`useful workflow run artifact validate`, and its `--json` document names that command. The
+Action itself asks the installed CLI which of the two it has and runs that spelling, for its
+own validation and for its read of the run's status.
+
 The source tree also contains a working
 [PR conflict resolver](examples/resolve-pr-conflicts/README.md) and advanced
 [nightly Sentry repair composition](examples/nightly-sentry-repair/README.md). The latter

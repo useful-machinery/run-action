@@ -625,15 +625,21 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
           throw new AdapterError("terminal_result_invalid");
         },
         recover: (executable, recoveredAllocation, environment) =>
-          recoverDurableRun(executable, recoveredAllocation, environment, {
-            readStatus: async () => ({
-              code: 1,
-              signal: null,
-              stdout: Buffer.from("{}\n"),
-              stdoutOverflow: false,
-              stderrOverflow: false,
-            }),
-          }),
+          recoverDurableRun(
+            executable,
+            recoveredAllocation,
+            environment,
+            async () => "earlier",
+            {
+              readStatus: async () => ({
+                code: 1,
+                signal: null,
+                stdout: Buffer.from("{}\n"),
+                stdoutOverflow: false,
+                stderrOverflow: false,
+              }),
+            },
+          ),
         project: async (executable, identity) => {
           validations += 1;
           assert.equal(executable, "/verified/useful");
@@ -898,21 +904,33 @@ test("a job cancelled during the run recovers its interrupted run's result throu
         },
         readTerminal: readTerminalEnvelope,
         recover: (executable, allocation, environment) =>
-          recoverDurableRun(executable, allocation, environment, {
-            readStatus: async (_executable, runDirectory) => {
-              statusReads += 1;
-              assert.equal(runDirectory, allocation.runDirectory);
-              return {
-                code: 0,
-                signal: null,
-                stdout: Buffer.from(
-                  `${JSON.stringify(pinnedStatusDocument(runDirectory, root))}\n`,
-                ),
-                stdoutOverflow: false,
-                stderrOverflow: false,
-              };
+          recoverDurableRun(
+            executable,
+            allocation,
+            environment,
+            async () => "earlier",
+            {
+              readStatus: async (_executable, arguments_) => {
+                statusReads += 1;
+                assert.deepEqual(arguments_, [
+                  "workflow",
+                  "run",
+                  "status",
+                  allocation.runDirectory,
+                  "--json",
+                ]);
+                return {
+                  code: 0,
+                  signal: null,
+                  stdout: Buffer.from(
+                    `${JSON.stringify(pinnedStatusDocument(allocation.runDirectory, root))}\n`,
+                  ),
+                  stdoutOverflow: false,
+                  stderrOverflow: false,
+                };
+              },
             },
-          }),
+          ),
         project: async () => ({ outcome: "failed" }),
         writeOutputs: async () => undefined,
         report: async () => undefined,
@@ -1257,9 +1275,15 @@ test("a CLI launch failure starts no run and exposes no result", async () => {
         },
         readTerminal: () => unreachable<TerminalEnvelope>(),
         recover: (executable, allocated, environment) =>
-          recoverDurableRun(executable, allocated, environment, {
-            readStatus: () => unreachable(),
-          }),
+          recoverDurableRun(
+            executable,
+            allocated,
+            environment,
+            async () => "earlier",
+            {
+              readStatus: () => unreachable(),
+            },
+          ),
         project: () => unreachable<ValidatedResultProjection>(),
         writeOutputs: async (_file, outputs) => {
           observedOutputs = { ...outputs };
