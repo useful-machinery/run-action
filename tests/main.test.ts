@@ -750,7 +750,7 @@ test("authenticated terminal-less recovery retains and validates its result", as
   }
 });
 
-// REQ-RUNACTION-47, REQ-RUNACTION-75
+// REQ-RUNACTION-91, REQ-RUNACTION-75
 // INV-EMBED-6
 test("a refused terminal identity is never recovered through status", async (t) => {
   const scenarios: readonly {
@@ -963,7 +963,7 @@ test("a job cancelled during the run recovers its interrupted run's result throu
   }
 });
 
-// REQ-RUNACTION-79, REQ-RUNACTION-60, REQ-RUNACTION-61
+// REQ-RUNACTION-79, REQ-RUNACTION-92, REQ-RUNACTION-60, REQ-RUNACTION-61
 // INV-EMBED-5
 test("an unclassified error names its phase and class but never its text", async (t) => {
   const sentinel = "prompt attachment export credential provider-secret";

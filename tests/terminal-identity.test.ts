@@ -104,7 +104,7 @@ test("terminal identity mismatch and unknown root fields fail closed", async () 
   });
 });
 
-// REQ-RUNACTION-6
+// REQ-RUNACTION-87
 // INV-EMBED-6
 test("the terminal document's command names the executable that ran", async (t) => {
   await withTemporary(async (directory) => {
@@ -333,7 +333,7 @@ test("pinned status binds terminal-less recovery to the initial published result
         "renamed status command",
         { ...pinned(), command: `${PINNED_EXECUTABLE} workflow status` },
       ],
-      // REQ-RUNACTION-6
+      // REQ-RUNACTION-87
       [
         "another executable's status command",
         { ...pinned(), command: "um workflow run status" },

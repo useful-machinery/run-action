@@ -114,7 +114,7 @@ interface Installation {
   readonly listed: ReadonlyMap<string, string | undefined>;
   readonly archive: ArchiveExpectation;
   // The executable the installation names under the archive's root directory,
-  // which reports itself as `command` (REQ-RUNACTION-6).
+  // which reports itself as `command` (REQ-RUNACTION-87).
   readonly executable: string;
   // The pinned build identity, or undefined for a selected release.
   readonly buildIdentity: string | undefined;
@@ -195,7 +195,7 @@ function selectedInstallation(
   };
 }
 
-// Resolves `latest` from the release page's redirect alone (REQ-RUNACTION-83).
+// Resolves `latest` from the release page's redirect alone (REQ-RUNACTION-90).
 async function discoverLatest(
   fetchRelease: BootstrapDependencies["fetch"],
 ): Promise<string> {

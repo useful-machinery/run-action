@@ -13,7 +13,7 @@ export interface CapturedCommand {
 
 // The `command` member of a document the installed CLI prints for `words`: the
 // name of the executable the installation names, then the words
-// (REQ-RUNACTION-6).
+// (REQ-RUNACTION-87).
 export function cliCommand(executable: string, words: string): string {
   return `${path.basename(executable)} ${words}`;
 }

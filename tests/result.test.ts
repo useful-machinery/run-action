@@ -591,7 +591,7 @@ test("a result.json beyond 202,027,692 bytes fails before artifact validation", 
   }
 });
 
-// REQ-RUNACTION-6
+// REQ-RUNACTION-87
 test("the validation document's command names the executable that ran", async (t) => {
   for (const [command, accepted] of [
     ["fixture-cli workflow run artifact validate", true],

@@ -734,7 +734,7 @@ test("a selected release installs from its constructed URLs", async (t) => {
   }
 });
 
-// REQ-RUNACTION-6, REQ-RUNACTION-82
+// REQ-RUNACTION-87, REQ-RUNACTION-82
 // INV-EMBED-1, INV-EMBED-22
 test("the bootstrap runs the executable its installation names", async (t) => {
   const environment = (runnerTemp: string) => ({
@@ -843,7 +843,7 @@ test("an unpublished or unreachable selected checksum list stops before the arch
   });
 });
 
-// REQ-RUNACTION-83, REQ-RUNACTION-67
+// REQ-RUNACTION-90, REQ-RUNACTION-67
 // INV-EMBED-22
 test("latest resolves only from a release-page redirect to a stable tag", async (t) => {
   const cases: readonly [string, Redirect | undefined][] = [
@@ -891,7 +891,7 @@ test("latest resolves only from a release-page redirect to a stable tag", async 
   }
 });
 
-// REQ-RUNACTION-8, REQ-RUNACTION-9, REQ-RUNACTION-11
+// REQ-RUNACTION-88, REQ-RUNACTION-89, REQ-RUNACTION-11
 // INV-EMBED-22
 test("a selected release's checksum list, archive and layout fail closed before the probe", async (t) => {
   const assets = selectedReleaseAssets(SELECTED_VERSION);
