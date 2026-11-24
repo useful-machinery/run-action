@@ -100,7 +100,6 @@ async function withTemporary(
   }
 }
 
-// REQ-RUNACTION-19, REQ-RUNACTION-23, REQ-RUNACTION-27, REQ-RUNACTION-28, REQ-RUNACTION-29, REQ-RUNACTION-30, REQ-RUNACTION-32, REQ-RUNACTION-33, REQ-RUNACTION-34, REQ-RUNACTION-35, REQ-RUNACTION-36, REQ-RUNACTION-40, REQ-RUNACTION-50
 test("one shell-free child drains streams, spools JSON, and forwards one signal", async () => {
   await withTemporary(async (directory) => {
     const workspace = path.join(directory, "workspace");
@@ -276,8 +275,6 @@ test("one shell-free child drains streams, spools JSON, and forwards one signal"
   });
 });
 
-// REQ-RUNACTION-40
-// INV-EMBED-8
 test("cancellation during launch preparation reaches the child only once", async () => {
   await withTemporary(async (directory) => {
     const actionInputs = inputs(directory);
@@ -340,7 +337,6 @@ test("a symlinked runner temp retains the CLI's normalized run identity", async 
   });
 });
 
-// REQ-RUNACTION-33
 test("an occupied reserved run path is rejected before child launch", async () => {
   await withTemporary(async (directory) => {
     const workspace = path.join(directory, "workspace");
@@ -373,7 +369,6 @@ test("an occupied reserved run path is rejected before child launch", async () =
   });
 });
 
-// REQ-RUNACTION-36
 test("terminal spool is bounded while stdout continues to EOF", async () => {
   await withTemporary(async (directory) => {
     const workspace = path.join(directory, "workspace");
@@ -437,7 +432,6 @@ function failingLog(accepted: number): Writable {
   return log;
 }
 
-// REQ-RUNACTION-72
 test("a CLI that cannot be started fails as child_launch_failed", async (t) => {
   for (const [name, launch] of [
     [
@@ -488,7 +482,6 @@ test("a CLI that cannot be started fails as child_launch_failed", async (t) => {
   }
 });
 
-// REQ-RUNACTION-73
 test("an unwritable result spool, log, or stop marker fails as child_output_failed", async (t) => {
   const cases: readonly {
     name: string;
@@ -553,7 +546,6 @@ test("an unwritable result spool, log, or stop marker fails as child_output_fail
   }
 });
 
-// REQ-RUNACTION-76
 test("an Action file that cannot be removed fails cleanup without touching the run", async () => {
   await withTemporary(async (directory) => {
     const allocation = await allocateExecution(directory, []);

@@ -308,7 +308,7 @@ function optionalInput(
 }
 
 // The workflow file the CLI's `--workflow` names: relative to the source root and
-// inside it, since the CLI refuses an absolute or `..`-bearing path (REQ-RUNACTION-86).
+// inside it, since the CLI refuses an absolute or `..`-bearing path.
 export function workflowFile(
   sourceRoot: string,
   workflow: string,

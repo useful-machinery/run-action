@@ -30,8 +30,6 @@ async function withTemporary(
   }
 }
 
-// REQ-RUNACTION-45, REQ-RUNACTION-46
-// INV-EMBED-6
 test("published terminal envelope recovers only the reserved committed identity", async () => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
@@ -81,7 +79,6 @@ test("published terminal envelope recovers only the reserved committed identity"
   });
 });
 
-// INV-EMBED-6
 test("terminal identity mismatch and unknown root fields fail closed", async () => {
   await withTemporary(async (directory) => {
     const file = path.join(directory, "terminal.json");
@@ -104,8 +101,6 @@ test("terminal identity mismatch and unknown root fields fail closed", async () 
   });
 });
 
-// REQ-RUNACTION-87
-// INV-EMBED-6
 test("the terminal document's command names the executable that ran", async (t) => {
   await withTemporary(async (directory) => {
     const file = path.join(directory, "terminal.json");
@@ -169,8 +164,6 @@ test("bounded parser rejects malformed, duplicate, and non-schema documents", as
   });
 });
 
-// REQ-RUNACTION-47
-// INV-EMBED-8
 test("a missing terminal spool is refused as an invalid terminal", async () => {
   await withTemporary(async (directory) => {
     await assert.rejects(
@@ -185,8 +178,6 @@ test("a missing terminal spool is refused as an invalid terminal", async () => {
   });
 });
 
-// REQ-RUNACTION-47, REQ-RUNACTION-75
-// INV-EMBED-6
 test("bare durable markers do not authenticate terminal-less recovery", async () => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
@@ -235,8 +226,6 @@ test("bare durable markers do not authenticate terminal-less recovery", async ()
   });
 });
 
-// REQ-RUNACTION-47, REQ-RUNACTION-85
-// INV-EMBED-6
 test("pinned status binds terminal-less recovery to the initial published result", async (t) => {
   await withTemporary(async (directory) => {
     const allocation: ExecutionAllocation = {
@@ -323,7 +312,6 @@ test("pinned status binds terminal-less recovery to the initial published result
     const foreignResult = pinned();
     foreignResult.state.attempts[0]!.result.relativeDirectory =
       "attempts/000001/other";
-    // REQ-RUNACTION-75, REQ-RUNACTION-85
     const retryAttempt = pinned();
     retryAttempt.state.attempts[0]!.trigger = "retry";
     for (const [name, status] of [
@@ -333,7 +321,6 @@ test("pinned status binds terminal-less recovery to the initial published result
         "renamed status command",
         { ...pinned(), command: `${PINNED_EXECUTABLE} workflow status` },
       ],
-      // REQ-RUNACTION-87
       [
         "another executable's status command",
         { ...pinned(), command: "um workflow run status" },
@@ -361,7 +348,6 @@ test("pinned status binds terminal-less recovery to the initial published result
   });
 });
 
-// REQ-RUNACTION-78
 test("workflow status output is read up to its 33,554,432-byte bound", async (t) => {
   for (const [size, accepted] of [
     [33_554_432, true],
@@ -426,8 +412,6 @@ test("workflow status output is read up to its 33,554,432-byte bound", async (t)
   }
 });
 
-// REQ-RUNACTION-78, REQ-RUNACTION-85
-// INV-EMBED-6
 test("recovery reads the status by the spelling the installed CLI has", async (t) => {
   const show = (runDirectory: string) => [
     "workflow",

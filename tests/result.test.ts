@@ -135,8 +135,6 @@ const validValidator =
     calls.push(artifactDirectory);
   };
 
-// REQ-RUNACTION-53, REQ-RUNACTION-54, REQ-RUNACTION-55, REQ-RUNACTION-57
-// INV-EMBED-23
 test("projection covers unavailable, file, text, JSON, changed Git, and zero-delta Git", async (t) => {
   const cases: readonly {
     name: string;
@@ -366,8 +364,6 @@ test("projection covers unavailable, file, text, JSON, changed Git, and zero-del
   }
 });
 
-// REQ-RUNACTION-55, REQ-RUNACTION-56
-// INV-EMBED-7
 test("inline text projection enforces all three byte boundaries", async (t) => {
   for (const size of [
     MAXIMUM_INLINE_EXPORT_BYTES - 1,
@@ -410,7 +406,6 @@ test("inline text projection enforces all three byte boundaries", async (t) => {
   }
 });
 
-// REQ-RUNACTION-51
 test("selected export lookup follows result metadata across alias ordinal shifts", async () => {
   const bytes = Buffer.from("shared");
   await withArtifact(
@@ -455,7 +450,6 @@ test("validated result supplies a missing recovered outcome", async () => {
   });
 });
 
-// REQ-RUNACTION-51, REQ-RUNACTION-52
 test("an absent exact export fails without guessing a path", async () => {
   await withArtifact({}, {}, async ({ identity }) => {
     await assert.rejects(
@@ -475,8 +469,6 @@ test("an absent exact export fails without guessing a path", async () => {
   });
 });
 
-// REQ-RUNACTION-48
-// INV-EMBED-7
 test("complete validation failure precedes selected carrier exposure", async () => {
   const bytes = Buffer.from("private export");
   await withArtifact(
@@ -503,8 +495,6 @@ test("complete validation failure precedes selected carrier exposure", async () 
   );
 });
 
-// REQ-RUNACTION-49
-// INV-EMBED-7
 test("post-validation metadata and carrier mutation both fail closed", async (t) => {
   const bytes = Buffer.from("immutable");
   await t.test("result metadata", async () => {
@@ -555,7 +545,6 @@ test("post-validation metadata and carrier mutation both fail closed", async (t)
   });
 });
 
-// REQ-RUNACTION-77
 test("a result.json beyond 202,027,692 bytes fails before artifact validation", async (t) => {
   for (const [size, accepted] of [
     [202_027_692, true],
@@ -591,7 +580,6 @@ test("a result.json beyond 202,027,692 bytes fails before artifact validation", 
   }
 });
 
-// REQ-RUNACTION-87
 test("the validation document's command names the executable that ran", async (t) => {
   for (const [command, accepted] of [
     ["fixture-cli workflow run artifact validate", true],
@@ -635,7 +623,6 @@ test("the validation document's command names the executable that ran", async (t
   }
 });
 
-// REQ-RUNACTION-78
 test("artifact validation output is read up to its 1,048,576-byte bound", async (t) => {
   for (const [size, accepted] of [
     [1_048_576, true],
@@ -681,8 +668,6 @@ test("artifact validation output is read up to its 1,048,576-byte bound", async 
   }
 });
 
-// REQ-RUNACTION-48, REQ-RUNACTION-78
-// INV-EMBED-7
 test("artifact validation runs the spelling the installed CLI has", async (t) => {
   const current = ["workflow", "run", "artifact", "validate"];
   const earlier = ["artifact", "validate"];

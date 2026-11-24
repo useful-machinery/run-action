@@ -89,8 +89,7 @@ function exactKeys(value: object, expected: readonly string[]): boolean {
   );
 }
 
-// Artifact validation on each tree: the same document under another command
-// (REQ-RUNACTION-48).
+// Artifact validation on each tree: the same document under another command.
 const VALIDATE_COMMANDS: Readonly<Record<CliTree, string>> = {
   current: "workflow run artifact validate",
   earlier: "artifact validate",
@@ -238,7 +237,7 @@ const PLACE_MEMBERS: Readonly<Record<Place, readonly string[]>> = {
 };
 
 // The place of a container opened under `key` inside `parent`; arrays and every
-// other container are unread (INV-EMBED-23).
+// other container are unread.
 function childPlace(
   parent: Place | undefined,
   key: string | undefined,

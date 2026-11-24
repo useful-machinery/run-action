@@ -36,8 +36,6 @@ function unreachable<T>(): Promise<T> {
   throw new Error("unexpected test dependency call");
 }
 
-// REQ-RUNACTION-13, REQ-RUNACTION-42, REQ-RUNACTION-84
-// INV-EMBED-2
 test("bootstrap rejection precedes every workflow input read and launch", async () => {
   let inputReads = 0;
   let launches = 0;
@@ -79,8 +77,6 @@ test("bootstrap rejection precedes every workflow input read and launch", async 
   assert.deepEqual(observedOutputs, emptyOutputs());
 });
 
-// REQ-RUNACTION-13, REQ-RUNACTION-82
-// INV-EMBED-2
 test("only the useful-version input is read before bootstrap", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-selection-"));
   try {
@@ -133,8 +129,6 @@ test("only the useful-version input is read before bootstrap", async () => {
   }
 });
 
-// REQ-RUNACTION-82, REQ-RUNACTION-42, REQ-RUNACTION-84
-// INV-EMBED-2
 test("an invalid useful-version fails before bootstrap and writes every output empty", async () => {
   let bootstraps = 0;
   let inputReads = 0;
@@ -179,8 +173,6 @@ test("an invalid useful-version fails before bootstrap and writes every output e
   assert.deepEqual(observedOutputs, emptyOutputs());
 });
 
-// REQ-RUNACTION-26
-// INV-EMBED-2
 test("invalid acquisition documents fail before source reads and allocation", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "useful-main-inputs-"),
@@ -227,7 +219,6 @@ test("invalid acquisition documents fail before source reads and allocation", as
   }
 });
 
-// REQ-RUNACTION-17
 test("an unusable workspace or empty workflow fails before allocation and launch", async () => {
   const workspace = await mkdtemp(
     path.join(os.tmpdir(), "useful-main-workspace-"),
@@ -388,7 +379,6 @@ async function committedRun(
   };
 }
 
-// REQ-RUNACTION-84, REQ-RUNACTION-42
 test("a completed bootstrap writes the useful-version output and one selected-version line", async (t) => {
   const identity = "0123456789abcdef0123456789abcdef01234567";
   const scenarios: readonly {
@@ -447,9 +437,6 @@ test("a completed bootstrap writes the useful-version output and one selected-ve
   }
 });
 
-// REQ-RUNACTION-42, REQ-RUNACTION-44, REQ-RUNACTION-46, REQ-RUNACTION-48, REQ-RUNACTION-53, REQ-RUNACTION-56, REQ-RUNACTION-58, REQ-RUNACTION-59
-// REQ-RUNACTION-76, REQ-RUNACTION-77
-// INV-EMBED-5
 test("result and process matrix preserves trustworthy outputs and failure precedence", async (t) => {
   const scenarios: readonly {
     name: string;
@@ -571,8 +558,6 @@ test("result and process matrix preserves trustworthy outputs and failure preced
   }
 });
 
-// REQ-RUNACTION-45, REQ-RUNACTION-47
-// INV-EMBED-6
 test("bare durable markers cannot expose terminal-less result outputs", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-recovery-"));
   try {
@@ -663,8 +648,6 @@ test("bare durable markers cannot expose terminal-less result outputs", async ()
   }
 });
 
-// REQ-RUNACTION-47
-// INV-EMBED-5
 test("authenticated terminal-less recovery retains and validates its result", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-recovery-"));
   try {
@@ -750,8 +733,6 @@ test("authenticated terminal-less recovery retains and validates its result", as
   }
 });
 
-// REQ-RUNACTION-91, REQ-RUNACTION-75
-// INV-EMBED-6
 test("a refused terminal identity is never recovered through status", async (t) => {
   const scenarios: readonly {
     name: string;
@@ -837,8 +818,6 @@ test("a refused terminal identity is never recovered through status", async (t) 
   }
 });
 
-// REQ-RUNACTION-41, REQ-RUNACTION-45, REQ-RUNACTION-46, REQ-RUNACTION-47
-// INV-EMBED-6, INV-EMBED-8
 test("a job cancelled during the run recovers its interrupted run's result through status", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-cancelled-"));
   const before = [
@@ -963,8 +942,6 @@ test("a job cancelled during the run recovers its interrupted run's result throu
   }
 });
 
-// REQ-RUNACTION-79, REQ-RUNACTION-92, REQ-RUNACTION-60, REQ-RUNACTION-61
-// INV-EMBED-5
 test("an unclassified error names its phase and class but never its text", async (t) => {
   const sentinel = "prompt attachment export credential provider-secret";
   const systemError = (code: string, errno: number) =>
@@ -1062,7 +1039,6 @@ test("an unclassified error names its phase and class but never its text", async
   }
 });
 
-// REQ-RUNACTION-60, REQ-RUNACTION-61
 test("adapter-authored failure is a stable structured fact", () => {
   const error = new AdapterError("artifact_validation_failed");
   assert.equal(
@@ -1088,8 +1064,6 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     "projection",
     "cleanup",
   ] as const) {
-    // REQ-RUNACTION-41
-    // INV-EMBED-8
     test(
       `cancellation during ${phase} cleans private inputs (${signal})`,
       { timeout: 5000 },
@@ -1243,7 +1217,6 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   }
 }
 
-// REQ-RUNACTION-72
 test("a CLI launch failure starts no run and exposes no result", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "useful-main-launch-"));
   try {

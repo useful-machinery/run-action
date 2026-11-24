@@ -17,7 +17,7 @@ export type FailureCode =
   | "terminal_result_invalid"
   | "workflow_failed";
 
-// The phase an unclassified error escaped (REQ-RUNACTION-79).
+// The phase an unclassified error escaped.
 export type FailureStage =
   | "allocation"
   | "bootstrap"

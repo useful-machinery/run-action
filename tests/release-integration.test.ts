@@ -163,7 +163,6 @@ async function actionReservation(runnerTemp: string): Promise<string> {
   return path.join(runnerTemp, reservation.name);
 }
 
-// REQ-RUNACTION-32, REQ-RUNACTION-50, REQ-RUNACTION-58
 test(
   "the staged pinned release executes one all-kind named-input Action invocation",
   { skip: releaseBundle === undefined },
@@ -233,7 +232,6 @@ function fileCreated(file: string, signal: AbortSignal): Promise<void> {
   });
 }
 
-// REQ-RUNACTION-41, REQ-RUNACTION-46, REQ-RUNACTION-47
 test(
   "the staged pinned release recovers an interrupted run's outputs through its status",
   { skip: releaseBundle === undefined, timeout: 120_000 },
@@ -336,7 +334,6 @@ exports:
         value: Note
 `;
 
-// REQ-RUNACTION-53, REQ-RUNACTION-54, REQ-RUNACTION-55
 test(
   "the staged pinned release projects exports that carry presentation",
   { skip: releaseBundle === undefined },

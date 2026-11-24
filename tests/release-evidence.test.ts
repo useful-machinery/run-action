@@ -174,8 +174,6 @@ function observe(): Observations {
   return { requests: [], ancestry: [] };
 }
 
-// REQ-RUNACTION-80, REQ-ONBOARD-4
-// INV-EMBED-21
 test("the generator records a verified stable release in the committed key order", async () => {
   const fake = await fakeRelease();
   const observations = observe();
@@ -227,8 +225,6 @@ test("the generator records a verified stable release in the committed key order
   );
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("the generator takes the executable's name from the release's archives", async (t) => {
   for (const executable of ["useful", "fixture-cli"]) {
     await t.test(executable, async () => {
@@ -251,8 +247,6 @@ test("the generator takes the executable's name from the release's archives", as
   }
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("a release whose archives do not share one executable name is refused", async (t) => {
   await t.test("archive names", async () => {
     const fake = await fakeRelease(undefined, (target) =>
@@ -287,7 +281,6 @@ test("a release whose archives do not share one executable name is refused", asy
   });
 });
 
-// REQ-RUNACTION-80
 test("a GitHub token authorizes the API reads and never the downloads", async () => {
   const fake = await fakeRelease();
   const observations = observe();
@@ -312,7 +305,6 @@ test("a GitHub token authorizes the API reads and never the downloads", async ()
   );
 });
 
-// REQ-RUNACTION-80
 for (const field of ["prerelease", "draft"] as const) {
   test(`a ${field} release is refused before any download`, async () => {
     const fake = await fakeRelease();
@@ -329,8 +321,6 @@ for (const field of ["prerelease", "draft"] as const) {
   });
 }
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("an asset whose bytes differ from its recorded digest is refused", async () => {
   const fake = await fakeRelease();
   const archive = fake.release.assets[1]!;
@@ -341,8 +331,6 @@ test("an asset whose bytes differ from its recorded digest is refused", async ()
   );
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("an archive that differs from its SHA256SUMS line is refused", async () => {
   const fake = await fakeRelease();
   const sums = fake.downloads.get(`${DOWNLOADS}/SHA256SUMS`)!.toString();
@@ -359,8 +347,6 @@ test("an archive that differs from its SHA256SUMS line is refused", async () => 
   );
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("an asset whose size differs from its recorded size is refused", async () => {
   const fake = await fakeRelease();
   const archive = fake.release.assets[2]!;
@@ -371,8 +357,6 @@ test("an asset whose size differs from its recorded size is refused", async () =
   );
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("a release with an extra or a missing asset is refused", async () => {
   const extra = await fakeRelease();
   extra.release.assets.push(
@@ -394,8 +378,6 @@ test("a release with an extra or a missing asset is refused", async () => {
   );
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 for (const tar of ["inventory", "mode"] as const) {
   test(`an archive with a ${tar} change to the canonical layout is refused`, async () => {
     const target = TARGETS[1];
@@ -412,8 +394,6 @@ for (const tar of ["inventory", "mode"] as const) {
   });
 }
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("a release commit without exactly one Source-Revision trailer is refused", async () => {
   const none = await fakeRelease();
   none.commit.commit.message = "Mirror CLI candidate\n";
@@ -430,8 +410,6 @@ test("a release commit without exactly one Source-Revision trailer is refused", 
   );
 });
 
-// REQ-RUNACTION-80
-// INV-EMBED-21
 test("a source revision that does not descend from the required ancestor is refused", async () => {
   const fake = await fakeRelease();
   await assert.rejects(

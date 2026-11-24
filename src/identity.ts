@@ -52,7 +52,7 @@ const DEFAULT_RECOVERY_DEPENDENCIES: RecoveryDependencies = {
 };
 
 // The run's status on each tree: the same document under another command and
-// outcome (REQ-RUNACTION-78, REQ-RUNACTION-85).
+// outcome.
 const STATUS_COMMANDS: Readonly<
   Record<CliTree, { readonly words: string; readonly outcome: string }>
 > = {

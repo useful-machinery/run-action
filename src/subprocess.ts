@@ -12,8 +12,7 @@ export interface CapturedCommand {
 }
 
 // The `command` member of a document the installed CLI prints for `words`: the
-// name of the executable the installation names, then the words
-// (REQ-RUNACTION-87).
+// name of the executable the installation names, then the words.
 export function cliCommand(executable: string, words: string): string {
   return `${path.basename(executable)} ${words}`;
 }
@@ -21,7 +20,7 @@ export function cliCommand(executable: string, words: string): string {
 // Which spelling of the run's status and of artifact validation the installed
 // CLI has: `current` has `workflow run show` and `workflow run artifact
 // validate`; `earlier`, which a selected or pinned release may still be, has
-// `workflow run status` and `artifact validate` (REQ-RUNACTION-78).
+// `workflow run status` and `artifact validate`.
 export type CliTree = "current" | "earlier";
 
 // Answers for the command that asks, failing with that command's code when

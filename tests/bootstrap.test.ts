@@ -197,9 +197,6 @@ async function withRunnerTemp(
   }
 }
 
-// REQ-RUNACTION-4, REQ-RUNACTION-7, REQ-RUNACTION-11, REQ-RUNACTION-12, REQ-RUNACTION-38, REQ-RUNACTION-67
-// INV-EMBED-1
-// INV-EMBED-3
 test("all supported platforms verify and install only their closed archive", async (t) => {
   for (const platform of targets) {
     await t.test(platform.target, async () => {
@@ -246,7 +243,6 @@ test("all supported platforms verify and install only their closed archive", asy
   }
 });
 
-// REQ-RUNACTION-5
 test("a supported runner temp may use a symlinked absolute path", async () => {
   const directory = await mkdtemp(
     path.join(os.tmpdir(), "useful-bootstrap-link-"),
@@ -280,8 +276,6 @@ test("a supported runner temp may use a symlinked absolute path", async () => {
   }
 });
 
-// REQ-RUNACTION-7, REQ-RUNACTION-9, REQ-RUNACTION-10, REQ-RUNACTION-11
-// INV-EMBED-1
 test("bootstrap failures stay closed before ambient fallback", async (t) => {
   await withRunnerTemp(async (runnerTemp) => {
     const platform = targets[0]!;
@@ -389,8 +383,6 @@ test("bootstrap failures stay closed before ambient fallback", async (t) => {
   });
 });
 
-// REQ-RUNACTION-8
-// INV-EMBED-1
 test("checksum and archive byte corruption fail before version inspection", async () => {
   await withRunnerTemp(async (runnerTemp) => {
     const fixtureValue = await fixture();
@@ -434,8 +426,6 @@ test("checksum and archive byte corruption fail before version inspection", asyn
   });
 });
 
-// REQ-RUNACTION-8
-// INV-EMBED-1
 test("archive size and checksum layout drift fail before version inspection", async (t) => {
   await withRunnerTemp(async (runnerTemp) => {
     const platform = targets[0]!;
@@ -512,8 +502,6 @@ test("archive size and checksum layout drift fail before version inspection", as
   });
 });
 
-// REQ-RUNACTION-4
-// INV-EMBED-1
 test("unsupported platform fails without retrieval", async () => {
   let fetches = 0;
   await assert.rejects(
@@ -537,7 +525,6 @@ test("unsupported platform fails without retrieval", async () => {
   assert.equal(fetches, 0);
 });
 
-// REQ-RUNACTION-78
 test("CLI version output is read up to its 65,536-byte bound", async (t) => {
   for (const [size, accepted] of [
     [65_536, true],
@@ -690,8 +677,6 @@ const requested: VersionSelection = {
   version: SELECTED_VERSION,
 };
 
-// REQ-RUNACTION-82, REQ-RUNACTION-83
-// INV-EMBED-22
 test("a selected release installs from its constructed URLs", async (t) => {
   for (const [selection, source] of [
     [{ kind: "latest" }, "latest"],
@@ -734,8 +719,6 @@ test("a selected release installs from its constructed URLs", async (t) => {
   }
 });
 
-// REQ-RUNACTION-87, REQ-RUNACTION-82
-// INV-EMBED-1, INV-EMBED-22
 test("the bootstrap runs the executable its installation names", async (t) => {
   const environment = (runnerTemp: string) => ({
     RUNNER_OS: "Linux",
@@ -812,8 +795,6 @@ test("the bootstrap runs the executable its installation names", async (t) => {
   });
 });
 
-// REQ-RUNACTION-7, REQ-RUNACTION-11
-// INV-EMBED-22
 test("an unpublished or unreachable selected checksum list stops before the archive", async (t) => {
   const checksumsUrl = selectedReleaseAssets(SELECTED_VERSION).checksumsUrl;
   await t.test("unpublished", async () => {
@@ -843,8 +824,6 @@ test("an unpublished or unreachable selected checksum list stops before the arch
   });
 });
 
-// REQ-RUNACTION-90, REQ-RUNACTION-67
-// INV-EMBED-22
 test("latest resolves only from a release-page redirect to a stable tag", async (t) => {
   const cases: readonly [string, Redirect | undefined][] = [
     ["not found", undefined],
@@ -891,8 +870,6 @@ test("latest resolves only from a release-page redirect to a stable tag", async 
   }
 });
 
-// REQ-RUNACTION-88, REQ-RUNACTION-89, REQ-RUNACTION-11
-// INV-EMBED-22
 test("a selected release's checksum list, archive and layout fail closed before the probe", async (t) => {
   const assets = selectedReleaseAssets(SELECTED_VERSION);
   const archiveUrl = assets.archives[SELECTED_TARGET].url;
@@ -1017,8 +994,6 @@ test("a selected release's checksum list, archive and layout fail closed before 
   }
 });
 
-// REQ-RUNACTION-10, REQ-RUNACTION-11
-// INV-EMBED-22
 test("a selected release's probe must report its version and a commit identity", async (t) => {
   const cases: readonly [string, string, string][] = [
     ["another version", "version", "9.8.8"],
@@ -1040,7 +1015,6 @@ test("a selected release's probe must report its version and a commit identity",
   }
 });
 
-// REQ-RUNACTION-4, REQ-RUNACTION-5, REQ-RUNACTION-83
 test("latest is not resolved on an unsupported platform or runner temp", async (t) => {
   const environments: readonly [string, NodeJS.ProcessEnv][] = [
     ["platform", { RUNNER_OS: "Windows", RUNNER_ARCH: "X64" }],

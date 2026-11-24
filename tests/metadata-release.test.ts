@@ -25,7 +25,6 @@ const inputNames = [
   "useful-version",
 ];
 
-// REQ-RUNACTION-3, REQ-RUNACTION-14, REQ-RUNACTION-15, REQ-RUNACTION-42, REQ-RUNACTION-67
 test("action.yml exposes only the V1 metadata surface and Node 24 bundle", async () => {
   const metadata = parse(
     await readFile(path.join(packageRoot, "action.yml"), "utf8"),
@@ -143,8 +142,6 @@ test("public checks define source and all supported native behavior jobs", async
   assert.ok(releaseRun.env?.USEFUL_RUN_ACTION_RELEASE_BUNDLE);
 });
 
-// REQ-RUNACTION-6, REQ-RUNACTION-81, REQ-ONBOARD-4
-// INV-EMBED-1
 test("release evidence is a closed, internally consistent stable release", async () => {
   assert.deepEqual(PINNED_RELEASE, evidence);
   assert.equal(evidence.schemaVersion, 1);
