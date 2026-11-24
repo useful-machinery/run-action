@@ -3239,121 +3239,121 @@ var WorkflowCommandGuard = class {
 var release_evidence_default = {
   schemaVersion: 1,
   repository: "useful-machinery/cli",
-  releaseUrl: "https://github.com/useful-machinery/cli/releases/tag/v0.81.0",
-  tag: "v0.81.0",
-  releaseId: 454049294,
-  releaseCommit: "6a3d6021e494a5cc5a3fb856958aa5f0e7255970",
-  sourceRevision: "8d7225154ad2dee79296208ada4140f7102bdf26",
+  releaseUrl: "https://github.com/useful-machinery/cli/releases/tag/v0.81.1",
+  tag: "v0.81.1",
+  releaseId: 455998404,
+  releaseCommit: "b3fb427c2c376cb06fc59194a1712a4fd98c3a9c",
+  sourceRevision: "42e10dd9cb216f27aa26e8bf7f675e1f7db0478d",
   requiredSourceAncestor: "7215869ca26439d305c097af1dca50ebb8066419",
-  version: "0.81.0",
-  buildIdentity: "6a3d6021e494a5cc5a3fb856958aa5f0e7255970",
+  version: "0.81.1",
+  buildIdentity: "b3fb427c2c376cb06fc59194a1712a4fd98c3a9c",
   checksumAsset: {
-    id: 777159294,
+    id: 784542869,
     name: "SHA256SUMS",
     size: 333,
-    sha256: "22551368e6b3f14f02d5773dec05f11a8895c2ccdc19e3c2c3c7879798f35460",
-    url: "https://github.com/useful-machinery/cli/releases/download/v0.81.0/SHA256SUMS"
+    sha256: "dadfec3934f46031f0f8ec45817996990e06a7a729ba2988624bd8c02226ea2b",
+    url: "https://github.com/useful-machinery/cli/releases/download/v0.81.1/SHA256SUMS"
   },
   archives: {
     "x86_64-unknown-linux-gnu": {
-      id: 777159291,
-      name: "useful-0.81.0-x86_64-unknown-linux-gnu.tar.gz",
-      size: 23473679,
-      sha256: "a67e6b1e35af98cd5189a5bef32f71737436d6f8ede89e1c3aed1c3426596a8f",
-      url: "https://github.com/useful-machinery/cli/releases/download/v0.81.0/useful-0.81.0-x86_64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "useful-0.81.0-x86_64-unknown-linux-gnu",
+      id: 784542874,
+      name: "useful-0.81.1-x86_64-unknown-linux-gnu.tar.gz",
+      size: 23481614,
+      sha256: "a428518309efbf74c9f4bb034677922e15aab2c3207f66a9d06e96f0aff30622",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.81.1/useful-0.81.1-x86_64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "useful-0.81.1-x86_64-unknown-linux-gnu",
       inventory: [
         {
-          path: "useful-0.81.0-x86_64-unknown-linux-gnu",
+          path: "useful-0.81.1-x86_64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "useful-0.81.0-x86_64-unknown-linux-gnu/LICENSE",
+          path: "useful-0.81.1-x86_64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "useful-0.81.0-x86_64-unknown-linux-gnu/README.md",
+          path: "useful-0.81.1-x86_64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
           size: 229941
         },
         {
-          path: "useful-0.81.0-x86_64-unknown-linux-gnu/useful",
+          path: "useful-0.81.1-x86_64-unknown-linux-gnu/useful",
           type: "file",
           mode: 493,
-          size: 81248880
+          size: 81190528
         }
       ]
     },
     "aarch64-unknown-linux-gnu": {
-      id: 777159296,
-      name: "useful-0.81.0-aarch64-unknown-linux-gnu.tar.gz",
-      size: 24236875,
-      sha256: "1f718d3c3312f7480dad83eff72da8b061decb5d841ec14fd20771e099b13e0c",
-      url: "https://github.com/useful-machinery/cli/releases/download/v0.81.0/useful-0.81.0-aarch64-unknown-linux-gnu.tar.gz",
-      rootDirectory: "useful-0.81.0-aarch64-unknown-linux-gnu",
+      id: 784542882,
+      name: "useful-0.81.1-aarch64-unknown-linux-gnu.tar.gz",
+      size: 24230130,
+      sha256: "0048ad5ff5e8bc511aa6b40e55aa671635689d5d18113b3fa0f2cc5cfafae506",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.81.1/useful-0.81.1-aarch64-unknown-linux-gnu.tar.gz",
+      rootDirectory: "useful-0.81.1-aarch64-unknown-linux-gnu",
       inventory: [
         {
-          path: "useful-0.81.0-aarch64-unknown-linux-gnu",
+          path: "useful-0.81.1-aarch64-unknown-linux-gnu",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "useful-0.81.0-aarch64-unknown-linux-gnu/LICENSE",
+          path: "useful-0.81.1-aarch64-unknown-linux-gnu/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "useful-0.81.0-aarch64-unknown-linux-gnu/README.md",
+          path: "useful-0.81.1-aarch64-unknown-linux-gnu/README.md",
           type: "file",
           mode: 420,
           size: 229941
         },
         {
-          path: "useful-0.81.0-aarch64-unknown-linux-gnu/useful",
+          path: "useful-0.81.1-aarch64-unknown-linux-gnu/useful",
           type: "file",
           mode: 493,
-          size: 76915800
+          size: 76861400
         }
       ]
     },
     "aarch64-apple-darwin": {
-      id: 777159292,
-      name: "useful-0.81.0-aarch64-apple-darwin.tar.gz",
-      size: 21813987,
-      sha256: "3d7f0e9e71409023e55207713f9ee85005c93f670586c101ba5df163af584aa9",
-      url: "https://github.com/useful-machinery/cli/releases/download/v0.81.0/useful-0.81.0-aarch64-apple-darwin.tar.gz",
-      rootDirectory: "useful-0.81.0-aarch64-apple-darwin",
+      id: 784542871,
+      name: "useful-0.81.1-aarch64-apple-darwin.tar.gz",
+      size: 21815513,
+      sha256: "45660f385d78f0ef453a4c21af37660faf3ad76ae39246a224eea5bdd763a07b",
+      url: "https://github.com/useful-machinery/cli/releases/download/v0.81.1/useful-0.81.1-aarch64-apple-darwin.tar.gz",
+      rootDirectory: "useful-0.81.1-aarch64-apple-darwin",
       inventory: [
         {
-          path: "useful-0.81.0-aarch64-apple-darwin",
+          path: "useful-0.81.1-aarch64-apple-darwin",
           type: "directory",
           mode: 493,
           size: 0
         },
         {
-          path: "useful-0.81.0-aarch64-apple-darwin/LICENSE",
+          path: "useful-0.81.1-aarch64-apple-darwin/LICENSE",
           type: "file",
           mode: 420,
           size: 11357
         },
         {
-          path: "useful-0.81.0-aarch64-apple-darwin/README.md",
+          path: "useful-0.81.1-aarch64-apple-darwin/README.md",
           type: "file",
           mode: 420,
           size: 229941
         },
         {
-          path: "useful-0.81.0-aarch64-apple-darwin/useful",
+          path: "useful-0.81.1-aarch64-apple-darwin/useful",
           type: "file",
           mode: 493,
-          size: 69904800
+          size: 69774176
         }
       ]
     }
