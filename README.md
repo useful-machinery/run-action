@@ -1,6 +1,6 @@
 # Useful Machinery Run Action
 
-The implementation pins the checksum-verified `useful` v0.82.0 release and runs `useful`
+The implementation pins the checksum-verified `useful` v0.83.0 release and runs `useful`
 0.78.0 or later. This README and both executable examples still select public mirror
 revision `b9de88cc55fb9301697eccb72e42030a49ec495d`, the last revision for which
 [source, all three native behavior jobs and the pinned-release jobs passed](https://github.com/useful-machinery/run-action/actions/runs/42555199928);
@@ -128,7 +128,7 @@ Useful Machinery monorepo commit.
 
 The optional `useful-version` input chooses the `useful` release the step installs:
 
-- omit it, or leave it empty, to install the release this Action revision pins (v0.82.0
+- omit it, or leave it empty, to install the release this Action revision pins (v0.83.0
   here); the CLI is reproducible for each Action revision and is the one the revision
   was tested with;
 - set an exact published version such as `0.78.0` to install that release; the CLI stays
@@ -185,7 +185,7 @@ move a step to this revision:
 | `inputs` | absent | Closed JSON acquisition map for named Text, JSON, File, and attachment-collection values. |
 | `max-parallel` | `1` | Maximum number of workflow nodes to run concurrently, from 1 through 256. |
 | `export` | absent | Exact declared workflow export to bridge to selected-export outputs. |
-| `useful-version` | absent | CLI release to install: omit for the pinned v0.82.0, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
+| `useful-version` | absent | CLI release to install: omit for the pinned v0.83.0, `latest`, or an exact `MAJOR.MINOR.PATCH`. |
 
 Absent or empty `inputs`, and the document `{}`, all supply the empty named map. A
 nonempty value is one JSON object keyed by declared Workflow V1 input names. Each member
