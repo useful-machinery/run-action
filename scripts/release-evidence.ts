@@ -455,7 +455,7 @@ const packageRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 async function main(argv: readonly string[]): Promise<number> {
   const usage =
-    "usage: release-evidence.ts [--repository DIR] (<tag> | --check)";
+    "usage: release-evidence.ts [--repository DIR] (<tag> | --check [--recorded-source-ancestry])";
   let repository = path.resolve(packageRoot, "../..");
   const rest = [...argv];
   if (rest[0] === "--repository") {
@@ -466,6 +466,17 @@ async function main(argv: readonly string[]): Promise<number> {
     repository = path.resolve(rest[1]);
     rest.splice(0, 2);
   }
+  // --recorded-source-ancestry answers the one ancestry question for the
+  // committed pair without a checkout, for a check run with no history: the
+  // regenerated evidence must still equal the committed one, so the release's
+  // trailer must be the committed sourceRevision, and whether that revision
+  // descends from requiredSourceAncestor is left to
+  // scripts/check-run-action-source-ancestry, which reads the history.
+  const recordedAncestry =
+    rest.length === 2 &&
+    rest[0] === "--check" &&
+    rest[1] === "--recorded-source-ancestry";
+  if (recordedAncestry) rest.pop();
   const [mode] = rest;
   if (rest.length !== 1 || mode === undefined || mode === "") {
     console.error(usage);
@@ -475,12 +486,33 @@ async function main(argv: readonly string[]): Promise<number> {
   const dependencies = defaultDependencies(repository);
   if (mode === "--check") {
     const committed = await readFile(evidencePath, "utf8");
-    const tag = (JSON.parse(committed) as { tag?: unknown }).tag;
+    const record = JSON.parse(committed) as {
+      tag?: unknown;
+      requiredSourceAncestor?: unknown;
+      sourceRevision?: unknown;
+    };
+    const tag = record.tag;
     if (typeof tag !== "string") {
       throw new Error("release-evidence.json has no tag");
     }
+    const checkDependencies: ReleaseEvidenceDependencies = recordedAncestry
+      ? {
+          fetch: dependencies.fetch,
+          isAncestor: async (ancestor, descendant) => {
+            if (
+              ancestor !== record.requiredSourceAncestor ||
+              descendant !== record.sourceRevision
+            ) {
+              throw new Error(
+                `the ancestry of ${descendant} from ${ancestor} is not the recorded pair; check it in a checkout`,
+              );
+            }
+            return true;
+          },
+        }
+      : dependencies;
     const generated = serializeReleaseEvidence(
-      await generateReleaseEvidence(tag, dependencies),
+      await generateReleaseEvidence(tag, checkDependencies),
     );
     if (generated !== committed) {
       console.error(
